@@ -14,6 +14,12 @@
     }
   },
 
+  "guardrails": {
+    "shell": {
+      "overrides": {}
+    }
+  },
+
   "providers": {
     "github": {
       "allowPrivileged": false,

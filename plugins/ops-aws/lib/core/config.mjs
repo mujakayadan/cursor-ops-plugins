@@ -24,7 +24,11 @@ const DEFAULTS = {
     unknown: "allow",
     trustedServers: ["^cursor-ide-browser$"],
     serverOverrides: {},
+    deniedTools: [
+      "(^|_)(drop|delete|destroy|purge|wipe|truncate|reset)_(databases?|dbs?|projects?|clusters?|buckets?|instances?|repos?|repositor(y|ies)|schemas?|tables?|collections?|volumes?|organizations?|orgs?|namespaces?)(_|$)",
+    ],
   },
+  guardrails: { shell: { overrides: {} } },
   prompts: { blockSecrets: true },
 };
 

@@ -155,6 +155,15 @@ export function decideThirdPartyMcp(payload, cfg) {
   if (!server) {
     return { permission: "deny", user_message: "MCP call without a server name was blocked.", agent_message: "Unidentified MCP server; blocked by policy." };
   }
+  const normalized = tokens(payload.tool_name ?? "").join("_");
+  const denied = (policy.deniedTools ?? []).find((p) => new RegExp(p, "i").test(normalized));
+  if (denied) {
+    return {
+      permission: "deny",
+      user_message: `${server} › ${payload.tool_name} is a destructive tool and is blocked (thirdPartyMcp.deniedTools).`,
+      agent_message: `Destroying databases, projects, clusters, buckets or repositories through MCP is not allowed. Do not retry with another tool or the CLI; explain the block to the user.`,
+    };
+  }
   if (policy.trustedServers.some((p) => new RegExp(p, "i").test(server))) return { permission: "allow" };
 
   let effective = { read: policy.read, write: policy.write, privileged: policy.privileged, unknown: policy.unknown };

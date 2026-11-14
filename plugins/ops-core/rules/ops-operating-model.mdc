@@ -8,7 +8,9 @@ alwaysApply: true
 - Investigate with `ops-<provider>-read` servers first. They are side-effect free and need no approval.
 - Use `ops-<provider>-write` tools only when the user asked for that change in this conversation. State the exact target and expected effect before calling.
 - Privileged tools need a typed `confirm` value. Never construct it yourself from a vague request: show the user the exact target and wait for an explicit go-ahead.
-- When a guardrail denies a call, do not retry with a different tool, shell command, or vendor MCP server to get the same effect. Explain the block and offer options.
+- When a guardrail denies a call, do not retry with a different tool, shell command, or vendor MCP server to get the same effect. Never wrap the action in a script, alias, encoded command, or another language to evade the check. Explain the block and offer options, such as a safer command or asking the user to run it themselves.
+- Never discard uncommitted work (`git reset --hard`, `git checkout -- .`, `git clean -f`) or destroy data (dropping databases, truncating tables, removing volumes). Prefer `git stash`, a new branch, a backup, or a reversible migration.
+- Never edit, disable, or remove the ops guardrails, `~/.ops/config.json`, `.cursor/hooks.json`, or the audit log.
 - Prefer ops-* MCP tools over raw CLI commands; shell CLI calls bypass input validation and typed confirmation.
 - Never print, request, or inline secrets. Reference profiles, contexts, or env var names.
 - For any change, follow the `ops-change-management` skill: plan, snapshot/backup, apply, verify, report.

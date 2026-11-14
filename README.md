@@ -12,7 +12,7 @@ Cursor plugin suite for operating **GitHub, DigitalOcean, Vercel and AWS** from 
 
 `ops-scaffold` generates new **Python, TypeScript and Java** projects from Copier templates kept in this repo (see [Scaffolders](#scaffolders)).
 
-`ops-core` adds cross-cutting guardrails (secret blocking in prompts/commands/MCP args, generic destructive-shell rules, risk classification for **third-party** MCP servers such as the official Vercel or GitHub MCP), the audit trail, the operating-model rule, change-management/incident skills and a read-only `ops-investigator` subagent.
+`ops-core` adds cross-cutting guardrails (secret blocking in prompts/commands/MCP args, [safety guardrails](#safety-guardrails) against destructive git, database, filesystem and system commands, risk classification for **third-party** MCP servers such as the official Vercel or GitHub MCP), the audit trail, the operating-model rule, change-management/incident skills and a read-only `ops-investigator` subagent.
 
 ## Architecture
 
@@ -73,6 +73,25 @@ scripts/                          # sync, validate, install, doctor, smoke, scaf
 ```
 
 Plugins are self-contained (core is vendored), so they install from a marketplace without the monorepo. CI fails if `lib/core` drifts from `packages/core`.
+
+## Safety guardrails
+
+`ops-core` checks every agent shell command and every MCP call before it runs (`plugins/ops-core/hooks/guardrails.mjs`). **Deny** covers irreversible data loss and attempts to switch off safety controls. **Ask** covers actions that are risky but often legitimate.
+
+| Area | Denied | Asks |
+|---|---|---|
+| Git | `reset --hard`, `clean -f`, discarding changes (`checkout -- .`, `restore`, `switch --discard-changes`), `stash drop/clear`, reflog expiry, `gc --prune=now`, `filter-branch`/`filter-repo`, `push --mirror`, force-pushing or deleting `main`/`master`/`production`/`release`/`develop` | other force pushes and remote deletes, `branch -D`, `--no-verify`, changing `core.hooksPath` |
+| Databases | `DROP DATABASE/SCHEMA/TABLE/ROLE`, `TRUNCATE`, `DELETE` without `WHERE`, `FLUSHALL`, `dropDatabase()`, `dropdb`; resets in Prisma, Rails, Laravel, Alembic (`downgrade base`), Flyway, Django, Supabase, EF, Liquibase and others; deleting managed databases (GCP, Azure, Neon, PlanetScale, Fly, Heroku, Atlas); `docker compose down -v` and volume removal; deleting Kubernetes namespaces, PVCs or `--all` | `UPDATE` without `WHERE`, `ALTER TABLE … DROP`, migration rollbacks, `docker system prune`, other `kubectl delete` |
+| Infrastructure | `terraform`/`tofu`/`pulumi`/`cdk`/`sst destroy` | `apply -auto-approve`, `state rm/mv`, `pulumi up --yes` |
+| Filesystem and system | recursive deletes of `/`, `~`, `.`, `..`, `*`, `.git`, drive roots and system folders; disk formatting and `dd` to devices; secure erase; shutdown and reboot; killing every process; disabling Defender, firewalls or SELinux; deleting registry keys | `curl … \| sh`, `irm … \| iex`, `Set-ExecutionPolicy Bypass` |
+| Releases and secrets | | `npm`/`pnpm`/`uv`/`cargo` publish, `gradlew publish`, `docker push`, reading SSH, AWS, kube or Docker credential files, printing access tokens |
+| Tampering | writing to or removing `~/.ops/config.json`, the audit log, `.cursor/hooks.json` or installed plugins; setting `OPS_ALLOW_PRIVILEGED` or `OPS_CONFIG` | |
+
+For MCP tools that execute commands or SQL (`execute_sql`, `run_query`, `run_session_command`, …), the same rules run against every string in the tool input. Third-party tools named like `delete_project`, `drop_database` or `destroy_cluster` are denied outright (`thirdPartyMcp.deniedTools`).
+
+To avoid false positives, the guard skips text-only commands (`rg "DROP TABLE"`, `git log --grep …`, `echo`) and ignores the text of commit, PR and issue messages. To relax a single rule, set `guardrails.shell.overrides` in `~/.ops/config.json`, for example `{ "git-reset-hard": "ask" }`. The tamper rules can't be relaxed.
+
+Hooks see the command line, not what a script does after it starts. An agent that writes a script and then runs it is not covered. The operating-model rule forbids that workaround, and the audit log records every command.
 
 ## Scaffolders
 
@@ -161,5 +180,7 @@ To add a tool, add an entry to the provider's `tools` array with a `tier`, an `i
 | `providers.scaffold.source` / `ref` | this repo's GitHub URL / latest tag | Copier template location and version |
 | `providers.scaffold.scope.allowedRoots` | `[]` (anywhere) | Directories new projects may be created in |
 | `thirdPartyMcp.{read,write,privileged,unknown}` | allow/ask/ask/allow | Policy for non-ops MCP servers; `serverOverrides` per server regex |
+| `thirdPartyMcp.deniedTools` | destroy/drop/delete + database, project, cluster, bucket, repo, … | Tool-name regexes (snake_case-normalized) that are always denied |
+| `guardrails.shell.overrides` | `{}` | Per-rule decision (`allow`/`ask`/`deny`) for the [safety guardrails](#safety-guardrails); tamper rules can't be relaxed |
 | `prompts.blockSecrets` | `true` | Block prompts containing credentials |
 | `audit.{enabled,dir}` | `true`, `~/.ops/audit` | Audit trail |
