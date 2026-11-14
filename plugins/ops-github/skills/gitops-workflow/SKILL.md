@@ -16,7 +16,7 @@ description: Apply and follow the team's GitOps flow on GitHub - main is product
 1. Ask the user for the visibility (`public` or `private`); there is no default. The same applies to the license (see `scaffold-project`).
 2. `github_repo_create` with `visibility`, and `source` set to the local repo whose initial commit is on `main`. This pushes `main`.
 3. `github_repo_bootstrap` with `environments` (only if asked), `requiredChecks` (the CI job names, e.g. `verify`) and `project` (if the user has a board). It creates `dev` from `main`, sets merge settings (squash and merge commits on, rebase off, delete merged branches), adds labels, and applies rulesets where the plan allows (public repos on Free). It also lets Actions open PRs.
-4. Relay the `gitopsToken` line. PRs opened with the default workflow token don't trigger CI, so required checks would never run on release and sync PRs. The user creates a fine-grained token (this repo; Contents and Pull requests read/write) and stores it as the `GITOPS_TOKEN` Actions secret. Never create or store that token yourself.
+4. Relay the `gitopsToken` line. Without the token, CI on release and sync PRs waits as *action required* until the user approves the runs in the Actions tab. To avoid that, the user creates a fine-grained token (this repo; Contents and Pull requests read/write) and stores it as the `GITOPS_TOKEN` Actions secret. Never create or store that token yourself.
 
 Changing an existing repo to public is `github_repo_set_visibility` (privileged, typed confirmation). First scan the full history for secrets (e.g. `gitleaks git` or `trufflehog git file://.`) and show the result to the user.
 
