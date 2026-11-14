@@ -26,5 +26,15 @@
     "actions": {
       "source": { "organizeImports": "on" }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["package.json"],
+      "json": { "formatter": { "expand": "always" } }
+    },
+    {
+      "includes": [".release-please-manifest.json"],
+      "formatter": { "enabled": false }
+    }
+  ]
 }
