@@ -137,6 +137,7 @@ Every project gets the same set of shared files:
 - GitHub Actions CI and Dependabot (conventional `chore(deps)` titles)
 - the GitOps workflows (`pr-policy`, `sync-main-to-dev`, `release-please`, and the GHCR `image` workflow when there is a Dockerfile), issue forms, a PR template, release-please config, and an initial commit on `main`
 - `.editorconfig` and `.gitattributes`
+- `.vscode/extensions.json` recommending the language-server extensions for the project's linters (Ruff and ty, Biome, or Java), so the agent sees their diagnostics while it edits
 - an optional Dockerfile for backend and Next.js projects
 
 **From the agent:** the `scaffold-project` skill interviews the user, always including the project's license, copyright holder and GitHub visibility, and calls `scaffold_create`. It then publishes and bootstraps the repo through `gitops-workflow`. Calls to `scaffold_create` and `scaffold_update` always ask for approval. The tools refuse non-empty destinations, relative paths, and paths outside `providers.scaffold.scope.allowedRoots` when that is set.

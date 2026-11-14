@@ -76,6 +76,7 @@ const CASES: Case[] = [
       ".github/workflows/ci.yml",
       ...GITOPS_FILES,
       ".copier-answers.yml",
+      ".vscode/extensions.json",
     ],
     absent: [
       "alembic.ini",
@@ -127,6 +128,7 @@ const CASES: Case[] = [
       "src/scaffold_check/__init__.py",
       "src/scaffold_check/py.typed",
       "AGENTS.md",
+      ".vscode/extensions.json",
       ".github/ISSUE_TEMPLATE/bug.yml",
       "release-please-config.json",
     ],
@@ -165,6 +167,7 @@ const CASES: Case[] = [
       ".cursor/rules/nextjs.mdc",
       ".claude/rules/nextjs.md",
       ".claude/skills/verify/SKILL.md",
+      ".vscode/extensions.json",
     ],
     absent: [".cursor/mcp.json", ".mcp.json", ".cursor/skills"],
     checks: "typescript",
@@ -189,6 +192,7 @@ const CASES: Case[] = [
       "src/main/java/com/example/scaffoldcheck/Greeter.java",
       "src/test/java/com/example/scaffoldcheck/GreeterTest.java",
       ".claude/rules/java.md",
+      ".vscode/extensions.json",
       ...GITOPS_FILES,
     ],
     absent: [
