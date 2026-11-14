@@ -1,5 +1,5 @@
 {% raw %}# Keeps dev a superset of main: after releases or hotfixes land on main, open a main -> dev PR.
-# PRs opened with GITHUB_TOKEN do not trigger CI; set a GITOPS_TOKEN secret so they do.
+# CI on PRs opened with GITHUB_TOKEN waits for approval; a GITOPS_TOKEN secret makes it run directly.
 name: sync-main-to-dev
 
 on:

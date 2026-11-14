@@ -38,6 +38,14 @@
     {
       "includes": ["**/evals/*.json"],
       "formatter": { "enabled": false }
+    },
+    {
+      "includes": ["**/.cursor-plugin/*.json", "package.json"],
+      "json": { "formatter": { "expand": "always" } }
+    },
+    {
+      "includes": [".release-please-manifest.json"],
+      "formatter": { "enabled": false }
     }
   ]
 }

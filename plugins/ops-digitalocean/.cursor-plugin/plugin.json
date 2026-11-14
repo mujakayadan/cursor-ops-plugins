@@ -7,6 +7,11 @@
     "name": "Muja Kayadan"
   },
   "license": "MIT",
-  "keywords": ["digitalocean", "app-platform", "droplets", "dns"],
+  "keywords": [
+    "digitalocean",
+    "app-platform",
+    "droplets",
+    "dns"
+  ],
   "category": "developer-tools"
 }

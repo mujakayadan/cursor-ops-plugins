@@ -791,7 +791,7 @@ const tools = [
       ).catch(() => undefined);
       const token = secrets?.some((s) => s.name === "GITOPS_TOKEN")
         ? "present"
-        : "missing: add a fine-grained token (Contents and Pull requests: read/write on this repo) as the GITOPS_TOKEN Actions secret so bot PRs (release-please, main→dev sync) trigger CI";
+        : "missing: add a fine-grained token (Contents and Pull requests: read/write on this repo) as the GITOPS_TOKEN Actions secret; until then, CI on release-please and main→dev sync PRs waits for approval in the Actions tab";
 
       return {
         repo: a.repo,

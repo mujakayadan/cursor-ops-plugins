@@ -7,6 +7,11 @@
     "name": "Muja Kayadan"
   },
   "license": "MIT",
-  "keywords": ["guardrails", "audit", "security", "change-management"],
+  "keywords": [
+    "guardrails",
+    "audit",
+    "security",
+    "change-management"
+  ],
   "category": "developer-tools"
 }
