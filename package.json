@@ -5,20 +5,33 @@
   "description": "Enterprise Cursor plugin suite for GitHub, DigitalOcean, Vercel and AWS operations with tiered MCP servers, guardrail hooks, skills and evals, plus Copier project scaffolders.",
   "type": "module",
   "packageManager": "pnpm@11.20.0",
-  "engines": { "node": ">=24" },
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
-    "sync": "node scripts/sync-core.mjs",
-    "check": "node scripts/sync-core.mjs --check && node scripts/validate.mjs",
-    "test": "node --test \"test/**/*.test.mjs\"",
-    "evals": "node evals/run.mjs policy contract",
-    "evals:agent": "node evals/run.mjs agent",
+    "sync": "node scripts/sync-core.ts",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "typecheck": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "biome ci . && pnpm run typecheck && node scripts/sync-core.ts --check && node scripts/validate.ts",
+    "evals": "node evals/run.ts policy contract",
+    "evals:agent": "node evals/run.ts agent",
     "ci": "pnpm run check && pnpm test && pnpm run evals",
-    "install-local": "node scripts/sync-core.mjs && node scripts/install-local.mjs",
-    "uninstall-local": "node scripts/install-local.mjs --uninstall",
-    "doctor": "node scripts/doctor.mjs",
-    "smoke": "node scripts/smoke.mjs",
-    "new-plugin": "node scripts/new-plugin.mjs",
-    "templates:render": "node scripts/test-templates.mjs --render-only",
-    "templates:test": "node scripts/test-templates.mjs"
+    "install-local": "node scripts/sync-core.ts && node scripts/install-local.ts",
+    "uninstall-local": "node scripts/install-local.ts --uninstall",
+    "doctor": "node scripts/doctor.ts",
+    "smoke": "node scripts/smoke.ts",
+    "new-plugin": "node scripts/new-plugin.ts",
+    "templates:render": "node scripts/test-templates.ts --render-only",
+    "templates:test": "node scripts/test-templates.ts"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.7",
+    "@j178/prek": "0.5.10",
+    "@types/node": "^24.19.2",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
   }
 }

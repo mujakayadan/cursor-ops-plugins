@@ -1,0 +1,42 @@
+# Run with prek (https://prek.j178.dev): `pnpm exec prek run --all-files`.
+default_install_hook_types: [pre-commit, pre-push]
+
+repos:
+  - repo: builtin
+    hooks:
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-json
+        exclude: ^(tsconfig\.json|templates/.*\.jinja)$
+      - id: check-yaml
+        exclude: ^(templates/|copier\.yml$)
+      - id: end-of-file-fixer
+        exclude: ^templates/
+      - id: trailing-whitespace
+        exclude: ^templates/
+
+  - repo: local
+    hooks:
+      - id: biome
+        name: biome check
+        entry: pnpm exec biome check --write --no-errors-on-unmatched --files-ignore-unknown=true
+        language: system
+        types_or: [javascript, ts, json]
+      - id: sync-core
+        name: vendored core in sync
+        entry: pnpm run sync
+        language: system
+        pass_filenames: false
+        files: ^packages/core/
+      - id: typecheck
+        name: tsc
+        entry: pnpm run typecheck
+        language: system
+        pass_filenames: false
+        types_or: [ts]
+      - id: test
+        name: vitest
+        entry: pnpm test
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

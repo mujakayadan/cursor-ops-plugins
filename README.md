@@ -4,7 +4,7 @@ Cursor plugin suite for operating **GitHub, DigitalOcean, Vercel and AWS** from 
 
 | Layer | What it is | Where |
 |---|---|---|
-| MCP (read) | `ops-<p>-read` server: side-effect-free tools, auto-allowed | `mcp.json`, `provider.mjs` |
+| MCP (read) | `ops-<p>-read` server: side-effect-free tools, auto-allowed | `mcp.json`, `provider.ts` |
 | MCP (write) | `ops-<p>-write` server: curated mutations, every call needs approval; privileged tools need opt-in + typed confirmation | same |
 | Guardrails | `beforeMCPExecution` / `beforeShellExecution` hooks (fail-closed) + server-side validation, scope checks, redaction | `hooks/hooks.json`, `lib/core` |
 | Skills | Workflows (triage, release, change sets, DNS, CI) | `skills/*/SKILL.md` |
@@ -57,7 +57,7 @@ plugins/
   ops-core/                       # hooks, rules, skills, agents (no MCP)
   ops-<provider>/
     .cursor-plugin/plugin.json
-    provider.mjs                  # tool catalog + shell rules (the only provider code)
+    provider.ts                   # tool catalog + shell rules (the only provider code)
     mcp.json                      # ops-<p>-read / ops-<p>-write
     hooks/hooks.json
     skills/
@@ -68,7 +68,7 @@ copier.yml                        # scaffold questions; selects templates/<langu
 templates/
   python/ typescript/ java/       # rendered trees (*.jinja files are templated)
   _shared/                        # include-only fragments (license, MCP, rules, skills)
-evals/run.mjs                     # eval harness
+evals/run.ts                      # eval harness
 scripts/                          # sync, validate, install, doctor, smoke, scaffold, test-templates
 ```
 
@@ -76,7 +76,7 @@ Plugins are self-contained (core is vendored), so they install from a marketplac
 
 ## Safety guardrails
 
-`ops-core` checks every agent shell command and every MCP call before it runs (`plugins/ops-core/hooks/guardrails.mjs`). **Deny** covers irreversible data loss and attempts to switch off safety controls. **Ask** covers actions that are risky but often legitimate.
+`ops-core` checks every agent shell command and every MCP call before it runs (`plugins/ops-core/hooks/guardrails.ts`). **Deny** covers irreversible data loss and attempts to switch off safety controls. **Ask** covers actions that are risky but often legitimate.
 
 | Area | Denied | Asks |
 |---|---|---|
@@ -103,7 +103,7 @@ Hooks see the command line, not what a script does after it starts. An agent tha
 | TypeScript | `next` (Next.js 16 App Router, Turbopack) | Node 24 | pnpm, Biome, TypeScript 7, Vitest + Testing Library, prek |
 | Java | `simple`, `backend` (Spring Boot 4, JDBC, Flyway, Postgres, Testcontainers), `library` | 25 | Gradle 9 wrapper (Kotlin DSL, version catalog, foojay toolchains), Spotless/palantir-java-format, Error Prone + NullAway (JSpecify), JUnit 6, prek |
 
-The stack is a standard, not a menu: one package manager and one runtime version per language. This repo follows the same standard; it is a pnpm project on Node 24. Bumping a runtime is a template change, and `copier update` rolls it out to existing projects.
+The stack is a standard, not a menu: one package manager and one runtime version per language. This repo follows the same standard: it is a strict TypeScript 7 project on Node 24 with pnpm, Biome, Vitest and prek. Hooks and MCP servers are `.ts` files that Node runs directly (built-in type stripping), so there is no build step and nothing to install at runtime. Bumping a runtime is a template change, and `copier update` rolls it out to existing projects.
 
 Every project gets the same set of shared files:
 - `AGENTS.md`
@@ -156,8 +156,13 @@ Configure least-privilege credentials per tier in `~/.ops/config.json`. See `con
 ## Development
 
 ```powershell
+pnpm install            # dev tools (TypeScript, Biome, Vitest, prek)
+pnpm exec prek install  # git hooks: Biome, typecheck, vendoring on commit; tests on push
 pnpm run sync           # after editing packages/core
-pnpm run ci             # vendoring check + manifest/skill validation + unit tests + evals
+pnpm run format         # Biome format + safe fixes
+pnpm run typecheck      # tsc (strict, no emit)
+pnpm test               # Vitest
+pnpm run ci             # Biome + typecheck + vendoring + manifest/skill validation + tests + evals
 pnpm run smoke          # live read-only calls against your real accounts
 pnpm run evals:agent    # live agent scenarios (needs the Cursor CLI; set OPS_AGENT_CMD to override)
 pnpm run new-plugin -- cloudflare wrangler "Cloudflare"
@@ -165,7 +170,7 @@ pnpm run templates:render   # scaffold structure checks (fast)
 pnpm run templates:test     # render every scaffold profile and run its toolchain (needs uv, pnpm, a JDK)
 ```
 
-To add a tool, add an entry to the provider's `tools` array with a `tier`, an `input` schema and a `run` function. Mutating tools need `summarize`; privileged tools need `confirm`/`confirmHint`. Then add policy and contract cases. The contract suite enforces naming, tier placement and confirmation automatically.
+To add a tool, add a `tool({...})` entry to the provider's `tools` array with a `tier`, an `input` schema built from the `schema-helpers` (`str`, `int`, `oneOf`, `obj`, ...) and a `run` function. The argument types of `run`, `summarize`, `confirm` and `scope` are inferred from `input`. Mutating tools need `summarize`; privileged tools need `confirm`/`confirmHint`. Then add policy and contract cases. The contract suite enforces naming, tier placement and confirmation automatically.
 
 ## Configuration reference
 

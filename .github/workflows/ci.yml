@@ -46,4 +46,4 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         if: matrix.language == 'java'
       - run: git config --global user.email ci@example.com && git config --global user.name ci
-      - run: node scripts/test-templates.mjs --only ${{ matrix.language }}
+      - run: node scripts/test-templates.ts --only ${{ matrix.language }}

@@ -2,10 +2,19 @@
   "version": 1,
   "hooks": {
     "beforeMCPExecution": [
-      { "command": "node ./lib/core/run-guard.mjs beforeMCPExecution", "timeout": 10, "failClosed": true }
+      {
+        "command": "node ./lib/core/run-guard.ts beforeMCPExecution",
+        "timeout": 10,
+        "failClosed": true
+      }
     ],
     "beforeShellExecution": [
-      { "command": "node ./lib/core/run-guard.mjs beforeShellExecution", "matcher": "\\bgh(\\.exe)?\\s", "timeout": 10, "failClosed": true }
+      {
+        "command": "node ./lib/core/run-guard.ts beforeShellExecution",
+        "matcher": "\\bgh(\\.exe)?\\s",
+        "timeout": 10,
+        "failClosed": true
+      }
     ]
   }
 }
