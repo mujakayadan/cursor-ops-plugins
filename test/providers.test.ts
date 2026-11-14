@@ -2,7 +2,11 @@ import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 import aws, { hideEnvValues } from "../plugins/ops-aws/provider.ts";
 import digitalocean from "../plugins/ops-digitalocean/provider.ts";
-import github from "../plugins/ops-github/provider.ts";
+import github, {
+  assertChecksGreen,
+  mergeMethodFor,
+  rulesetFor,
+} from "../plugins/ops-github/provider.ts";
 import scaffold from "../plugins/ops-scaffold/provider.ts";
 import vercel from "../plugins/ops-vercel/provider.ts";
 
@@ -32,6 +36,42 @@ describe("provider catalogs", () => {
       }
     });
   }
+});
+
+describe("github gitops merge rules", () => {
+  it("squashes features into dev and merges promotions", () => {
+    assert.equal(mergeMethodFor("dev", "muja/feat/login", "auto"), "squash");
+    assert.equal(mergeMethodFor("dev", "muja/feat/login", "merge"), "merge");
+    assert.equal(mergeMethodFor("main", "dev", "auto"), "merge");
+    assert.equal(mergeMethodFor("dev", "main", "auto"), "merge");
+    assert.equal(mergeMethodFor("main", "dependabot/npm_and_yarn/x-1.2.3", "auto"), "merge");
+    assert.equal(mergeMethodFor("main", "release-please--branches--main", "auto"), "merge");
+  });
+  it("refuses feature branches into main and squashed promotions", () => {
+    assert.throws(() => mergeMethodFor("main", "muja/feat/login", "auto"), /must target dev/);
+    assert.throws(() => mergeMethodFor("main", "dev", "squash"), /merge commit/);
+    assert.throws(() => mergeMethodFor("dev", "main", "squash"), /merge commit/);
+  });
+  it("requires every check to pass", () => {
+    assertChecksGreen([
+      { name: "pr-policy", bucket: "pass" },
+      { name: "docs", bucket: "skipping" },
+    ]);
+    assert.throws(() => assertChecksGreen([]), /No CI checks/);
+    assert.throws(
+      () => assertChecksGreen([{ name: "verify", bucket: "pending" }]),
+      /verify \(pending\)/,
+    );
+  });
+  it("builds branch rulesets with merge methods per branch", () => {
+    const methods = (b: string) =>
+      JSON.stringify(rulesetFor(b, ["pr-policy"])).match(
+        /"allowed_merge_methods":(\[[^\]]*\])/,
+      )?.[1];
+    assert.equal(methods("main"), '["merge"]');
+    assert.equal(methods("dev"), '["squash","merge"]');
+    assert.match(JSON.stringify(rulesetFor("dev", ["pr-policy", "ci"])), /"context":"ci"/);
+  });
 });
 
 describe("aws hideEnvValues", () => {

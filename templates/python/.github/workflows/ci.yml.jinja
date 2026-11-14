@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
   workflow_dispatch:
 
@@ -23,6 +23,8 @@ jobs:
           enable-cache: true
       - run: uv sync --locked
       - run: uv run prek run --all-files --show-diff-on-failure
+        env:
+          SKIP: no-commit-to-branch
       - run: uv run pytest
 {%- if profile == "library" %}
       - run: uv build

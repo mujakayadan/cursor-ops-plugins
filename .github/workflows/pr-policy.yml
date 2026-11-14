@@ -1,0 +1,42 @@
+# GitOps pull request policy: main only takes promotions (dev, qa, staging) and bot PRs;
+# other branches are <github-user>/<type>/<kebab-name>; titles follow Conventional Commits.
+name: pr-policy
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  pr-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check target, branch name and title
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          envs='^(main|dev|qa|staging)$'
+          bots='^(dependabot/.+|release-please--.+)$'
+          types='feat|fix|chore|docs|refactor|perf|test|build|ci|style|revert|hotfix'
+          branch_re="^([A-Za-z0-9-]+)/($types)/[a-z0-9][a-z0-9._-]*$"
+          title_re='^(feat|fix|chore|docs|refactor|perf|test|build|ci|style|revert)(\([a-z0-9._/-]+\))?!?: .+'
+
+          if [[ "$BASE" == main && ! "$HEAD" =~ ^(dev|qa|staging)$ && ! "$HEAD" =~ $bots ]]; then
+            fail "main only accepts pull requests from dev, qa, staging, Dependabot or release-please, not '$HEAD'. Target dev."
+          fi
+          if [[ ! "$HEAD" =~ $envs && ! "$HEAD" =~ $bots ]]; then
+            [[ "$HEAD" =~ $branch_re ]] \
+              || fail "Branch '$HEAD' must be <github-user>/<type>/<kebab-name> with type one of: ${types//|/, }."
+            [[ "${BASH_REMATCH[1],,}" == "${AUTHOR,,}" ]] \
+              || fail "Branch '$HEAD' starts with '${BASH_REMATCH[1]}', but the pull request author is '$AUTHOR'."
+          fi
+          [[ "$TITLE" =~ $title_re ]] \
+            || fail "Title '$TITLE' must follow Conventional Commits, e.g. 'feat(api): add health check'."
+          echo "pr-policy ok: $HEAD -> $BASE"

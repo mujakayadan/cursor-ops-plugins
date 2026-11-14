@@ -16,6 +16,23 @@ export function listPlugins(): string[] {
     .sort();
 }
 
+/** release-please `extra-files` entry; the suite releases all manifests with one version. */
+export interface VersionFile {
+  type: "json";
+  path: string;
+  jsonpath: string;
+}
+
+export interface ReleaseConfig {
+  packages: { ".": { "extra-files": VersionFile[] } };
+}
+
+export const pluginVersionFile = (plugin: string): VersionFile => ({
+  type: "json",
+  path: `plugins/${plugin}/.cursor-plugin/plugin.json`,
+  jsonpath: "$.version",
+});
+
 export function providerPlugins(): string[] {
   return listPlugins().filter((p) => existsSync(join(PLUGINS_DIR, p, "provider.ts")));
 }

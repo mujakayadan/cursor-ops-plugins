@@ -31,6 +31,111 @@ function ownerScope(args: { repo?: string }, pcfg: ProviderConfig): string | und
 const SECRET_API_PATHS =
   /\/(actions|dependabot|codespaces)\/secrets\/[^/]+$|\/keys?$|\/installation\/token/i;
 
+const OWNER_PATTERN = "^[A-Za-z0-9-]{1,39}$";
+const owner = str("User or organization login.", { pattern: OWNER_PATTERN });
+const visibility = oneOf(
+  ["public", "private"],
+  "Repository visibility. Ask the user; there is no default.",
+);
+
+/** Long-lived environment branches; everything else is `<user>/<type>/<name>`. */
+export const ENV_BRANCHES = ["main", "dev", "qa", "staging"] as const;
+const OPTIONAL_ENVS = ["qa", "staging"] as const;
+/** Heads `main` accepts: promotions from env branches and bot PRs (Dependabot, release-please). */
+const MAIN_SOURCES = /^(?:dev|qa|staging|dependabot\/.+|release-please--.+)$/;
+const isEnvBranch = (b: string): boolean => (ENV_BRANCHES as readonly string[]).includes(b);
+
+export type MergeMethod = "squash" | "merge";
+
+/**
+ * GitOps merge rules: features squash into `dev`; promotions and syncs between env branches
+ * use merge commits so the branches never diverge; `main` only accepts promotions and bots.
+ */
+export function mergeMethodFor(
+  base: string,
+  head: string,
+  requested: MergeMethod | "auto",
+): MergeMethod {
+  if (base === "main" && !MAIN_SOURCES.test(head)) {
+    throw new ToolError(
+      `main only accepts pull requests from dev, qa, staging, dependabot/* or release-please--*; "${head}" must target dev.`,
+    );
+  }
+  const needsMerge = base === "main" || isEnvBranch(head);
+  if (needsMerge && requested === "squash") {
+    throw new ToolError(
+      `${head} → ${base} must use a merge commit; squashing would make the branches diverge.`,
+    );
+  }
+  if (needsMerge) return "merge";
+  return requested === "auto" ? "squash" : requested;
+}
+
+interface CheckRun {
+  name: string;
+  bucket: string;
+}
+
+/** Refuses to merge unless every check passed: the free-plan substitute for required checks. */
+export function assertChecksGreen(checks: CheckRun[]): void {
+  if (!checks.length) {
+    throw new ToolError(
+      "No CI checks reported on this pull request. The GitOps standard needs pr-policy and CI to pass before merging.",
+    );
+  }
+  const notGreen = checks.filter((c) => c.bucket !== "pass" && c.bucket !== "skipping");
+  if (notGreen.length) {
+    throw new ToolError(
+      `Checks are not green: ${notGreen.map((c) => `${c.name} (${c.bucket})`).join(", ")}.`,
+    );
+  }
+}
+
+export const GITOPS_LABELS: Record<string, [color: string, description: string]> = {
+  bug: ["d73a4a", "Something is not working"],
+  enhancement: ["a2eeef", "New feature or request"],
+  documentation: ["0075ca", "Documentation only"],
+  chore: ["cfd3d7", "Maintenance, tooling, CI"],
+  dependencies: ["0366d6", "Dependency updates"],
+  security: ["b60205", "Security fix or hardening"],
+  "breaking-change": ["e11d21", "Requires a major version bump"],
+};
+
+/** Branch ruleset: no deletion or force push, PR-only, conversations resolved, checks required. */
+export function rulesetFor(branch: string, requiredChecks: string[]): JsonObject {
+  return {
+    name: `gitops: ${branch}`,
+    target: "branch",
+    enforcement: "active",
+    bypass_actors: [],
+    conditions: { ref_name: { include: [`refs/heads/${branch}`], exclude: [] } },
+    rules: [
+      { type: "deletion" },
+      { type: "non_fast_forward" },
+      {
+        type: "pull_request",
+        parameters: {
+          required_approving_review_count: 0,
+          dismiss_stale_reviews_on_push: false,
+          require_code_owner_review: false,
+          require_last_push_approval: false,
+          required_review_thread_resolution: true,
+          allowed_merge_methods: branch === "dev" ? ["squash", "merge"] : ["merge"],
+        },
+      },
+      {
+        type: "required_status_checks",
+        parameters: {
+          strict_required_status_checks_policy: false,
+          required_status_checks: requiredChecks.map((context) => ({ context })),
+        },
+      },
+    ],
+  };
+}
+
+const errorMessage = (e: unknown): string => (e instanceof Error ? e.message : String(e));
+
 const PR_FIELDS =
   "number,title,author,state,isDraft,headRefName,baseRefName,reviewDecision,updatedAt,url";
 const RUN_FIELDS =
@@ -270,6 +375,40 @@ const tools = [
       return cli(args);
     },
   }),
+  tool({
+    name: "github_release_list",
+    title: "List releases",
+    tier: "read",
+    description: "Recent releases with tag, latest/draft/prerelease flags and publish date.",
+    input: obj({ repo, limit: limit(10, 100) }, ["repo"]),
+    scope: ownerScope,
+    run: (a, { cli }) =>
+      cli(
+        [
+          "release",
+          "list",
+          "-R",
+          a.repo,
+          "--limit",
+          String(a.limit),
+          "--json",
+          "tagName,name,isLatest,isDraft,isPrerelease,publishedAt",
+        ],
+        { parse: "json" },
+      ),
+  }),
+  tool({
+    name: "github_project_list",
+    title: "List projects",
+    tier: "read",
+    description:
+      "GitHub Projects (kanban boards) of a user or organization. Needs the `project` token scope.",
+    input: obj({ owner, limit: limit(30, 100) }, ["owner"]),
+    run: (a, { cli }) =>
+      cli(["project", "list", "--owner", a.owner, "--limit", String(a.limit), "--format", "json"], {
+        parse: "json",
+      }),
+  }),
 
   tool({
     name: "github_pr_create",
@@ -368,34 +507,326 @@ const tools = [
   }),
 
   tool({
+    name: "github_project_item_add",
+    title: "Add to project",
+    tier: "write",
+    description:
+      "Add an issue or pull request (by URL) to a GitHub Project board. Needs the `project` token scope.",
+    input: obj(
+      {
+        owner,
+        project: int("Project number.", { minimum: 1 }),
+        url: str("Issue or pull request URL.", {
+          pattern: "^https://github\\.com/[A-Za-z0-9-]+/[A-Za-z0-9._-]+/(issues|pull)/[0-9]+$",
+        }),
+      },
+      ["owner", "project", "url"],
+    ),
+    summarize: (a) => `${a.url} → project ${a.owner}#${a.project}`,
+    run: (a, { cli }) =>
+      cli(["project", "item-add", String(a.project), "--owner", a.owner, "--url", a.url], {
+        parse: "text",
+      }),
+  }),
+  tool({
     name: "github_pr_merge",
     title: "Merge pull request",
-    tier: "privileged",
-    description: "Merge a pull request. Never bypasses branch protection (no --admin).",
+    tier: "write",
+    description:
+      "Merge a pull request under the GitOps rules: all checks green, features squash into dev, promotions into main (from dev/qa/staging/bots only) use merge commits. Never bypasses protection (no --admin).",
     input: obj(
       {
         repo,
         number,
-        method: oneOf(["squash", "merge", "rebase"], "Merge method.", "squash"),
-        deleteBranch: bool("Delete the head branch after merge.", false),
+        method: oneOf(
+          ["auto", "squash", "merge"],
+          "Merge method; auto picks squash for features and merge for promotions.",
+          "auto",
+        ),
+        deleteBranch: bool("Delete the head branch after merge (never env branches).", true),
       },
       ["repo", "number"],
     ),
-    confirmHint: '"OWNER/REPO#NUMBER"',
-    confirm: (a) => `${a.repo}#${a.number}`,
+    scope: ownerScope,
+    summarize: (a) => `${a.repo}#${a.number} via ${a.method}`,
+    run: async (a, { cli }) => {
+      const n = String(a.number);
+      const pr = await cli<{
+        baseRefName: string;
+        headRefName: string;
+        headRefOid: string;
+        isDraft: boolean;
+        state: string;
+        reviewDecision: string;
+      }>(
+        [
+          "pr",
+          "view",
+          n,
+          "-R",
+          a.repo,
+          "--json",
+          "baseRefName,headRefName,headRefOid,isDraft,state,reviewDecision",
+        ],
+        { parse: "json" },
+      );
+      if (pr.state !== "OPEN") throw new ToolError(`${a.repo}#${n} is ${pr.state}.`);
+      if (pr.isDraft) throw new ToolError(`${a.repo}#${n} is a draft; mark it ready first.`);
+      if (pr.reviewDecision === "CHANGES_REQUESTED") {
+        throw new ToolError(`${a.repo}#${n} has requested changes.`);
+      }
+      const method = mergeMethodFor(pr.baseRefName, pr.headRefName, a.method);
+      // gh exits 1 when checks fail or none exist, and 8 when pending.
+      const raw = await cli(["pr", "checks", n, "-R", a.repo, "--json", "name,bucket"], {
+        okCodes: [0, 1, 8],
+        parse: "text",
+      });
+      assertChecksGreen(raw.trim().startsWith("[") ? (JSON.parse(raw) as CheckRun[]) : []);
+      const args = ["pr", "merge", n, "-R", a.repo, `--${method}`];
+      args.push("--match-head-commit", pr.headRefOid);
+      if (a.deleteBranch && !isEnvBranch(pr.headRefName)) args.push("--delete-branch");
+      return cli(args, { parse: "text" });
+    },
+  }),
+  tool({
+    name: "github_repo_create",
+    title: "Create repository",
+    tier: "write",
+    description:
+      "Create a repository. Visibility has no default: ask the user. With `source`, pushes that local repo's main branch; then run github_repo_bootstrap.",
+    input: obj(
+      {
+        name: str("Repository name.", { pattern: "^[A-Za-z0-9._-]{1,100}$" }),
+        owner: str("Owner login; defaults to the authenticated user.", {
+          pattern: OWNER_PATTERN,
+        }),
+        visibility,
+        description: str("Short description.", { maxLength: 350 }),
+        source: str("Absolute path of a local git repository to push as the initial main.", {
+          maxLength: 1024,
+        }),
+      },
+      ["name", "visibility"],
+    ),
+    summarize: (a) =>
+      `${a.owner ? `${a.owner}/` : ""}${a.name} (${a.visibility})${a.source ? ` from ${a.source}` : ""}`,
+    run: (a, { cli }) => {
+      const args = ["repo", "create", a.owner ? `${a.owner}/${a.name}` : a.name];
+      args.push(`--${a.visibility}`);
+      if (a.description) args.push(`--description=${a.description}`);
+      if (a.source) args.push(`--source=${a.source}`, "--remote=origin", "--push");
+      return cli(args, { parse: "text" });
+    },
+  }),
+  tool({
+    name: "github_repo_bootstrap",
+    title: "Bootstrap GitOps repository",
+    tier: "write",
+    description:
+      "Apply the GitOps standard to a repository whose main exists: create dev (and optional qa/staging) from main, set merge settings, labels, branch rulesets where the plan allows, and optionally link a project.",
+    input: obj(
+      {
+        repo,
+        environments: list(
+          oneOf([...OPTIONAL_ENVS], "Extra environment branch."),
+          "Extra environment branches besides main and dev. Only when the user asks.",
+          { maxItems: 2 },
+        ),
+        requiredChecks: list(
+          str("Check run name.", { minLength: 1, maxLength: 100 }),
+          "Required status checks besides pr-policy (e.g. CI job names).",
+          { maxItems: 20 },
+        ),
+        project: int("Project number to link (owner's project).", { minimum: 1 }),
+      },
+      ["repo"],
+    ),
     scope: ownerScope,
     summarize: (a) =>
-      `${a.repo}#${a.number} via ${a.method}${a.deleteBranch ? ", delete branch" : ""}`,
+      `${a.repo}: branches main, dev${(a.environments ?? []).map((e) => `, ${e}`).join("")}; settings, labels, rulesets${a.project ? `, project ${a.project}` : ""}`,
+    run: async (a, { cli }) => {
+      const info = await cli<{ default_branch: string; visibility: string }>(
+        ["api", `repos/${a.repo}`],
+        { parse: "json" },
+      );
+      if (info.default_branch !== "main") {
+        throw new ToolError(
+          `The default branch is "${info.default_branch}". Push main and make it the default first.`,
+        );
+      }
+      const main = await cli<{ object: { sha: string } }>(
+        ["api", `repos/${a.repo}/git/ref/heads/main`],
+        { parse: "json" },
+      );
+      const existing = new Set(
+        (
+          await cli(["api", `repos/${a.repo}/branches`, "--paginate", "--jq", ".[].name"], {
+            parse: "text",
+          })
+        )
+          .split(/\r?\n/)
+          .filter(Boolean),
+      );
+      const envs = ["main", "dev", ...new Set(a.environments ?? [])];
+      const created: string[] = [];
+      for (const b of envs) {
+        if (existing.has(b)) continue;
+        await cli(
+          [
+            "api",
+            "-X",
+            "POST",
+            `repos/${a.repo}/git/refs`,
+            "-f",
+            `ref=refs/heads/${b}`,
+            "-f",
+            `sha=${main.object.sha}`,
+          ],
+          { parse: "text" },
+        );
+        created.push(b);
+      }
+
+      await cli(
+        [
+          "api",
+          "-X",
+          "PATCH",
+          `repos/${a.repo}`,
+          "-F",
+          "allow_merge_commit=true",
+          "-F",
+          "allow_squash_merge=true",
+          "-F",
+          "allow_rebase_merge=false",
+          "-F",
+          "delete_branch_on_merge=true",
+          "-F",
+          "has_issues=true",
+          "-F",
+          "has_projects=true",
+          "-f",
+          "squash_merge_commit_title=PR_TITLE",
+          "-f",
+          "squash_merge_commit_message=PR_BODY",
+          "-f",
+          "merge_commit_title=PR_TITLE",
+          "-f",
+          "merge_commit_message=PR_BODY",
+        ],
+        { parse: "text" },
+      );
+
+      // release-please and the main → dev sync open pull requests with the workflow token.
+      await cli(
+        [
+          "api",
+          "-X",
+          "PUT",
+          `repos/${a.repo}/actions/permissions/workflow`,
+          "-f",
+          "default_workflow_permissions=read",
+          "-F",
+          "can_approve_pull_request_reviews=true",
+        ],
+        { parse: "text" },
+      );
+
+      for (const [label, [color, description]] of Object.entries(GITOPS_LABELS)) {
+        await cli(
+          [
+            "label",
+            "create",
+            label,
+            "-R",
+            a.repo,
+            `--color=${color}`,
+            `--description=${description}`,
+            "--force",
+          ],
+          { parse: "text" },
+        );
+      }
+
+      const checks = ["pr-policy", ...new Set(a.requiredChecks ?? [])];
+      let rulesets: string;
+      const listed = await cli(["api", `repos/${a.repo}/rulesets`], {
+        okCodes: [0, 1],
+        parse: "text",
+      });
+      if (!listed.trim().startsWith("[")) {
+        rulesets = `unavailable (${listed.trim().slice(0, 200)}). Rulesets need a public repo or a paid plan; pr-policy, CI and the local hooks still enforce the flow.`;
+      } else {
+        const ids = new Map(
+          (JSON.parse(listed) as { id: number; name: string }[]).map((r) => [r.name, r.id]),
+        );
+        for (const b of envs) {
+          const body = rulesetFor(b, checks);
+          const id = ids.get(String(body.name));
+          const path = id ? `repos/${a.repo}/rulesets/${id}` : `repos/${a.repo}/rulesets`;
+          await cli(["api", "-X", id ? "PUT" : "POST", path, "--input", "-"], {
+            input: JSON.stringify(body),
+            parse: "text",
+          });
+        }
+        rulesets = `applied to ${envs.join(", ")} (required checks: ${checks.join(", ")})`;
+      }
+
+      let project: string | undefined;
+      if (a.project) {
+        const [repoOwner = "", repoName = ""] = a.repo.split("/");
+        project = await cli(
+          ["project", "link", String(a.project), "--owner", repoOwner, "--repo", repoName],
+          { parse: "text" },
+        ).then(
+          () => `linked project ${a.project}`,
+          (e: unknown) =>
+            `not linked: ${errorMessage(e).slice(0, 200)} (needs the \`project\` token scope)`,
+        );
+      }
+
+      const secrets = await cli<{ name: string }[]>(
+        ["secret", "list", "-R", a.repo, "--json", "name"],
+        { parse: "json" },
+      ).catch(() => undefined);
+      const token = secrets?.some((s) => s.name === "GITOPS_TOKEN")
+        ? "present"
+        : "missing: add a fine-grained token (Contents and Pull requests: read/write on this repo) as the GITOPS_TOKEN Actions secret so bot PRs (release-please, main→dev sync) trigger CI";
+
+      return {
+        repo: a.repo,
+        visibility: info.visibility,
+        branches: { created, existing: envs.filter((b) => !created.includes(b)) },
+        settings:
+          "merge commits and squash on, rebase off, delete head branches, PR title as commit title",
+        labels: Object.keys(GITOPS_LABELS),
+        rulesets,
+        ...(project ? { project } : {}),
+        gitopsToken: token,
+      };
+    },
+  }),
+
+  tool({
+    name: "github_repo_set_visibility",
+    title: "Change repository visibility",
+    tier: "privileged",
+    description:
+      "Make a repository public or private. Public exposes all history; scan it for secrets first.",
+    input: obj({ repo, visibility }, ["repo", "visibility"]),
+    confirmHint: '"OWNER/REPO:public" or "OWNER/REPO:private"',
+    confirm: (a) => `${a.repo}:${a.visibility}`,
+    scope: ownerScope,
+    summarize: (a) => `${a.repo} → ${a.visibility}`,
     run: (a, { cli }) =>
       cli(
         [
-          "pr",
-          "merge",
-          String(a.number),
-          "-R",
+          "repo",
+          "edit",
           a.repo,
-          `--${a.method}`,
-          ...(a.deleteBranch ? ["--delete-branch"] : []),
+          "--visibility",
+          a.visibility,
+          "--accept-visibility-change-consequences",
         ],
         { parse: "text" },
       ),

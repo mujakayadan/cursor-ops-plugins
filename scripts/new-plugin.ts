@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { PLUGINS_DIR, REPO_ROOT } from "./lib.ts";
+import { PLUGINS_DIR, pluginVersionFile, REPO_ROOT, type ReleaseConfig } from "./lib.ts";
 
 const [id, bin, displayName = id] = process.argv.slice(2);
 if (!id || !/^[a-z][a-z0-9]{1,30}$/.test(id) || !bin) {
@@ -17,12 +17,16 @@ if (existsSync(root)) {
   process.exit(1);
 }
 
+const suiteVersion = (
+  JSON.parse(readFileSync(join(REPO_ROOT, "package.json"), "utf8")) as { version: string }
+).version;
+
 const files: Record<string, string> = {
   ".cursor-plugin/plugin.json": JSON.stringify(
     {
       name,
       displayName: `Ops: ${displayName}`,
-      version: "0.1.0",
+      version: suiteVersion,
       description: `${displayName} operations with separate read and write MCP servers and ${bin} guardrails.`,
       author: { name: "Muja Kayadan" },
       license: "MIT",
@@ -158,6 +162,11 @@ const market = JSON.parse(readFileSync(marketPath, "utf8")) as {
 };
 market.plugins.push({ name, source: `./plugins/${name}` });
 writeFileSync(marketPath, `${JSON.stringify(market, null, 2)}\n`);
+
+const releasePath = join(REPO_ROOT, "release-please-config.json");
+const release = JSON.parse(readFileSync(releasePath, "utf8")) as ReleaseConfig;
+release.packages["."]["extra-files"].push(pluginVersionFile(name));
+writeFileSync(releasePath, `${JSON.stringify(release, null, 2)}\n`);
 
 console.log(
   `Created plugins/${name}. Next: edit provider.ts, add skills/, then run \`pnpm run sync && pnpm run ci\`.`,
