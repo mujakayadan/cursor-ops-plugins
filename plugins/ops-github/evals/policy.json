@@ -1,0 +1,18 @@
+[
+  { "name": "read tool allowed", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-github-read", "tool_name": "github_pr_list", "tool_input": "{\"repo\":\"acme/app\"}" }, "expect": { "permission": "allow" } },
+  { "name": "write tool asks", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-github-write", "tool_name": "github_pr_create", "tool_input": "{\"repo\":\"acme/app\",\"title\":\"x\",\"body\":\"y\",\"head\":\"f\"}" }, "expect": { "permission": "ask" } },
+  { "name": "namespaced plugin server name recognised", "event": "beforeMCPExecution", "input": { "mcp_server_name": "plugin-ops-github-ops-github-write", "tool_name": "github_pr_comment", "tool_input": "{}" }, "expect": { "permission": "ask" } },
+  { "name": "privileged merge denied by default", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-github-write", "tool_name": "github_pr_merge", "tool_input": "{}" }, "expect": { "permission": "deny" } },
+  { "name": "privileged merge asks when enabled", "event": "beforeMCPExecution", "env": { "OPS_ALLOW_PRIVILEGED": "1" }, "input": { "mcp_server_name": "ops-github-write", "tool_name": "github_pr_merge", "tool_input": "{}" }, "expect": { "permission": "ask" } },
+  { "name": "write tool on read server denied", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-github-read", "tool_name": "github_pr_create", "tool_input": "{}" }, "expect": { "permission": "deny" } },
+  { "name": "unknown tool on own server denied", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-github-write", "tool_name": "github_repo_delete", "tool_input": "{}" }, "expect": { "permission": "deny" } },
+  { "name": "other servers deferred", "event": "beforeMCPExecution", "input": { "mcp_server_name": "user-github", "tool_name": "merge_pull_request", "tool_input": "{}" }, "expect": { "permission": "allow" } },
+
+  { "name": "gh repo delete denied", "event": "beforeShellExecution", "input": { "command": "gh repo delete acme/app --yes" }, "expect": { "permission": "deny" } },
+  { "name": "gh pr merge --admin denied", "event": "beforeShellExecution", "input": { "command": "gh pr merge 12 --squash --admin" }, "expect": { "permission": "deny" } },
+  { "name": "gh pr merge asks", "event": "beforeShellExecution", "input": { "command": "gh pr merge 12 --squash" }, "expect": { "permission": "ask" } },
+  { "name": "gh api DELETE asks", "event": "beforeShellExecution", "input": { "command": "gh api -X DELETE repos/acme/app/git/refs/heads/x" }, "expect": { "permission": "ask" } },
+  { "name": "gh.exe secret set asks", "event": "beforeShellExecution", "input": { "command": "gh.exe secret set NPM_TOKEN" }, "expect": { "permission": "ask" } },
+  { "name": "gh pr list allowed", "event": "beforeShellExecution", "input": { "command": "gh pr list --state open" }, "expect": { "permission": "allow" } },
+  { "name": "unrelated command skips gh guard", "event": "beforeShellExecution", "input": { "command": "git status" }, "expect": { "permission": "allow" } }
+]

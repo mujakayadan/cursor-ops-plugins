@@ -1,0 +1,3 @@
+[
+  { "name": "identity check uses whoami", "prompt": "Which AWS account and role am I using? Use the ops-aws tools.", "expectTools": ["aws_whoami"], "forbidTools": ["aws_ec2_stop_instances", "aws_ecs_force_deploy"] }
+]

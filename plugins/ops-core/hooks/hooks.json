@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeSubmitPrompt": [
+      { "command": "node ./hooks/core-guard.mjs beforeSubmitPrompt", "timeout": 10 }
+    ],
+    "beforeShellExecution": [
+      { "command": "node ./hooks/core-guard.mjs beforeShellExecution", "timeout": 10, "failClosed": true }
+    ],
+    "beforeMCPExecution": [
+      { "command": "node ./hooks/core-guard.mjs beforeMCPExecution", "timeout": 10, "failClosed": true }
+    ],
+    "afterShellExecution": [
+      { "command": "node ./hooks/core-guard.mjs afterShellExecution", "timeout": 10 }
+    ],
+    "afterMCPExecution": [
+      { "command": "node ./hooks/core-guard.mjs afterMCPExecution", "timeout": 10 }
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "ops-plugins",
+  "owner": { "name": "mujak" },
+  "metadata": {
+    "description": "Operations plugin suite: core guardrails plus GitHub, DigitalOcean, Vercel and AWS with tiered read/write MCP servers.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    { "name": "ops-core", "source": "./plugins/ops-core" },
+    { "name": "ops-github", "source": "./plugins/ops-github" },
+    { "name": "ops-digitalocean", "source": "./plugins/ops-digitalocean" },
+    { "name": "ops-vercel", "source": "./plugins/ops-vercel" },
+    { "name": "ops-aws", "source": "./plugins/ops-aws" }
+  ]
+}

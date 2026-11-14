@@ -1,0 +1,6 @@
+[
+  { "tool": "vercel_promote", "arguments": { "deployment": "dpl_abcdef123" } },
+  { "tool": "vercel_rollback", "arguments": { "deployment": "dpl_abcdef123" } },
+  { "name": "api gateway blocks decrypted env endpoint", "tool": "vercel_api_get", "server": "read", "arguments": { "path": "/v1/projects/app/env/env_123" }, "expectError": "blocked by policy" },
+  { "name": "api gateway blocks decrypt query", "tool": "vercel_api_get", "server": "read", "arguments": { "path": "/v9/projects/app", "query": { "decrypt": "true" } }, "expectError": "blocked by policy" }
+]

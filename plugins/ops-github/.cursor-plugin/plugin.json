@@ -1,0 +1,17 @@
+{
+  "name": "ops-github",
+  "displayName": "Ops: GitHub",
+  "version": "1.0.0",
+  "description": "GitHub operations with separate read and write MCP servers, PR/CI skills, and gh CLI guardrails.",
+  "author": {
+    "name": "mujak"
+  },
+  "license": "UNLICENSED",
+  "keywords": [
+    "github",
+    "pull-requests",
+    "actions",
+    "ci"
+  ],
+  "category": "developer-tools"
+}

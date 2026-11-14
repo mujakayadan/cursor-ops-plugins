@@ -1,0 +1,15 @@
+[
+  { "name": "readonly gateway allowed", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-aws-read", "tool_name": "aws_readonly_call", "tool_input": "{\"service\":\"rds\",\"operation\":\"describe-db-instances\"}" }, "expect": { "permission": "allow" } },
+  { "name": "ecs force deploy asks", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-aws-write", "tool_name": "aws_ecs_force_deploy", "tool_input": "{\"cluster\":\"prod\",\"service\":\"api\"}" }, "expect": { "permission": "ask" } },
+  { "name": "stop instances denied by default", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-aws-write", "tool_name": "aws_ec2_stop_instances", "tool_input": "{}" }, "expect": { "permission": "deny" } },
+
+  { "name": "s3 recursive rm denied", "event": "beforeShellExecution", "input": { "command": "aws s3 rm s3://prod-assets --recursive" }, "expect": { "permission": "deny" } },
+  { "name": "terminate denied", "event": "beforeShellExecution", "input": { "command": "aws ec2 terminate-instances --instance-ids i-0123456789abcdef0" }, "expect": { "permission": "deny" } },
+  { "name": "delete-stack denied", "event": "beforeShellExecution", "input": { "command": "aws cloudformation delete-stack --stack-name prod" }, "expect": { "permission": "deny" } },
+  { "name": "rds delete denied", "event": "beforeShellExecution", "input": { "command": "aws rds delete-db-instance --db-instance-identifier prod" }, "expect": { "permission": "deny" } },
+  { "name": "secret read asks", "event": "beforeShellExecution", "input": { "command": "aws secretsmanager get-secret-value --secret-id prod/db" }, "expect": { "permission": "ask" } },
+  { "name": "iam attach asks", "event": "beforeShellExecution", "input": { "command": "aws iam attach-role-policy --role-name x --policy-arn y" }, "expect": { "permission": "ask" } },
+  { "name": "ecs update asks", "event": "beforeShellExecution", "input": { "command": "aws ecs update-service --cluster prod --service api --force-new-deployment" }, "expect": { "permission": "ask" } },
+  { "name": "describe allowed", "event": "beforeShellExecution", "input": { "command": "aws ec2 describe-instances --region us-east-1" }, "expect": { "permission": "allow" } },
+  { "name": "s3 ls allowed", "event": "beforeShellExecution", "input": { "command": "aws s3 ls s3://bucket" }, "expect": { "permission": "allow" } }
+]

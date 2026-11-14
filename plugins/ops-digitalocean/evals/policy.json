@@ -1,0 +1,12 @@
+[
+  { "name": "read tool allowed", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-digitalocean-read", "tool_name": "digitalocean_droplet_list", "tool_input": "{}" }, "expect": { "permission": "allow" } },
+  { "name": "redeploy asks", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-digitalocean-write", "tool_name": "digitalocean_app_redeploy", "tool_input": "{\"appId\":\"f81d4fae-7dec-11d0-a765-00a0c91e6bf6\"}" }, "expect": { "permission": "ask" } },
+  { "name": "reboot denied by default", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-digitalocean-write", "tool_name": "digitalocean_droplet_reboot", "tool_input": "{\"id\":\"1\"}" }, "expect": { "permission": "deny" } },
+  { "name": "reboot asks when enabled", "event": "beforeMCPExecution", "env": { "OPS_ALLOW_PRIVILEGED": "1" }, "input": { "mcp_server_name": "ops-digitalocean-write", "tool_name": "digitalocean_droplet_reboot", "tool_input": "{\"id\":\"1\"}" }, "expect": { "permission": "ask" } },
+
+  { "name": "cluster delete denied", "event": "beforeShellExecution", "input": { "command": "doctl kubernetes cluster delete prod-cluster" }, "expect": { "permission": "deny" } },
+  { "name": "database delete denied", "event": "beforeShellExecution", "input": { "command": "doctl databases delete 1234 --force" }, "expect": { "permission": "deny" } },
+  { "name": "droplet delete asks", "event": "beforeShellExecution", "input": { "command": "doctl compute droplet delete 123 --force" }, "expect": { "permission": "ask" } },
+  { "name": "app deployment asks", "event": "beforeShellExecution", "input": { "command": "doctl apps create-deployment abc" }, "expect": { "permission": "ask" } },
+  { "name": "droplet list allowed", "event": "beforeShellExecution", "input": { "command": "doctl compute droplet list -o json" }, "expect": { "permission": "allow" } }
+]

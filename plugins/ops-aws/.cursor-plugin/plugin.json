@@ -1,0 +1,18 @@
+{
+  "name": "ops-aws",
+  "displayName": "Ops: AWS",
+  "version": "1.0.0",
+  "description": "AWS operations (EC2, ECS, Lambda, CloudWatch, CloudFormation, cost) with separate read and write MCP servers and aws CLI guardrails.",
+  "author": {
+    "name": "mujak"
+  },
+  "license": "UNLICENSED",
+  "keywords": [
+    "aws",
+    "ecs",
+    "cloudwatch",
+    "cloudformation",
+    "cost"
+  ],
+  "category": "developer-tools"
+}

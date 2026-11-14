@@ -1,0 +1,8 @@
+[
+  { "tool": "aws_ec2_stop_instances", "arguments": { "instanceIds": ["i-0123456789abcdef0"] } },
+  { "tool": "aws_cfn_execute_change_set", "arguments": { "stack": "app", "changeSetName": "cs1" } },
+  { "name": "readonly gateway blocks secret reads", "tool": "aws_readonly_call", "server": "read", "arguments": { "service": "secretsmanager", "operation": "get-secret-value", "params": { "SecretId": "x" } }, "expectError": "blocked by policy" },
+  { "name": "readonly gateway blocks ssm parameters", "tool": "aws_readonly_call", "server": "read", "arguments": { "service": "ssm", "operation": "get-parameters-by-path", "params": { "Path": "/" } }, "expectError": "blocked by policy" },
+  { "name": "readonly gateway blocks mutations", "tool": "aws_readonly_call", "server": "read", "arguments": { "service": "s3api", "operation": "delete-bucket", "params": { "Bucket": "x" } }, "expectError": "not a read operation" },
+  { "name": "region outside scope rejected", "tool": "aws_ec2_instances", "server": "read", "arguments": { "region": "eu-west-1" }, "expectError": "Scope policy" }
+]

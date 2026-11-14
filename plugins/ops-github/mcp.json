@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "ops-github-read": {
+      "command": "node",
+      "args": ["${CURSOR_PLUGIN_ROOT}/lib/core/run-mcp.mjs", "--tier", "read"]
+    },
+    "ops-github-write": {
+      "command": "node",
+      "args": ["${CURSOR_PLUGIN_ROOT}/lib/core/run-mcp.mjs", "--tier", "write"]
+    }
+  }
+}

@@ -1,0 +1,14 @@
+---
+description: Operating model for cloud and SaaS operations through the ops-* MCP servers (GitHub, DigitalOcean, Vercel, AWS).
+alwaysApply: true
+---
+
+# Cloud operations operating model
+
+- Investigate with `ops-<provider>-read` servers first. They are side-effect free and need no approval.
+- Use `ops-<provider>-write` tools only when the user asked for that change in this conversation. State the exact target and expected effect before calling.
+- Privileged tools need a typed `confirm` value. Never construct it yourself from a vague request: show the user the exact target and wait for an explicit go-ahead.
+- When a guardrail denies a call, do not retry with a different tool, shell command, or vendor MCP server to get the same effect. Explain the block and offer options.
+- Prefer ops-* MCP tools over raw CLI commands; shell CLI calls bypass input validation and typed confirmation.
+- Never print, request, or inline secrets. Reference profiles, contexts, or env var names.
+- For any change, follow the `ops-change-management` skill: plan, snapshot/backup, apply, verify, report.

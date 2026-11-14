@@ -1,0 +1,13 @@
+[
+  { "name": "deployment list allowed", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-vercel-read", "tool_name": "vercel_deployment_list", "tool_input": "{}" }, "expect": { "permission": "allow" } },
+  { "name": "preview redeploy asks", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-vercel-write", "tool_name": "vercel_redeploy_preview", "tool_input": "{\"deployment\":\"dpl_abc123\"}" }, "expect": { "permission": "ask" } },
+  { "name": "promote denied by default", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-vercel-write", "tool_name": "vercel_promote", "tool_input": "{}" }, "expect": { "permission": "deny" } },
+  { "name": "rollback asks when enabled", "event": "beforeMCPExecution", "env": { "OPS_ALLOW_PRIVILEGED": "1" }, "input": { "mcp_server_name": "ops-vercel-write", "tool_name": "vercel_rollback", "tool_input": "{}" }, "expect": { "permission": "ask" } },
+
+  { "name": "vercel --prod asks", "event": "beforeShellExecution", "input": { "command": "vercel --prod" }, "expect": { "permission": "ask" } },
+  { "name": "vercel deploy --prod asks", "event": "beforeShellExecution", "input": { "command": "vercel deploy --prod --yes" }, "expect": { "permission": "ask" } },
+  { "name": "env pull asks", "event": "beforeShellExecution", "input": { "command": "vercel env pull .env.local" }, "expect": { "permission": "ask" } },
+  { "name": "project rm denied", "event": "beforeShellExecution", "input": { "command": "vercel project rm my-app" }, "expect": { "permission": "deny" } },
+  { "name": "skip-permissions denied", "event": "beforeShellExecution", "input": { "command": "vercel api /v9/projects/x -X DELETE --dangerously-skip-permissions" }, "expect": { "permission": "deny" } },
+  { "name": "vercel ls allowed", "event": "beforeShellExecution", "input": { "command": "vercel ls my-app" }, "expect": { "permission": "allow" } }
+]

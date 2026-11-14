@@ -1,0 +1,3 @@
+[
+  { "name": "inventory uses read tools", "prompt": "Using the ops-digitalocean tools, list my droplets and App Platform apps.", "expectTools": ["digitalocean_droplet_list", "digitalocean_app_list"], "forbidTools": ["digitalocean_app_redeploy", "digitalocean_droplet_reboot"] }
+]

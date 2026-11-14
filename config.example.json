@@ -1,0 +1,52 @@
+{
+  "audit": { "enabled": true, "dir": null, "maxFieldChars": 4000 },
+  "execution": { "timeoutMs": 120000, "maxOutputChars": 60000 },
+  "prompts": { "blockSecrets": true },
+
+  "thirdPartyMcp": {
+    "read": "allow",
+    "write": "ask",
+    "privileged": "ask",
+    "unknown": "allow",
+    "trustedServers": ["^cursor-ide-browser$"],
+    "serverOverrides": {
+      "vercel": { "privileged": "deny" }
+    }
+  },
+
+  "providers": {
+    "github": {
+      "allowPrivileged": false,
+      "credentials": {
+        "read": { "env": {} },
+        "write": { "env": {} }
+      },
+      "scope": { "owners": [] }
+    },
+    "digitalocean": {
+      "allowPrivileged": false,
+      "credentials": {
+        "read": { "args": [] },
+        "write": { "args": [] }
+      },
+      "scope": { "protectedTags": ["production"] }
+    },
+    "vercel": {
+      "allowPrivileged": false,
+      "credentials": {
+        "read": { "args": [] },
+        "write": { "args": [] }
+      },
+      "scope": { "teamId": null, "allowedTeams": [] }
+    },
+    "aws": {
+      "allowPrivileged": false,
+      "defaultRegion": null,
+      "credentials": {
+        "read": { "args": [] },
+        "write": { "args": [] }
+      },
+      "scope": { "allowedRegions": [], "allowedAccounts": [] }
+    }
+  }
+}

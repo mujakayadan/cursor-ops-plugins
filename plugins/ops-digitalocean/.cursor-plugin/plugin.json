@@ -1,0 +1,17 @@
+{
+  "name": "ops-digitalocean",
+  "displayName": "Ops: DigitalOcean",
+  "version": "1.0.0",
+  "description": "DigitalOcean operations (droplets, App Platform, databases, DOKS, DNS) with separate read and write MCP servers and doctl guardrails.",
+  "author": {
+    "name": "mujak"
+  },
+  "license": "UNLICENSED",
+  "keywords": [
+    "digitalocean",
+    "app-platform",
+    "droplets",
+    "dns"
+  ],
+  "category": "developer-tools"
+}

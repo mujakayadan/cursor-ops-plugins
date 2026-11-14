@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "ops-aws-read": {
+      "command": "node",
+      "args": ["${CURSOR_PLUGIN_ROOT}/lib/core/run-mcp.mjs", "--tier", "read"]
+    },
+    "ops-aws-write": {
+      "command": "node",
+      "args": ["${CURSOR_PLUGIN_ROOT}/lib/core/run-mcp.mjs", "--tier", "write"]
+    }
+  }
+}

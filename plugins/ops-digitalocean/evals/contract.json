@@ -1,0 +1,6 @@
+[
+  { "tool": "digitalocean_droplet_reboot", "arguments": { "id": "123" } },
+  { "tool": "digitalocean_droplet_power_off", "arguments": { "id": "123" } },
+  { "tool": "digitalocean_domain_record_delete", "arguments": { "domain": "example.com", "recordId": "1" } },
+  { "name": "flag injection in id rejected", "tool": "digitalocean_droplet_get", "server": "read", "arguments": { "id": "--force" }, "expectError": "Invalid arguments" }
+]

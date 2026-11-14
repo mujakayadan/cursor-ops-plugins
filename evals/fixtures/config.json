@@ -1,0 +1,9 @@
+{
+  "audit": { "enabled": true },
+  "providers": {
+    "github": { "allowPrivileged": false },
+    "digitalocean": { "allowPrivileged": false },
+    "vercel": { "allowPrivileged": false },
+    "aws": { "allowPrivileged": false, "scope": { "allowedRegions": ["us-east-1", "us-west-2"] } }
+  }
+}
