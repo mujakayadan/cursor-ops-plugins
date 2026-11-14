@@ -6,6 +6,7 @@ out/
 bin/
 .idea/
 *.iml
-.vscode/
+.vscode/*
+!.vscode/extensions.json
 .env
 .DS_Store

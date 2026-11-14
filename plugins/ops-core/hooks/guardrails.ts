@@ -4,9 +4,26 @@
  * Rules are matched against the whole command with whitespace collapsed and newlines turned into `;`.
  */
 
-import type { Decision, ShellRule } from "../lib/core/types.ts";
+import { spawnSync } from "node:child_process";
+import type { Decision, HookPayload, ShellRule } from "../lib/core/types.ts";
 
-const PROTECTED_BRANCHES = "(?:main|master|production|prod|release|develop|trunk)";
+const PROTECTED_BRANCHES = "(?:main|master|dev|qa|staging|production|prod|release|develop|trunk)";
+// GitOps environment branches: changed only through pull requests.
+const ENV_BRANCHES = "(?:main|master|dev|qa|staging|production|prod)";
+export const BRANCH_TYPES = [
+  "feat",
+  "fix",
+  "chore",
+  "docs",
+  "refactor",
+  "perf",
+  "test",
+  "build",
+  "ci",
+  "style",
+  "revert",
+  "hotfix",
+] as const;
 
 // `git` plus global options such as `-C dir` or `--no-pager`, before the subcommand.
 const GIT = String.raw`\bgit(?:\.exe)?(?:\s+(?:-C|-c)\s+\S+|\s+--(?:git-dir|work-tree|no-pager|bare)(?:=\S+)?)*\s+`;
@@ -117,6 +134,64 @@ export const GIT_RULES: ShellRule[] = [
       "",
     ),
     reason: "This bypasses the repository's git hooks (lint, tests, secret scans).",
+  },
+];
+
+/** Branch checked out where the command runs; undefined outside a repo, on an unborn or detached HEAD. */
+export function currentBranch(cwd: string | undefined): string | undefined {
+  const r = spawnSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
+    cwd: cwd || undefined,
+    encoding: "utf8",
+    timeout: 3000,
+    windowsHide: true,
+  });
+  const branch = r.status === 0 ? r.stdout.trim() : "";
+  return branch && branch !== "HEAD" ? branch : undefined;
+}
+
+const ENV_BRANCH_RE = new RegExp(`^${ENV_BRANCHES}$`, "i");
+const onEnvBranch = (p: HookPayload): boolean => {
+  const cwd = p.cwd || p.workspace_roots?.[0];
+  return Boolean(cwd) && ENV_BRANCH_RE.test(currentBranch(cwd) ?? "");
+};
+
+const BRANCH_NAME = String.raw`(?:${ENV_BRANCHES}|[A-Za-z0-9][A-Za-z0-9-]*\/(?:${BRANCH_TYPES.join("|")})\/[a-z0-9][a-z0-9._-]*)${END}`;
+
+export const GITOPS_RULES: ShellRule[] = [
+  {
+    id: "git-push-env-branch",
+    decision: "deny",
+    re: re(`${GIT}push\\b(?=${A}\\s(?:\\S*:)?(?:refs\\/heads\\/)?${ENV_BRANCHES}${END})`, ""),
+    reason:
+      "Environment branches (main, dev, qa, staging) change only through pull requests. Push a `<user>/<type>/<name>` branch and open a PR.",
+  },
+  {
+    id: "git-push-from-env-branch",
+    decision: "deny",
+    re: re(`${GIT}push\\b(?!${A}\\s--tags${END})`, ""),
+    when: onEnvBranch,
+    reason:
+      "You are on an environment branch; pushing it bypasses the PR flow. Create a `<user>/<type>/<name>` branch first.",
+  },
+  {
+    id: "git-commit-env-branch",
+    decision: "deny",
+    re: re(
+      `${GIT}(?:commit|merge|cherry-pick|revert|am)\\b(?!${A}\\s--(?:abort|quit|continue|skip)${END})`,
+      "",
+    ),
+    when: onEnvBranch,
+    reason:
+      "No direct commits on environment branches (main, dev, qa, staging). Run `git switch -c <user>/<type>/<name>` and commit there.",
+  },
+  {
+    id: "git-branch-name",
+    decision: "deny",
+    re: re(
+      `${GIT}(?:(?:checkout|switch)\\b${A}\\s-[bBcC]\\s+|branch\\s+(?!-)|worktree\\s+add\\b${A}\\s-[bB]\\s+)(?!['"]?${BRANCH_NAME})[^\\s;&|-]`,
+      "",
+    ),
+    reason: `Branch names must be \`<github-user>/<type>/<kebab-name>\` with type one of ${BRANCH_TYPES.join(", ")} (env branches: main, dev, qa, staging).`,
   },
 ];
 
@@ -386,6 +461,7 @@ export const TAMPER_RULES: ShellRule[] = [
 export const SHELL_RULES: ShellRule[] = [
   ...TAMPER_RULES,
   ...GIT_RULES,
+  ...GITOPS_RULES,
   ...DATABASE_RULES,
   ...FILESYSTEM_RULES,
   ...SYSTEM_RULES,

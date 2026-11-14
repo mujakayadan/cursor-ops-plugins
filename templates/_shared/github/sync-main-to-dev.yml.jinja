@@ -1,0 +1,39 @@
+{% raw %}# Keeps dev a superset of main: after releases or hotfixes land on main, open a main -> dev PR.
+# PRs opened with GITHUB_TOKEN do not trigger CI; set a GITOPS_TOKEN secret so they do.
+name: sync-main-to-dev
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: sync-main-to-dev
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Open a main -> dev pull request when dev is behind
+        env:
+          GH_TOKEN: ${{ secrets.GITOPS_TOKEN || github.token }}
+        run: |
+          set -euo pipefail
+          if git merge-base --is-ancestor origin/main origin/dev; then
+            echo "dev already contains main"; exit 0
+          fi
+          open=$(gh pr list --base dev --head main --state open --json number --jq 'length')
+          if [ "$open" != "0" ]; then
+            echo "sync pull request already open"; exit 0
+          fi
+          gh pr create --base dev --head main --title "chore: sync main into dev" \
+            --body "Brings release and hotfix commits from main back into dev. Merge with a merge commit, not squash."
+{% endraw %}

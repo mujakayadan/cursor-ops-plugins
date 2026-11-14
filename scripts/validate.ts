@@ -1,9 +1,16 @@
 #!/usr/bin/env node
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { listPlugins, PLUGINS_DIR, REPO_ROOT } from "./lib.ts";
+import {
+  listPlugins,
+  PLUGINS_DIR,
+  pluginVersionFile,
+  REPO_ROOT,
+  type ReleaseConfig,
+} from "./lib.ts";
 
 interface Marketplace {
+  metadata: { version: string };
   plugins: { name: string }[];
 }
 interface PluginManifest {
@@ -58,14 +65,56 @@ if (json<{ license?: string }>(join(REPO_ROOT, "package.json")).license !== REPO
 const market = json<Marketplace>(join(REPO_ROOT, ".cursor-plugin", "marketplace.json"));
 const listed = new Set(market.plugins.map((p) => p.name));
 
+// One suite version, bumped by release-please in package.json, the marketplace and every plugin.
+const suiteVersion = json<{ version: string }>(join(REPO_ROOT, "package.json")).version;
+if (market.metadata.version !== suiteVersion) {
+  fail("marketplace.json", `metadata.version must equal package.json version ${suiteVersion}`);
+}
+const releaseFiles = new Set(
+  json<ReleaseConfig>(join(REPO_ROOT, "release-please-config.json")).packages["."][
+    "extra-files"
+  ].map((f) => `${f.path}#${f.jsonpath}`),
+);
+if (!releaseFiles.has(".cursor-plugin/marketplace.json#$.metadata.version")) {
+  fail("release-please-config.json", "extra-files must bump the marketplace version");
+}
+const manifestVersion = json<Record<string, string>>(
+  join(REPO_ROOT, ".release-please-manifest.json"),
+)["."];
+if (manifestVersion !== suiteVersion) {
+  fail(".release-please-manifest.json", `"." must equal package.json version ${suiteVersion}`);
+}
+
+// The repo runs the same GitOps workflows and community files that scaffolded projects get.
+const SHARED_GITHUB: Record<string, string> = {
+  "pr-policy.yml.jinja": ".github/workflows/pr-policy.yml",
+  "sync-main-to-dev.yml.jinja": ".github/workflows/sync-main-to-dev.yml",
+  "bug.yml.jinja": ".github/ISSUE_TEMPLATE/bug.yml",
+  "feature.yml.jinja": ".github/ISSUE_TEMPLATE/feature.yml",
+  "issue-config.yml.jinja": ".github/ISSUE_TEMPLATE/config.yml",
+  "pull_request_template.md.jinja": ".github/pull_request_template.md",
+};
+const lf = (s: string) => s.replace(/\r\n/g, "\n");
+for (const [fragment, copy] of Object.entries(SHARED_GITHUB)) {
+  const source = readFileSync(join(REPO_ROOT, "templates", "_shared", "github", fragment), "utf8");
+  const expected = lf(source.replace(/\{% (?:end)?raw %\}/g, ""));
+  const path = join(REPO_ROOT, copy);
+  if (!existsSync(path) || lf(readFileSync(path, "utf8")) !== expected) {
+    fail(copy, `must match templates/_shared/github/${fragment} (without raw tags)`);
+  }
+}
+
 for (const plugin of listPlugins()) {
   const root = join(PLUGINS_DIR, plugin);
   const manifest = json<PluginManifest>(join(root, ".cursor-plugin", "plugin.json"));
   if (manifest.name !== plugin) {
     fail(plugin, `plugin.json name "${manifest.name}" must match folder`);
   }
-  if (!/^\d+\.\d+\.\d+$/.test(manifest.version ?? "")) {
-    fail(plugin, "plugin.json version must be semver");
+  if (manifest.version !== suiteVersion) {
+    fail(plugin, `plugin.json version must equal the suite version ${suiteVersion}`);
+  }
+  if (!releaseFiles.has(`${pluginVersionFile(plugin).path}#$.version`)) {
+    fail(plugin, "missing from release-please-config.json extra-files");
   }
   if (manifest.license !== REPO_LICENSE) {
     fail(plugin, `plugin.json license must be "${REPO_LICENSE}" like the repository`);

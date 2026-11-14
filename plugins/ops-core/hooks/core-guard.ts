@@ -9,7 +9,7 @@ import {
   strictest,
 } from "../lib/core/policy.ts";
 import { findSecrets, truncate } from "../lib/core/redact.ts";
-import type { Config, HookResponse } from "../lib/core/types.ts";
+import type { Config, HookPayload, HookResponse } from "../lib/core/types.ts";
 import {
   EXEC_TOOL,
   inputStrings,
@@ -29,11 +29,16 @@ function secretResponse(kinds: string[], where: string): HookResponse {
   };
 }
 
-function evaluateCommand(command: string | undefined, cfg: Config): ShellEvaluation {
+function evaluateCommand(
+  command: string | undefined,
+  cfg: Config,
+  payload: HookPayload,
+): ShellEvaluation {
   if (isTextOnly(command ?? "")) return ALLOW;
   return evaluateShell(
     normalizeCommand(command),
     withOverrides(SHELL_RULES, cfg.guardrails?.shell?.overrides),
+    payload,
   );
 }
 
@@ -62,7 +67,7 @@ runHook(
     beforeShellExecution(payload) {
       const kinds = findSecrets(payload.command);
       if (kinds.length) return secretResponse(kinds, "this command");
-      const result = evaluateCommand(payload.command, loadConfig());
+      const result = evaluateCommand(payload.command, loadConfig(), payload);
       if (result.permission !== "allow") {
         audit({
           source: "hook",
@@ -86,7 +91,7 @@ runHook(
       if (kinds.length) return secretResponse(kinds, "these MCP tool arguments");
 
       const exec = EXEC_TOOL.test(payload.tool_name ?? "")
-        ? evaluateCommand(inputStrings(input), cfg)
+        ? evaluateCommand(inputStrings(input), cfg, payload)
         : ALLOW;
       const server = decideThirdPartyMcp(payload, cfg);
       const permission = strictest(exec.permission, server.permission);
