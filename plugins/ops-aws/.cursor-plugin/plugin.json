@@ -7,6 +7,12 @@
     "name": "Muja Kayadan"
   },
   "license": "MIT",
-  "keywords": ["aws", "ecs", "cloudwatch", "cloudformation", "cost"],
+  "keywords": [
+    "aws",
+    "ecs",
+    "cloudwatch",
+    "cloudformation",
+    "cost"
+  ],
   "category": "developer-tools"
 }

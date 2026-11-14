@@ -7,6 +7,11 @@
     "name": "Muja Kayadan"
   },
   "license": "MIT",
-  "keywords": ["github", "pull-requests", "actions", "ci"],
+  "keywords": [
+    "github",
+    "pull-requests",
+    "actions",
+    "ci"
+  ],
   "category": "developer-tools"
 }

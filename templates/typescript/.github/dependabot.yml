@@ -12,6 +12,10 @@ updates:
         patterns: ["next", "react", "react-dom", "@types/react", "@types/react-dom"]
       dev:
         dependency-type: development
+    ignore:
+      # Node types track the pinned runtime major (.node-version); bump both together.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
