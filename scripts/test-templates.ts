@@ -38,6 +38,19 @@ const base = {
   install_deps: false,
 };
 
+// The GitOps workflow, issue/PR templates and release config every CI-enabled project gets.
+const GITOPS_FILES = [
+  ".github/workflows/pr-policy.yml",
+  ".github/workflows/sync-main-to-dev.yml",
+  ".github/workflows/release-please.yml",
+  ".github/ISSUE_TEMPLATE/bug.yml",
+  ".github/ISSUE_TEMPLATE/feature.yml",
+  ".github/ISSUE_TEMPLATE/config.yml",
+  ".github/pull_request_template.md",
+  "release-please-config.json",
+  ".release-please-manifest.json",
+];
+
 const CASES: Case[] = [
   {
     id: "python/simple",
@@ -61,6 +74,7 @@ const CASES: Case[] = [
       ".cursor/mcp.json",
       ".mcp.json",
       ".github/workflows/ci.yml",
+      ...GITOPS_FILES,
       ".copier-answers.yml",
     ],
     absent: [
@@ -70,6 +84,7 @@ const CASES: Case[] = [
       ".cursor/skills",
       ".cursor/rules/backend.mdc",
       "Dockerfile",
+      ".github/workflows/image.yml",
     ],
     checks: "python",
   },
@@ -93,6 +108,7 @@ const CASES: Case[] = [
       ".cursor/skills/verify/SKILL.md",
       ".cursor/rules/backend.mdc",
       "LICENSE",
+      ".github/workflows/image.yml",
     ],
     absent: ["CLAUDE.md", ".claude", ".mcp.json", "src/scaffold_check/py.typed"],
     json: { ".cursor/mcp.json": (j) => Object.keys(j.mcpServers).join() === "context7,github" },
@@ -107,7 +123,13 @@ const CASES: Case[] = [
       agents: [],
       github_ci: false,
     },
-    present: ["src/scaffold_check/__init__.py", "src/scaffold_check/py.typed", "AGENTS.md"],
+    present: [
+      "src/scaffold_check/__init__.py",
+      "src/scaffold_check/py.typed",
+      "AGENTS.md",
+      ".github/ISSUE_TEMPLATE/bug.yml",
+      "release-please-config.json",
+    ],
     absent: [
       "LICENSE",
       ".cursor",
@@ -138,6 +160,8 @@ const CASES: Case[] = [
       "app/layout.tsx",
       "app/api/health/route.ts",
       "Dockerfile",
+      ...GITOPS_FILES,
+      ".github/workflows/image.yml",
       ".cursor/rules/nextjs.mdc",
       ".claude/rules/nextjs.md",
       ".claude/skills/verify/SKILL.md",
@@ -165,6 +189,7 @@ const CASES: Case[] = [
       "src/main/java/com/example/scaffoldcheck/Greeter.java",
       "src/test/java/com/example/scaffoldcheck/GreeterTest.java",
       ".claude/rules/java.md",
+      ...GITOPS_FILES,
     ],
     absent: [
       "compose.yaml",
@@ -174,6 +199,7 @@ const CASES: Case[] = [
       ".claude/rules/spring.md",
       ".cursor",
       "Dockerfile",
+      ".github/workflows/image.yml",
     ],
     checks: "java",
   },
@@ -233,7 +259,7 @@ const CHECKS: Record<Toolchain, string[]> = {
     "uv run ty check",
     "uv run pytest",
     "uv lock --check",
-    "git init -q -b main",
+    "git init -q -b ci/template-check",
     "git add -A",
     "uv run prek run --all-files",
   ],
@@ -241,13 +267,13 @@ const CHECKS: Record<Toolchain, string[]> = {
     "pnpm install",
     "pnpm run check",
     "pnpm run build",
-    "git init -q -b main",
+    "git init -q -b ci/template-check",
     "git add -A",
     "pnpm exec prek run --all-files",
   ],
   java: [
     IS_WINDOWS ? "gradlew.bat build --no-daemon" : "sh ./gradlew build --no-daemon",
-    "git init -q -b main",
+    "git init -q -b ci/template-check",
     "git add -A",
     "uvx prek run --all-files",
   ],

@@ -23,6 +23,7 @@ _exclude:
   - "{% if 'claude' not in agents or not mcp_servers %}/.mcp.json{% endif %}"
   - "{% if not github_ci %}/.github/workflows{% endif %}"
   - "{% if not docker %}/Dockerfile{% endif %}"
+  - "{% if not docker %}/.github/workflows/image.yml{% endif %}"
   - "{% if not docker %}/.dockerignore{% endif %}"
   # python
   - "{% if language == 'python' and profile != 'backend' %}/.env.example{% endif %}"
@@ -54,10 +55,13 @@ _tasks:
     when: "{{ language == 'java' and initialize_git and _copier_operation == 'copy' }}"
   - command: [uv, sync]
     when: "{{ language == 'python' and install_deps }}"
-  - command: [uv, run, prek, install]
-    when: "{{ language == 'python' and install_deps and initialize_git and _copier_operation == 'copy' }}"
   - command: [pnpm, install]
     when: "{{ language == 'typescript' and install_deps }}"
+  # The initial commit lands on main before the hooks exist; afterwards main only changes via PRs.
+  - command: 'git add -A && git commit -q -m "chore: initial commit from template" || echo Skipped the initial commit. Set git user.name and user.email, then commit on main before installing hooks.'
+    when: "{{ initialize_git and _copier_operation == 'copy' }}"
+  - command: [uv, run, prek, install]
+    when: "{{ language == 'python' and install_deps and initialize_git and _copier_operation == 'copy' }}"
   - command: [pnpm, exec, prek, install]
     when: "{{ language == 'typescript' and install_deps and initialize_git and _copier_operation == 'copy' }}"
   - command: [uvx, prek, install]
@@ -65,7 +69,8 @@ _tasks:
 
 _message_after_copy: |
   Created {{ project_name }} ({{ language }}/{{ profile }}) in {{ _copier_conf.dst_path }}.
-  Next: read AGENTS.md for the project commands.
+  Next: read AGENTS.md for the project commands and the branch flow
+  (feature branches -> dev -> main). Create the GitHub repo, then add the dev branch.
 
 language:
   type: str
@@ -217,7 +222,7 @@ github_ci:
 
 initialize_git:
   type: bool
-  help: Initialize a git repository (main branch) and install git hooks
+  help: Initialize a git repository (initial commit on main) and install git hooks
   default: true
 
 install_deps:

@@ -80,7 +80,7 @@ Plugins are self-contained (core is vendored), so they install from a marketplac
 
 | Area | Denied | Asks |
 |---|---|---|
-| Git | `reset --hard`, `clean -f`, discarding changes (`checkout -- .`, `restore`, `switch --discard-changes`), `stash drop/clear`, reflog expiry, `gc --prune=now`, `filter-branch`/`filter-repo`, `push --mirror`, force-pushing or deleting `main`/`master`/`production`/`release`/`develop` | other force pushes and remote deletes, `branch -D`, `--no-verify`, changing `core.hooksPath` |
+| Git | `reset --hard`, `clean -f`, discarding changes (`checkout -- .`, `restore`, `switch --discard-changes`), `stash drop/clear`, reflog expiry, `gc --prune=now`, `filter-branch`/`filter-repo`, `push --mirror`, force-pushing or deleting `main`/`master`/`dev`/`qa`/`staging`/`production`/`release`/`develop`; pushing to an environment branch (`main`, `dev`, `qa`, `staging`), committing while one is checked out, creating branches not named `<user>/<type>/<name>` | other force pushes and remote deletes, `branch -D`, `--no-verify`, changing `core.hooksPath` |
 | Databases | `DROP DATABASE/SCHEMA/TABLE/ROLE`, `TRUNCATE`, `DELETE` without `WHERE`, `FLUSHALL`, `dropDatabase()`, `dropdb`; resets in Prisma, Rails, Laravel, Alembic (`downgrade base`), Flyway, Django, Supabase, EF, Liquibase and others; deleting managed databases (GCP, Azure, Neon, PlanetScale, Fly, Heroku, Atlas); `docker compose down -v` and volume removal; deleting Kubernetes namespaces, PVCs or `--all` | `UPDATE` without `WHERE`, `ALTER TABLE … DROP`, migration rollbacks, `docker system prune`, other `kubectl delete` |
 | Infrastructure | `terraform`/`tofu`/`pulumi`/`cdk`/`sst destroy` | `apply -auto-approve`, `state rm/mv`, `pulumi up --yes` |
 | Filesystem and system | recursive deletes of `/`, `~`, `.`, `..`, `*`, `.git`, drive roots and system folders; disk formatting and `dd` to devices; secure erase; shutdown and reboot; killing every process; disabling Defender, firewalls or SELinux; deleting registry keys | `curl … \| sh`, `irm … \| iex`, `Set-ExecutionPolicy Bypass` |
@@ -92,6 +92,30 @@ For MCP tools that execute commands or SQL (`execute_sql`, `run_query`, `run_ses
 To avoid false positives, the guard skips text-only commands (`rg "DROP TABLE"`, `git log --grep …`, `echo`) and ignores the text of commit, PR and issue messages. To relax a single rule, set `guardrails.shell.overrides` in `~/.ops/config.json`, for example `{ "git-reset-hard": "ask" }`. The tamper rules can't be relaxed.
 
 Hooks see the command line, not what a script does after it starts. An agent that writes a script and then runs it is not covered. The operating-model rule forbids that workaround, and the audit log records every command.
+
+## GitOps
+
+Every repository, this one included, follows one branch and release flow:
+
+| Branch | Role | Receives | Merge method |
+|---|---|---|---|
+| `main` | production | PRs from `dev` (or `qa`/`staging`), Dependabot, release-please | merge commit |
+| `dev` | integration | PRs from `<github-user>/<type>/<kebab-name>` branches; the automatic `main → dev` sync | squash (features), merge commit (sync) |
+| `qa`, `staging` | optional, only when asked | promotions | merge commit |
+
+Work branch types are `feat`, `fix`, `chore`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `style`, `revert` and `hotfix`. PR titles follow Conventional Commits.
+
+The flow is enforced in layers that all work on GitHub Free:
+- **CI:** the `pr-policy` workflow checks the target, the branch name (its user part must match the PR author) and the title.
+- **Local hooks:** prek's `no-commit-to-branch` blocks commits on environment branches.
+- **Agent guardrails:** ops-core denies pushes and commits to environment branches and badly named branches. `github_pr_merge` refuses red checks, work branches into `main`, and squashed promotions.
+- **Rulesets:** `github_repo_bootstrap` applies them where the plan allows (public repos on Free, any repo on paid plans). They block deletion and force pushes, require a PR, resolved conversations and `pr-policy`, and set the merge methods. There are no bypass actors.
+
+Releases use [release-please](https://github.com/googleapis/release-please). Conventional commits on `main` produce a release PR, and merging it tags `vX.Y.Z` and publishes the GitHub release. Projects with a Dockerfile then push `ghcr.io/<owner>/<repo>:X.Y.Z` and `:latest` with build provenance; every push to `dev` publishes `:dev` and `:sha-<short>`. After each release or hotfix, `sync-main-to-dev` opens the `main → dev` PR. This repo releases the whole suite under one version: `package.json`, the marketplace and every `plugin.json` are bumped together, and the `vX.Y.Z` tag is the ref Copier scaffolds from.
+
+PRs opened with the default `GITHUB_TOKEN` don't trigger workflows, so release and sync PRs would never get their required checks. Add a fine-grained token with Contents and Pull requests read/write on the repo as the `GITOPS_TOKEN` Actions secret. The workflows use it when present.
+
+The `gitops-workflow` skill (ops-github) drives this from the agent. `github_repo_create` always asks for the visibility. `github_repo_bootstrap` creates `dev` and any extra environments, sets the merge settings, labels and rulesets, lets Actions open PRs, links a project board, and reports whether `GITOPS_TOKEN` is set. `github_release_list`, `github_project_list` and `github_project_item_add` cover releases and boards. The project tools need the `project` token scope (`gh auth refresh -s project`).
 
 ## Scaffolders
 
@@ -110,11 +134,12 @@ Every project gets the same set of shared files:
 - Cursor and/or Claude Code rules
 - a `verify` skill that knows the project's commands
 - optional Context7/GitHub MCP config (URLs only)
-- GitHub Actions CI and Dependabot
+- GitHub Actions CI and Dependabot (conventional `chore(deps)` titles)
+- the GitOps workflows (`pr-policy`, `sync-main-to-dev`, `release-please`, and the GHCR `image` workflow when there is a Dockerfile), issue forms, a PR template, release-please config, and an initial commit on `main`
 - `.editorconfig` and `.gitattributes`
 - an optional Dockerfile for backend and Next.js projects
 
-**From the agent:** the `scaffold-project` skill interviews the user, always including the project's license and copyright holder, and calls `scaffold_create`. Calls to `scaffold_create` and `scaffold_update` always ask for approval. The tools refuse non-empty destinations, relative paths, and paths outside `providers.scaffold.scope.allowedRoots` when that is set.
+**From the agent:** the `scaffold-project` skill interviews the user, always including the project's license, copyright holder and GitHub visibility, and calls `scaffold_create`. It then publishes and bootstraps the repo through `gitops-workflow`. Calls to `scaffold_create` and `scaffold_update` always ask for approval. The tools refuse non-empty destinations, relative paths, and paths outside `providers.scaffold.scope.allowedRoots` when that is set.
 
 **From a shell:**
 ```powershell

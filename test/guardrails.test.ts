@@ -1,8 +1,13 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, it } from "vitest";
 import { evaluateShell } from "../packages/core/policy.ts";
 import type { Decision, ShellRule } from "../packages/core/types.ts";
 import {
+  currentBranch,
   EXEC_TOOL,
   inputStrings,
   isTextOnly,
@@ -73,5 +78,41 @@ describe("guardrail command handling", () => {
       assert.ok(EXEC_TOOL.test(name), name);
     for (const name of ["list_projects", "get_deployment", "create_issue"])
       assert.ok(!EXEC_TOOL.test(name), name);
+  });
+});
+
+describe("gitops branch guardrails", () => {
+  const git = (cwd: string, ...args: string[]) =>
+    execFileSync("git", args, { cwd, stdio: "ignore", env: { ...process.env, ...IDENTITY } });
+  const IDENTITY = {
+    GIT_AUTHOR_NAME: "t",
+    GIT_AUTHOR_EMAIL: "t@example.com",
+    GIT_COMMITTER_NAME: "t",
+    GIT_COMMITTER_EMAIL: "t@example.com",
+  };
+  const decideIn = (cwd: string, command: string) =>
+    evaluateShell(normalizeCommand(command), SHELL_RULES, { cwd }).permission;
+
+  it("blocks commits and pushes on env branches, not on feature branches", () => {
+    const dir = mkdtempSync(join(tmpdir(), "ops-gitops-"));
+    try {
+      git(dir, "init", "-q", "-b", "main");
+      assert.equal(currentBranch(dir), undefined);
+      assert.equal(decideIn(dir, 'git commit -m "chore: initial commit"'), "allow");
+      git(dir, "commit", "-q", "--allow-empty", "-m", "init");
+      assert.equal(currentBranch(dir), "main");
+      assert.equal(decideIn(dir, 'git commit -am "fix: x"'), "deny");
+      assert.equal(decideIn(dir, "git push"), "deny");
+      assert.equal(decideIn(dir, "git merge --abort"), "allow");
+      assert.equal(decideIn(dir, "git push --tags"), "allow");
+      git(dir, "switch", "-q", "-c", "t/feat/x");
+      assert.equal(decideIn(dir, 'git commit -am "feat: x"'), "allow");
+      assert.equal(decideIn(dir, "git push -u origin t/feat/x"), "allow");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+  it("ignores the branch when the payload has no cwd", () => {
+    assert.equal(decideIn("", "git commit -m x"), "allow");
   });
 });
