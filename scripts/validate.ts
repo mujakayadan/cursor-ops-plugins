@@ -9,7 +9,10 @@ interface Marketplace {
 interface PluginManifest {
   name: string;
   version?: string;
+  license?: string;
 }
+
+const REPO_LICENSE = "MIT";
 interface HooksFile {
   version: number;
   hooks: Record<string, { command: string; matcher?: string }[]>;
@@ -44,6 +47,14 @@ function frontmatter(path: string): Frontmatter | null {
   return { fields, body: text.slice(m[0].length) };
 }
 
+const licensePath = join(REPO_ROOT, "LICENSE");
+if (!existsSync(licensePath) || !readFileSync(licensePath, "utf8").startsWith("MIT License")) {
+  fail("LICENSE", `repository LICENSE file must contain the ${REPO_LICENSE} license`);
+}
+if (json<{ license?: string }>(join(REPO_ROOT, "package.json")).license !== REPO_LICENSE) {
+  fail("package.json", `license must be "${REPO_LICENSE}"`);
+}
+
 const market = json<Marketplace>(join(REPO_ROOT, ".cursor-plugin", "marketplace.json"));
 const listed = new Set(market.plugins.map((p) => p.name));
 
@@ -55,6 +66,9 @@ for (const plugin of listPlugins()) {
   }
   if (!/^\d+\.\d+\.\d+$/.test(manifest.version ?? "")) {
     fail(plugin, "plugin.json version must be semver");
+  }
+  if (manifest.license !== REPO_LICENSE) {
+    fail(plugin, `plugin.json license must be "${REPO_LICENSE}" like the repository`);
   }
   if (!listed.has(plugin)) fail(plugin, "missing from .cursor-plugin/marketplace.json");
 

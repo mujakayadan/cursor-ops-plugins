@@ -27,6 +27,7 @@ const DEFAULT_SOURCE = "https://github.com/mujakayadan/cursor-ops-plugins.git";
 const INSTALL_TIMEOUT_MS = 900000;
 
 const LANGUAGES = ["python", "typescript", "java"] as const;
+const LICENSES = ["MIT", "Apache-2.0", "none"] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 export interface LanguageSpec {
@@ -189,7 +190,10 @@ const createInput = obj(
     description: str("One-line description.", { pattern: '^[^\\r\\n"\\\\]{1,200}$' }),
     author_name: str("Author name.", { pattern: '^[^\\r\\n"\\\\]{1,100}$' }),
     author_email: str("Author email.", { pattern: '^[^@\\s"]+@[^@\\s"]+$' }),
-    license: oneOf(["MIT", "Apache-2.0", "none"], "License file.", "MIT"),
+    license: oneOf(
+      LICENSES,
+      "License of the new project. Ask the user; 'none' means proprietary (no LICENSE file).",
+    ),
     agents: list(oneOf(["cursor", "claude"], "Agent client."), "Agent clients to configure.", {
       default: ["cursor", "claude"],
       maxItems: 2,
@@ -210,7 +214,7 @@ const createInput = obj(
     }),
     ref,
   },
-  ["destination", "language", "profile", "project_name"],
+  ["destination", "language", "profile", "project_name", "license"],
 );
 
 export type CreateArgs = Infer<typeof createInput>;
@@ -226,6 +230,11 @@ export function buildAnswers(a: CreateArgs): Record<string, unknown> {
   if (!lang.profiles[a.profile]) {
     throw new ToolError(
       `profile "${a.profile}" is not available for ${a.language}; choose one of: ${Object.keys(lang.profiles).join(", ")}`,
+    );
+  }
+  if (a.license !== "none" && !a.author_name) {
+    throw new ToolError(
+      `author_name is required for the ${a.license} license; it is the copyright holder in LICENSE`,
     );
   }
   const data: Record<string, unknown> = {
@@ -274,7 +283,7 @@ const tools = [
         ]),
       ),
       options: {
-        license: ["MIT", "Apache-2.0", "none"],
+        license: LICENSES,
         agents: ["cursor", "claude"],
         mcp_servers: ["context7", "github"],
         docker: "default true for backend and next profiles",

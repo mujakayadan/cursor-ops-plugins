@@ -19,7 +19,8 @@ Ask only what the request leaves open. Use one AskQuestion form where available:
 | Project name and destination | missing | parent folder: the user's code root (e.g. `D:\Codes`), dir = slug |
 | Agent clients | never ask unless the user mentions it | `cursor`, `claude` |
 | MCP servers | user mentions docs or GitHub automation | `context7` |
-| License | user mentions open source or publishing | `MIT` |
+| License | always, unless the user already said | none; offer `MIT`, `Apache-2.0`, or `none` (proprietary, no LICENSE file) |
+| Copyright holder (`author_name`) | license is not `none` and it is not known | none; the person or company that owns the code |
 | Package or group id | user states one | derived from the slug; Java group `com.example` |
 
 Runtime versions are fixed by the standard (Python 3.13, Node 24, Java 25) and are not options. If the user asks for a different one, say it is the team standard and that changing it is a template change (`scaffold-template-authoring`).
@@ -36,7 +37,7 @@ If `missingTools` lists something needed, tell the user first. Either they insta
 Call `scaffold_create` (write tier, needs approval) with an **absolute** `destination` that does not exist yet. Example:
 
 ```json
-{ "destination": "D:\\Codes\\billing-api", "language": "python", "profile": "backend", "project_name": "Billing API", "description": "Billing service." }
+{ "destination": "D:\\Codes\\billing-api", "language": "python", "profile": "backend", "project_name": "Billing API", "description": "Billing service.", "license": "MIT", "author_name": "Acme Inc." }
 ```
 
 The tool refuses non-empty directories. Never delete or empty a directory to make room; pick a new name instead.

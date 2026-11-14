@@ -64,6 +64,7 @@ describe("scaffold buildAnswers", () => {
     profile: "backend",
     project_name: "Billing API",
     license: "MIT",
+    author_name: "Acme Inc.",
     agents: ["cursor"],
     mcp_servers: [],
     github_ci: true,
@@ -86,6 +87,11 @@ describe("scaffold buildAnswers", () => {
   });
   it("rejects options for another language", () => {
     assert.throws(() => buildAnswers({ ...base, group_id: "com.acme" }), /only applies to java/);
+  });
+  it("requires a copyright holder unless the project has no license", () => {
+    const { author_name: _, ...anonymous } = base;
+    assert.throws(() => buildAnswers(anonymous), /author_name is required for the MIT license/);
+    assert.equal(buildAnswers({ ...anonymous, license: "none" }).license, "none");
   });
 });
 

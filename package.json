@@ -2,6 +2,8 @@
   "name": "cursor-ops-plugins",
   "version": "1.0.0",
   "private": true,
+  "license": "MIT",
+  "author": "Muja Kayadan",
   "description": "Enterprise Cursor plugin suite for GitHub, DigitalOcean, Vercel and AWS operations with tiered MCP servers, guardrail hooks, skills and evals, plus Copier project scaffolders.",
   "type": "module",
   "packageManager": "pnpm@11.20.0",
