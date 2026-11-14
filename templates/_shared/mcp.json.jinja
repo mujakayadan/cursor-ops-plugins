@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+{%- if "context7" in mcp_servers %}
+    "context7": {
+      "url": "https://mcp.context7.com/mcp"
+    }{% if "github" in mcp_servers %},{% endif %}
+{%- endif %}
+{%- if "github" in mcp_servers %}
+    "github": {
+      "url": "https://api.githubcopilot.com/mcp/"
+    }
+{%- endif %}
+  }
+}

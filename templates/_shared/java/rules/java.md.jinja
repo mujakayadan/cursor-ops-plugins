@@ -1,0 +1,9 @@
+# Java conventions
+
+- Build with the wrapper only: `./gradlew build` (Windows: `gradlew.bat build`). Format with `./gradlew spotlessApply`.
+- Dependencies and plugin versions live in `gradle/libs.versions.toml`; reference them as `libs.*`.
+- Null safety: packages are `@NullMarked`; annotate nullable types with `org.jspecify.annotations.Nullable`. NullAway fails the build on violations; fix the code instead of suppressing.
+- Error Prone runs on every compile. Treat findings as bugs.
+- Prefer records, `final` fields, and immutable collections (`List.of`, `Map.copyOf`).
+- Keep imports at the top of the file; no wildcard imports.
+- Tests use JUnit 6 and AssertJ (`assertThat`), named for behavior (`greetsByName`).

@@ -1,0 +1,78 @@
+[project]
+name = {{ project_slug | tojson }}
+version = "0.1.0"
+description = {{ description | tojson }}
+readme = "README.md"
+requires-python = ">={{ python_version }}"
+{%- if license != "none" %}
+license = {{ license | tojson }}
+license-files = ["LICENSE"]
+{%- endif %}
+authors = [
+    { name = {{ author_name | tojson }}{% if author_email %}, email = {{ author_email | tojson }}{% endif %} },
+]
+{%- if profile == "library" %}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Typing :: Typed",
+]
+{%- endif %}
+dependencies = [
+{%- if profile == "backend" %}
+    "alembic>=1.20.1",
+    "fastapi>=0.163.0",
+    "pydantic-settings>=2.16.3",
+    "sqlmodel>=0.0.50",
+    "uvicorn[standard]>=0.54.0",
+{%- endif %}
+]
+{%- if profile == "simple" %}
+
+[project.scripts]
+{{ project_slug }} = "{{ package_name }}.main:main"
+{%- endif %}
+
+[dependency-groups]
+dev = [
+{%- if profile == "backend" %}
+    "httpx>=0.28.1",
+{%- endif %}
+    "prek>=0.5.10",
+    "pytest>=9.2.0",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.17.5",
+    "ty>=0.0.104",
+]
+
+[build-system]
+requires = ["uv_build>=0.13.8,<0.14"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+addopts = ["--strict-markers", "--cov={{ package_name }}", "--cov-report=term-missing"]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py{{ python_version | replace('.', '') }}"
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "N", "RUF", "SIM", "UP", "PTH", "S"]
+# The formatter owns line length.
+ignore = ["E501"]
+
+{%- if profile == "backend" %}
+
+[tool.ruff.lint.isort]
+# The local alembic/ directory would otherwise make the package look first-party.
+known-third-party = ["alembic"]
+{%- endif %}
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+
+[tool.ty.environment]
+python-version = "{{ python_version }}"

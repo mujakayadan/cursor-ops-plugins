@@ -1,0 +1,7 @@
+# FastAPI backend conventions
+
+- Routes stay thin: validate input with Pydantic/SQLModel models, delegate to plain functions, return typed models.
+- Inject sessions with `SessionDep`; never create engines or sessions inside handlers.
+- Configuration comes from `{{ package_name }}.config.get_settings()`. Add new settings as typed fields with safe defaults and document them in `.env.example`.
+- Schema changes: add or modify SQLModel tables, import the module in `alembic/env.py`, run `uv run alembic revision --autogenerate -m "..."`, review the migration, then `uv run alembic upgrade head`.
+- Tests override `get_session` with an in-memory SQLite engine (see `tests/test_smoke.py`).

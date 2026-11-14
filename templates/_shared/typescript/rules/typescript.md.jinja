@@ -1,0 +1,10 @@
+# TypeScript conventions
+
+- pnpm only: `pnpm add`, `pnpm add -D`, `pnpm remove`, `pnpm dlx`. Never npm or yarn.
+- Biome owns formatting and linting: `pnpm run format`, then `pnpm run lint`. Do not add ESLint or Prettier.
+- Strict TypeScript: no `any` (use `unknown` and narrow), no non-null assertions without a comment explaining the invariant.
+- Indexed access is `T | undefined` (`noUncheckedIndexedAccess`); handle the undefined case.
+- Use `import type` for type-only imports (`verbatimModuleSyntax`).
+- `switch` over unions ends with a `default` branch that assigns to `never`.
+- Keep imports at the top of the module.
+- Tests live next to the code as `*.test.ts(x)` and run with `pnpm test`.

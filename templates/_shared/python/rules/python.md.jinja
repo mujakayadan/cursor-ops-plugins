@@ -1,0 +1,7 @@
+# Python conventions
+
+- uv owns the environment: `uv add` / `uv remove` for dependencies, `uv run <tool>` for commands. Never `pip install`.
+- Format with `uv run ruff format .`, lint with `uv run ruff check --fix .`, type-check with `uv run ty check`.
+- Annotate public functions; use built-in generics, `X | None`, `collections.abc` for protocols.
+- Keep imports at module scope (no inline imports unless a documented circular-import constraint).
+- Add focused pytest coverage for every behavior change; run the focused test first, then `uv run pytest`.

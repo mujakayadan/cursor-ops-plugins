@@ -1,0 +1,61 @@
+{% if profile == "simple" -%}
+import pytest
+
+from {{ package_name }}.main import main
+
+
+def test_main_greets_by_name(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["--name", "Ada"]) == 0
+    assert capsys.readouterr().out == "Hello, Ada!\n"
+{%- elif profile == "library" -%}
+import pytest
+
+from {{ package_name }} import greet
+
+
+def test_greet() -> None:
+    assert greet("Ada") == "Hello, Ada!"
+
+
+def test_greet_rejects_blank_name() -> None:
+    with pytest.raises(ValueError, match="blank"):
+        greet("  ")
+{%- else -%}
+from collections.abc import Iterator
+
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy.pool import StaticPool
+from sqlmodel import Session, create_engine
+
+from {{ package_name }}.database import get_session
+from {{ package_name }}.main import app
+
+
+@pytest.fixture
+def client() -> Iterator[TestClient]:
+    engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
+
+    def session_override() -> Iterator[Session]:
+        with Session(engine) as session:
+            yield session
+
+    app.dependency_overrides[get_session] = session_override
+    with TestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
+
+
+def test_health(client: TestClient) -> None:
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json()["status"] == "ok"
+
+
+def test_health_db(client: TestClient) -> None:
+    response = client.get("/health/db")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+{%- endif %}

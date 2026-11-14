@@ -1,0 +1,21 @@
+package {{ java_package }};
+
+/** Builds greetings. */
+public final class Greeter {
+
+    private Greeter() {}
+
+    /**
+     * Returns a greeting for {@code name}.
+     *
+     * @param name who to greet; must not be blank
+     * @return the greeting
+     * @throws IllegalArgumentException if {@code name} is blank
+     */
+    public static String greet(String name) {
+        if (name.isBlank()) {
+            throw new IllegalArgumentException("name must not be blank");
+        }
+        return "Hello, " + name.strip() + "!";
+    }
+}

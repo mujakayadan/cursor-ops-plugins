@@ -1,0 +1,4 @@
+[
+  { "name": "discovers templates before answering", "prompt": "Using the ops-scaffold tools, which project templates and profiles can you generate? Do not create anything.", "expectTools": ["scaffold_list_templates"], "forbidTools": ["scaffold_create", "scaffold_update"] },
+  { "name": "creates a python backend via the template", "prompt": "Scaffold a FastAPI backend called Eval Billing in a new folder under the system temp directory, without installing dependencies or initializing git.", "expectTools": ["scaffold_list_templates", "scaffold_create"], "timeoutSec": 600 }
+]

@@ -1,0 +1,30 @@
+[
+  { "name": "list templates allowed", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-scaffold-read", "tool_name": "scaffold_list_templates", "tool_input": "{}" }, "expect": { "permission": "allow" } },
+  { "name": "inspect project allowed", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-scaffold-read", "tool_name": "scaffold_inspect_project", "tool_input": "{\"project\":\"D:\\\\Codes\\\\app\"}" }, "expect": { "permission": "allow" } },
+  { "name": "create asks", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-scaffold-write", "tool_name": "scaffold_create", "tool_input": "{\"destination\":\"D:\\\\Codes\\\\app\",\"language\":\"python\",\"profile\":\"backend\",\"project_name\":\"App\"}" }, "expect": { "permission": "ask" } },
+  { "name": "update asks", "event": "beforeMCPExecution", "input": { "mcp_server_name": "plugin-ops-scaffold-ops-scaffold-write", "tool_name": "scaffold_update", "tool_input": "{\"project\":\"/home/me/app\"}" }, "expect": { "permission": "ask" } },
+  { "name": "create on read server denied", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-scaffold-read", "tool_name": "scaffold_create", "tool_input": "{}" }, "expect": { "permission": "deny" } },
+  { "name": "unknown scaffold tool denied", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-scaffold-write", "tool_name": "scaffold_delete_project", "tool_input": "{}" }, "expect": { "permission": "deny" } },
+
+  { "name": "pip install denied in uv project", "event": "beforeShellExecution", "input": { "command": "pip install requests", "cwd": "${REPO_ROOT}/evals/fixtures/projects/uv-app" }, "expect": { "permission": "deny" } },
+  { "name": "python -m pip install denied in uv project subdir", "event": "beforeShellExecution", "input": { "command": "python -m pip install -e .", "cwd": "${REPO_ROOT}/evals/fixtures/projects/uv-app/src" }, "expect": { "permission": "deny" } },
+  { "name": "poetry add denied in uv project", "event": "beforeShellExecution", "input": { "command": "poetry add httpx", "cwd": "${REPO_ROOT}/evals/fixtures/projects/uv-app" }, "expect": { "permission": "deny" } },
+  { "name": "uv pip install asks in uv project", "event": "beforeShellExecution", "input": { "command": "uv pip install rich", "cwd": "${REPO_ROOT}/evals/fixtures/projects/uv-app" }, "expect": { "permission": "ask" } },
+  { "name": "uv add allowed in uv project", "event": "beforeShellExecution", "input": { "command": "uv add httpx", "cwd": "${REPO_ROOT}/evals/fixtures/projects/uv-app" }, "expect": { "permission": "allow" } },
+  { "name": "pip install allowed outside uv projects", "event": "beforeShellExecution", "input": { "command": "pip install requests", "cwd": "${REPO_ROOT}/evals/fixtures/projects/pnpm-app" }, "expect": { "permission": "allow" } },
+  { "name": "pip install allowed without cwd", "event": "beforeShellExecution", "input": { "command": "pip install requests" }, "expect": { "permission": "allow" } },
+  { "name": "workspace root used when cwd missing", "event": "beforeShellExecution", "input": { "command": "pip install requests", "workspace_roots": ["${REPO_ROOT}/evals/fixtures/projects/uv-app"] }, "expect": { "permission": "deny" } },
+
+  { "name": "npm install denied in pnpm project", "event": "beforeShellExecution", "input": { "command": "npm install lodash", "cwd": "${REPO_ROOT}/evals/fixtures/projects/pnpm-app" }, "expect": { "permission": "deny" } },
+  { "name": "yarn add denied in pnpm project", "event": "beforeShellExecution", "input": { "command": "cd web && yarn add zod", "cwd": "${REPO_ROOT}/evals/fixtures/projects/pnpm-app" }, "expect": { "permission": "deny" } },
+  { "name": "pnpm add allowed in pnpm project", "event": "beforeShellExecution", "input": { "command": "pnpm add zod", "cwd": "${REPO_ROOT}/evals/fixtures/projects/pnpm-app" }, "expect": { "permission": "allow" } },
+  { "name": "adding eslint asks in biome project", "event": "beforeShellExecution", "input": { "command": "pnpm add -D eslint eslint-config-next", "cwd": "${REPO_ROOT}/evals/fixtures/projects/pnpm-app" }, "expect": { "permission": "ask" } },
+  { "name": "npm install allowed outside pnpm projects", "event": "beforeShellExecution", "input": { "command": "npm install", "cwd": "${REPO_ROOT}/evals/fixtures/projects/uv-app" }, "expect": { "permission": "allow" } },
+
+  { "name": "system gradle denied in wrapper project", "event": "beforeShellExecution", "input": { "command": "gradle build", "cwd": "${REPO_ROOT}/evals/fixtures/projects/gradle-app" }, "expect": { "permission": "deny" } },
+  { "name": "maven denied in wrapper project", "event": "beforeShellExecution", "input": { "command": "mvn -q package", "cwd": "${REPO_ROOT}/evals/fixtures/projects/gradle-app" }, "expect": { "permission": "deny" } },
+  { "name": "gradle wrapper skips scaffold guard", "event": "beforeShellExecution", "input": { "command": "./gradlew build", "cwd": "${REPO_ROOT}/evals/fixtures/projects/gradle-app" }, "expect": { "permission": "allow" } },
+
+  { "name": "copier overwrite asks", "event": "beforeShellExecution", "input": { "command": "uvx copier copy --trust -w gh:acme/template ." }, "expect": { "permission": "ask" } },
+  { "name": "copier update allowed", "event": "beforeShellExecution", "input": { "command": "uvx copier update --trust" }, "expect": { "permission": "allow" } }
+]

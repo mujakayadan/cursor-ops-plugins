@@ -46,9 +46,13 @@ export function classifyToolName(name) {
   return "unknown";
 }
 
-export function evaluateShell(command, rules) {
+/**
+ * Match a shell command against rules. A rule may carry `when(payload)` to apply only in
+ * some contexts (e.g. inside a uv project); it receives the hook payload.
+ */
+export function evaluateShell(command, rules, payload = {}) {
   const normalized = (command ?? "").replace(/\s+/g, " ");
-  const matches = rules.filter((r) => r.re.test(normalized));
+  const matches = rules.filter((r) => r.re.test(normalized) && (!r.when || r.when(payload)));
   const permission = strictest(...matches.map((m) => m.decision));
   return { permission, matches };
 }

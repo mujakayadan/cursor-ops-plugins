@@ -1,0 +1,12 @@
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.jar binary
+*.png binary
+*.jpg binary
+*.ico binary
+{%- if language == 'python' %}
+uv.lock linguist-generated
+{%- elif language == 'typescript' %}
+pnpm-lock.yaml linguist-generated
+{%- endif %}

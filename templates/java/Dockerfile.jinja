@@ -1,0 +1,20 @@
+# syntax=docker/dockerfile:1
+FROM eclipse-temurin:{{ java_version }}-jdk AS build
+WORKDIR /app
+COPY gradlew settings.gradle.kts build.gradle.kts gradle.properties ./
+COPY gradle ./gradle
+RUN --mount=type=cache,target=/root/.gradle sh ./gradlew dependencies --no-daemon > /dev/null
+COPY src ./src
+RUN --mount=type=cache,target=/root/.gradle sh ./gradlew bootJar --no-daemon -x test \
+    && java -Djarmode=tools -jar build/libs/*-SNAPSHOT.jar extract --layers --launcher --destination extracted
+
+FROM eclipse-temurin:{{ java_version }}-jre
+RUN useradd --create-home --uid 10001 app
+WORKDIR /app
+COPY --from=build --chown=app:app /app/extracted/dependencies/ ./
+COPY --from=build --chown=app:app /app/extracted/spring-boot-loader/ ./
+COPY --from=build --chown=app:app /app/extracted/snapshot-dependencies/ ./
+COPY --from=build --chown=app:app /app/extracted/application/ ./
+USER app
+EXPOSE 8080
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "org.springframework.boot.loader.launch.JarLauncher"]

@@ -22,6 +22,12 @@ function readJson(path) {
   return JSON.parse(readFileSync(path, "utf8"));
 }
 
+/** Replace ${REPO_ROOT} and ${TMP} placeholders inside eval inputs. */
+function expandPlaceholders(value) {
+  const esc = (s) => JSON.stringify(s).slice(1, -1);
+  return JSON.parse(JSON.stringify(value).replaceAll("${REPO_ROOT}", esc(REPO_ROOT)).replaceAll("${TMP}", esc(tmpdir())));
+}
+
 function baseEnv(extra = {}) {
   return { ...process.env, OPS_CONFIG: FIXTURE_CONFIG, OPS_AUDIT_DIR: auditDir, OPS_ALLOW_PRIVILEGED: "", ...extra };
 }
@@ -44,7 +50,7 @@ function runPolicy() {
         const [cmd, ...args] = def.command.split(" ");
         const proc = spawnSync(cmd, args, {
           cwd: join(PLUGINS_DIR, plugin),
-          input: JSON.stringify({ hook_event_name: c.event, conversation_id: "eval", ...c.input }),
+          input: JSON.stringify({ hook_event_name: c.event, conversation_id: "eval", ...expandPlaceholders(c.input) }),
           env: baseEnv({ CURSOR_PLUGIN_ROOT: join(PLUGINS_DIR, plugin), ...(c.env ?? {}) }),
           encoding: "utf8",
           timeout: (def.timeout ?? 10) * 1000,
@@ -150,7 +156,7 @@ async function runContract() {
     }
     for (const c of cases.filter((x) => x.expectError)) {
       const server = c.server === "write" ? writePriv : read;
-      const res = await server.client.request("tools/call", { name: c.tool, arguments: c.arguments });
+      const res = await server.client.request("tools/call", { name: c.tool, arguments: expandPlaceholders(c.arguments) });
       const msg = errorText(res);
       record("contract", p(c.name), new RegExp(c.expectError).test(msg), msg.slice(0, 160));
     }

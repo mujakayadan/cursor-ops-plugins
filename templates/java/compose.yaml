@@ -1,0 +1,10 @@
+# Local development database. Spring Boot starts it on `./gradlew bootRun`.
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: app
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: local-dev-only
+    ports:
+      - "5432"

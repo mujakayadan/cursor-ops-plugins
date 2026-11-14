@@ -1,0 +1,10 @@
+[
+  { "name": "create rejects relative destination", "server": "write", "tool": "scaffold_create", "arguments": { "destination": "my-app", "language": "python", "profile": "simple", "project_name": "App" }, "expectError": "invalid format" },
+  { "name": "create rejects parent traversal", "server": "write", "tool": "scaffold_create", "arguments": { "destination": "/tmp/../etc/app", "language": "python", "profile": "simple", "project_name": "App" }, "expectError": "must not contain '..'" },
+  { "name": "create rejects profile from another language", "server": "write", "tool": "scaffold_create", "arguments": { "destination": "${TMP}/ops-scaffold-contract-x", "language": "typescript", "profile": "backend", "project_name": "App" }, "expectError": "not available for typescript" },
+  { "name": "create rejects option for another language", "server": "write", "tool": "scaffold_create", "arguments": { "destination": "${TMP}/ops-scaffold-contract-y", "language": "python", "profile": "simple", "project_name": "App", "java_version": "25" }, "expectError": "only applies to java" },
+  { "name": "create rejects non-empty destination", "server": "write", "tool": "scaffold_create", "arguments": { "destination": "${REPO_ROOT}", "language": "python", "profile": "simple", "project_name": "App" }, "expectError": "not empty" },
+  { "name": "create rejects unknown arguments", "server": "write", "tool": "scaffold_create", "arguments": { "destination": "/tmp/x", "language": "python", "profile": "simple", "project_name": "App", "overwrite": true }, "expectError": "not allowed" },
+  { "name": "inspect rejects non-generated project", "server": "read", "tool": "scaffold_inspect_project", "arguments": { "project": "${REPO_ROOT}" }, "expectError": "no .copier-answers.yml" },
+  { "name": "update rejects non-generated project", "server": "write", "tool": "scaffold_update", "arguments": { "project": "${REPO_ROOT}" }, "expectError": "no .copier-answers.yml" }
+]

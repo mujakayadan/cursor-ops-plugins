@@ -1,0 +1,9 @@
+# Next.js App Router conventions
+
+- Components are Server Components unless they need state, effects, event handlers or browser APIs; only then add `"use client"` at the top of a small leaf component.
+- Fetch data on the server (Server Components, route handlers, Server Actions). Do not fetch in `useEffect` for initial data.
+- Route handlers live in `app/**/route.ts` and return `Response`/`Response.json`. Validate request input before using it.
+- Never import server-only modules (secrets, database clients) into client components; mark such modules with `import "server-only"`.
+- Use `next/image`, `next/link` and `next/font` instead of raw `<img>`, `<a>` for internal links, or external font CSS.
+- Typed routes are on: broken `href`s fail `pnpm run typecheck`.
+- After changing routes or config, run `pnpm build` locally; it catches errors that dev mode tolerates.

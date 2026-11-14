@@ -1,0 +1,33 @@
+package {{ java_package }};
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.jdbc.core.simple.JdbcClient;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
+
+/** Boots the full application against a real Postgres. Skipped when Docker is unavailable. */
+@SpringBootTest
+@Testcontainers(disabledWithoutDocker = true)
+class ApplicationIntegrationTest {
+
+    @Container
+    @ServiceConnection
+    static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:18-alpine");
+
+    @Autowired
+    private JdbcClient jdbc;
+
+    @Test
+    void appliesFlywayMigrations() {
+        Integer applied = jdbc.sql("select count(*) from flyway_schema_history where success")
+                .query(Integer.class)
+                .single();
+        assertThat(applied).isPositive();
+    }
+}

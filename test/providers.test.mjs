@@ -3,9 +3,10 @@ import { describe, it } from "node:test";
 import aws, { hideEnvValues } from "../plugins/ops-aws/provider.mjs";
 import digitalocean from "../plugins/ops-digitalocean/provider.mjs";
 import github from "../plugins/ops-github/provider.mjs";
+import scaffold from "../plugins/ops-scaffold/provider.mjs";
 import vercel from "../plugins/ops-vercel/provider.mjs";
 
-const providers = [github, digitalocean, vercel, aws];
+const providers = [github, digitalocean, vercel, aws, scaffold];
 
 describe("provider catalogs", () => {
   for (const p of providers) {
@@ -26,6 +27,7 @@ describe("provider catalogs", () => {
       for (const r of p.shellRules) {
         assert.ok(["ask", "deny"].includes(r.decision), r.id);
         assert.ok(r.re instanceof RegExp && r.reason, r.id);
+        assert.ok(r.when === undefined || typeof r.when === "function", r.id);
       }
     });
   }

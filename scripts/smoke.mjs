@@ -14,6 +14,7 @@ const CALLS = {
   digitalocean: [["digitalocean_account_get", {}], ["digitalocean_droplet_list", {}], ["digitalocean_app_list", {}]],
   vercel: [["vercel_project_list", { limit: 5 }]],
   aws: [["aws_whoami", {}], ["aws_s3_buckets", {}]],
+  scaffold: [["scaffold_list_templates", {}]],
 };
 
 function shape(text) {

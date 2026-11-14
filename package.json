@@ -2,7 +2,7 @@
   "name": "cursor-ops-plugins",
   "version": "1.0.0",
   "private": true,
-  "description": "Enterprise Cursor plugin suite for GitHub, DigitalOcean, Vercel and AWS operations with tiered MCP servers, guardrail hooks, skills and evals.",
+  "description": "Enterprise Cursor plugin suite for GitHub, DigitalOcean, Vercel and AWS operations with tiered MCP servers, guardrail hooks, skills and evals, plus Copier project scaffolders.",
   "type": "module",
   "engines": { "node": ">=20" },
   "scripts": {
@@ -16,6 +16,8 @@
     "uninstall-local": "node scripts/install-local.mjs --uninstall",
     "doctor": "node scripts/doctor.mjs",
     "smoke": "node scripts/smoke.mjs",
-    "new-plugin": "node scripts/new-plugin.mjs"
+    "new-plugin": "node scripts/new-plugin.mjs",
+    "templates:render": "node scripts/test-templates.mjs --render-only",
+    "templates:test": "node scripts/test-templates.mjs"
   }
 }

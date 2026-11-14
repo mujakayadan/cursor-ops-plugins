@@ -1,0 +1,43 @@
+{
+  "name": {{ project_slug | tojson }},
+  "version": "0.1.0",
+  "private": true,
+  "description": {{ description | tojson }},
+{%- if license != "none" %}
+  "license": {{ license | tojson }},
+{%- endif %}
+  "type": "module",
+  "packageManager": "pnpm@11.20.0",
+  "engines": {
+    "node": ">={{ node_version }}"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "biome ci . && pnpm run typecheck && pnpm run test"
+  },
+  "dependencies": {
+    "next": "16.4.6",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.7",
+    "@j178/prek": "0.5.10",
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/react": "16.3.3",
+    "@types/node": "^{{ node_version }}",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "jsdom": "31.0.1",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}

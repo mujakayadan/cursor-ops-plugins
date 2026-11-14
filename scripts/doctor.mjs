@@ -44,7 +44,16 @@ for (const p of providerPlugins()) {
     row(provider.id, `${provider.bin} on PATH`, false, err.message);
     continue;
   }
+  for (const extra of (provider.requires ?? []).filter((b) => b !== provider.bin)) {
+    try {
+      resolveBinary(extra);
+      row(provider.id, `${extra} on PATH`, true);
+    } catch (err) {
+      row(provider.id, `${extra} on PATH`, false, err.message);
+    }
+  }
   const probe = provider.tools.find((t) => t.name === WHOAMI[provider.id]);
+  if (!probe) continue;
   for (const tier of ["read", "write"]) {
     try {
       const out = await probe.run({}, makeContext(provider, { ...probe, tier }, cfg));

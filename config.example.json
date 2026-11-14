@@ -47,6 +47,11 @@
         "write": { "args": [] }
       },
       "scope": { "allowedRegions": [], "allowedAccounts": [] }
+    },
+    "scaffold": {
+      "source": null,
+      "ref": null,
+      "scope": { "allowedRoots": [] }
     }
   }
 }

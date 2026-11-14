@@ -1,0 +1,4 @@
+# Dependencies allowed to run install scripts.
+onlyBuiltDependencies:
+  - "@j178/prek"
+  - sharp

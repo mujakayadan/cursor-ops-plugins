@@ -1,0 +1,20 @@
+---
+name: verify
+description: Verify changes in {{ project_name }} with Spotless, Error Prone, NullAway and JUnit through the Gradle wrapper. Use after implementing a change or when asked to validate the project.
+---
+
+# Verify {{ project_name }}
+
+Use `./gradlew` on macOS/Linux and `gradlew.bat` on Windows.
+
+```shell
+./gradlew spotlessApply
+./gradlew build
+```
+
+`build` compiles with Error Prone and NullAway, runs `spotlessCheck` and the test suite.
+{%- if profile == "backend" %} Integration tests are skipped when Docker is unavailable; say so in your report instead of claiming they passed.{% endif %}
+
+On failure: read the first error in the output, fix issues introduced by the current change, and rerun `./gradlew build`. For a single test: `./gradlew test --tests '*ClassName'`.
+
+Report pre-existing or environment-related failures separately instead of working around them (no `@SuppressWarnings`, `@Disabled` or excluded checks without the user's agreement).

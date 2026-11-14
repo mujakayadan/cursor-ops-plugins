@@ -1,0 +1,98 @@
+import com.diffplug.spotless.LineEnding
+import net.ltgt.gradle.errorprone.CheckSeverity
+import net.ltgt.gradle.errorprone.errorprone
+
+plugins {
+{%- if profile == "simple" %}
+    application
+{%- elif profile == "library" %}
+    `java-library`
+{%- else %}
+    java
+    alias(libs.plugins.spring.boot)
+{%- endif %}
+    alias(libs.plugins.errorprone)
+    alias(libs.plugins.spotless)
+}
+
+group = "{{ group_id }}"
+version = "0.1.0-SNAPSHOT"
+description = {{ description | tojson | replace('$', '\\$') }}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of({{ java_version }})
+    }
+{%- if profile == "library" %}
+    withSourcesJar()
+    withJavadocJar()
+{%- endif %}
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+{%- if profile == "backend" %}
+    implementation(platform(libs.spring.boot.bom))
+    implementation(libs.spring.boot.starter.webmvc)
+    implementation(libs.spring.boot.starter.actuator)
+    implementation(libs.spring.boot.starter.jdbc)
+    implementation(libs.spring.boot.starter.flyway)
+    implementation(libs.jspecify)
+    runtimeOnly(libs.flyway.postgresql)
+    runtimeOnly(libs.postgresql)
+    developmentOnly(platform(libs.spring.boot.bom))
+    developmentOnly(libs.spring.boot.docker.compose)
+
+    testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.spring.boot.starter.webmvc.test)
+    testImplementation(libs.spring.boot.testcontainers)
+    testImplementation(libs.testcontainers.junit)
+    testImplementation(libs.testcontainers.postgresql)
+    testRuntimeOnly(libs.junit.platform.launcher)
+{%- else %}
+    {% if profile == "library" %}api{% else %}implementation{% endif %}(libs.jspecify)
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.assertj)
+    testRuntimeOnly(libs.junit.platform.launcher)
+{%- endif %}
+
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nullaway)
+}
+{%- if profile == "simple" %}
+
+application {
+    mainClass = "{{ java_package }}.App"
+}
+{%- endif %}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.encoding = "UTF-8"
+    options.compilerArgs.addAll(listOf("-Xlint:all,-processing", "-Werror", "-parameters"))
+    options.errorprone {
+        disableWarningsInGeneratedCode = true
+        // Packages opt in with @NullMarked (see package-info.java).
+        check("NullAway", if (name == "compileJava") CheckSeverity.ERROR else CheckSeverity.OFF)
+        option("NullAway:OnlyNullMarked", "true")
+        option("NullAway:JSpecifyMode", "true")
+    }
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
+}
+
+spotless {
+    lineEndings = LineEnding.UNIX
+    java {
+        target("src/**/*.java")
+        palantirJavaFormat(libs.versions.palantir.java.format.get())
+        removeUnusedImports()
+        formatAnnotations()
+    }
+}

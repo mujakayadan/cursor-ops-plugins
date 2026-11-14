@@ -1,0 +1,47 @@
+# {{ project_name }}: agent guide
+
+{{ description }}
+
+## Stack
+
+- **Next.js 16** (App Router, React 19, Turbopack for dev and build), Node.js {{ node_version }}
+- **pnpm** for packages and scripts (`packageManager` pins the version)
+- **TypeScript 7** in strict mode, type-checked with `tsc --noEmit` (Next.js does not block builds on it; CI does)
+- **Biome** for linting, formatting and import sorting (no ESLint or Prettier)
+- **Vitest** with Testing Library and jsdom for tests
+- **prek** for git hooks (`.pre-commit-config.yaml`)
+
+## Layout
+
+- `app/`: routes, layouts and route handlers (`app/api/*/route.ts`)
+- `lib/`: framework-free logic, importable as `@/lib/...`
+- `*.test.ts(x)`: tests sit next to the code they cover
+- `public/`: static assets
+
+## Commands
+
+```shell
+pnpm install
+pnpm dev                    # http://localhost:3000
+pnpm run format             # biome check --write (format + lint fixes + import sorting)
+pnpm run lint               # biome check
+pnpm run typecheck          # next typegen && tsc --noEmit
+pnpm test                   # vitest run
+pnpm run check              # biome ci + typecheck + tests
+pnpm build
+pnpm exec prek run --all-files
+```
+
+Verification sequence: `pnpm run check && pnpm build`
+
+## Conventions
+
+- Use pnpm only (`pnpm add`, `pnpm add -D`, `pnpm remove`, `pnpm dlx`). Never run npm or yarn here; never hand-edit `pnpm-lock.yaml`.
+- Server Components by default; add `"use client"` only for interactivity, state or browser APIs, and keep client components small.
+- Fetch data in Server Components or route handlers, not in client effects.
+- Keep business logic in `lib/` as plain functions and test it directly.
+- Read server-only configuration from `process.env` in server code; expose values to the browser only through `NEXT_PUBLIC_*` variables.
+- No `any`; prefer `unknown` plus narrowing. Exhaustive `switch` statements end in a `never` check.
+- Typed routes are enabled: link with `<Link href="/path">` and let `tsc` catch broken routes.
+
+{% include 'templates/_shared/agents-common.md.jinja' %}

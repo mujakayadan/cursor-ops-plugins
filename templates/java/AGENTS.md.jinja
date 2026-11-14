@@ -1,0 +1,58 @@
+# {{ project_name }}: agent guide
+
+{{ description }}
+
+## Stack
+
+- Java {{ java_version }} via a **Gradle toolchain** (downloaded automatically if missing)
+- **Gradle 9** wrapper, Kotlin syntax (`build.gradle.kts`), versions in `gradle/libs.versions.toml`
+- **Spotless** with palantir-java-format for formatting
+- **Error Prone** + **NullAway** for static analysis; packages are `@NullMarked` (JSpecify)
+- **JUnit 6** + **AssertJ** for tests
+{%- if profile == "backend" %}
+- **Spring Boot 4** (Web MVC, Actuator, JDBC, Flyway, Postgres); Testcontainers for integration tests; `compose.yaml` for local Postgres
+{%- endif %}
+- **prek** for git hooks (`.pre-commit-config.yaml`)
+
+## Layout
+
+- `src/main/java/{{ java_package_path }}/`: production code (`{{ java_package }}`)
+- `src/test/java/{{ java_package_path }}/`: tests
+{%- if profile == "backend" %}
+- `src/main/resources/application.yaml`: configuration
+- `src/main/resources/db/migration/`: Flyway migrations (`V<n>__description.sql`)
+{%- endif %}
+
+## Commands
+
+Use `./gradlew` (macOS/Linux) or `gradlew.bat` (Windows).
+
+```shell
+./gradlew build                 # compile + Error Prone/NullAway + spotlessCheck + tests
+./gradlew spotlessApply         # format
+./gradlew test --tests '*GreeterTest'
+{%- if profile == "simple" %}
+./gradlew run --args="Ada"
+{%- elif profile == "backend" %}
+./gradlew bootRun               # starts compose.yaml Postgres automatically (needs Docker)
+{%- endif %}
+uvx prek run --all-files
+```
+
+Verification sequence: `./gradlew spotlessApply build`
+
+## Conventions
+
+- Declare dependencies in `gradle/libs.versions.toml` and reference them as `libs.*`; never hardcode versions in `build.gradle.kts`.
+{%- if profile == "backend" %} Spring Boot manages most versions through its BOM; add catalog entries without a version for managed artifacts.{% endif %}
+- Always use the wrapper; never a system `gradle` or Maven.
+- Every package has a `package-info.java` with `@NullMarked`. Mark nullable values with `org.jspecify.annotations.Nullable` instead of suppressing NullAway.
+- Do not silence Error Prone findings with `@SuppressWarnings` without a comment explaining why.
+- Prefer records and immutable types; keep classes package-private unless they are API.
+{%- if profile == "backend" %}
+- Constructor injection only (no field `@Autowired` in production code). Keep controllers thin and put logic in services.
+- Schema changes go in a new Flyway migration; never edit an applied one.
+- Use `@WebMvcTest` slices for controllers and `@SpringBootTest` + Testcontainers for integration tests.
+{%- endif %}
+
+{% include 'templates/_shared/agents-common.md.jinja' %}

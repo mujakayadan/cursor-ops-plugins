@@ -1,0 +1,29 @@
+# Run with prek (https://prek.j178.dev): `uvx prek run --all-files`.
+default_install_hook_types: [pre-commit, pre-push]
+
+repos:
+  - repo: builtin
+    hooks:
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+        exclude: \.bat$
+
+  - repo: local
+    hooks:
+      - id: spotless
+        name: spotless (palantir-java-format)
+        entry: java scripts/gradle.java spotlessApply --quiet
+        language: system
+        pass_filenames: false
+        types: [java]
+      - id: gradle-check
+        name: gradle check
+        entry: java scripts/gradle.java check --quiet
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

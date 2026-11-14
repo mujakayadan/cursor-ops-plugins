@@ -1,0 +1,9 @@
+# Spring Boot conventions
+
+- Constructor injection only in production code; no field `@Autowired`.
+- Controllers stay thin: validate input, delegate to a service, return records or `ResponseEntity`.
+- Data access goes through `JdbcClient`; SQL lives next to the repository class that runs it.
+- Schema changes go in a new `src/main/resources/db/migration/V<n>__description.sql`. Never edit an applied migration.
+- Configuration goes in `application.yaml` with `${ENV_VAR:default}` placeholders; bind related settings with `@ConfigurationProperties` records.
+- Tests: `@WebMvcTest` + `MockMvcTester` for controllers; `@SpringBootTest` with a Testcontainers `@ServiceConnection` for integration tests.
+- `./gradlew bootRun` starts `compose.yaml` services through Spring Boot Docker Compose support.

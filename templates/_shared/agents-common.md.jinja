@@ -1,0 +1,13 @@
+## Working agreements
+
+- Run the full verification sequence above before declaring work done. Fix failures you caused; report pre-existing or environment failures separately.
+- Add or update tests with every behavior change.
+- Keep imports at the top of the module.
+- Never commit `.env` files, credentials, tokens or generated secrets.
+- This project was generated from a Copier template. Do not edit `.copier-answers.yml`; pull template improvements with `uvx copier update --trust` on a clean working tree.
+{%- if agents and "context7" in mcp_servers %}
+- Use the Context7 MCP server when you need current library or API documentation.
+{%- endif %}
+{%- if agents and "github" in mcp_servers %}
+- The GitHub MCP server can write. Confirm consequential write operations (merges, releases, settings) with the user first.
+{%- endif %}

@@ -54,12 +54,13 @@ function describe(tool) {
 export function makeContext(provider, tool, cfg = loadConfig()) {
   const creds = tierCredentials(provider.id, tool.tier, cfg);
   const pcfg = providerConfig(provider.id, cfg);
-  const cli = async (args, { okCodes = [0], input, parse = "auto", withBaseArgs = true, timeoutMs = cfg.execution.timeoutMs } = {}) => {
+  const cli = async (args, { okCodes = [0], input, parse = "auto", withBaseArgs = true, timeoutMs = cfg.execution.timeoutMs, cwd } = {}) => {
     const base = withBaseArgs ? (provider.baseArgs ?? []) : [];
     const result = await runCommand(provider.bin, [...creds.args, ...base, ...args], {
       env: { ...(provider.baseEnv ?? {}), ...creds.env },
       timeoutMs,
       input,
+      cwd,
     });
     if (result.timedOut) throw new ToolError(`${provider.bin} timed out after ${timeoutMs}ms`);
     if (!okCodes.includes(result.code)) {

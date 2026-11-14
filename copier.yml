@@ -1,0 +1,232 @@
+# Project scaffolds for Python, TypeScript and Java.
+#   uvx copier copy --trust gh:mujakayadan/cursor-ops-plugins my-project
+#   uvx copier update --trust            (from inside a generated project)
+# The ops-scaffold plugin drives this file through its scaffold_create / scaffold_update tools.
+
+_min_copier_version: "9.10.0"
+_subdirectory: "templates/{{ language }}"
+_templates_suffix: .jinja
+_answers_file: .copier-answers.yml
+
+_exclude:
+  - "~*"
+  - "*.py[co]"
+  - __pycache__
+  - .DS_Store
+  - "{% if license == 'none' %}/LICENSE{% endif %}"
+  - "{% if 'cursor' not in agents %}/.cursor{% endif %}"
+  - "{% if 'cursor' in agents and not mcp_servers %}/.cursor/mcp.json{% endif %}"
+  # Cursor also reads .claude/skills, so skills are written once.
+  - "{% if 'claude' in agents %}/.cursor/skills{% endif %}"
+  - "{% if 'claude' not in agents %}/CLAUDE.md{% endif %}"
+  - "{% if 'claude' not in agents %}/.claude{% endif %}"
+  - "{% if 'claude' not in agents or not mcp_servers %}/.mcp.json{% endif %}"
+  - "{% if not github_ci %}/.github/workflows{% endif %}"
+  - "{% if not docker %}/Dockerfile{% endif %}"
+  - "{% if not docker %}/.dockerignore{% endif %}"
+  # python
+  - "{% if language == 'python' and profile != 'backend' %}/.env.example{% endif %}"
+  - "{% if language == 'python' and profile != 'backend' %}/alembic.ini{% endif %}"
+  - "{% if language == 'python' and profile != 'backend' %}/alembic{% endif %}"
+  - "{% if language == 'python' and profile != 'backend' %}/src/{{ package_name }}/config.py{% endif %}"
+  - "{% if language == 'python' and profile != 'backend' %}/src/{{ package_name }}/database.py{% endif %}"
+  - "{% if language == 'python' and profile == 'library' %}/src/{{ package_name }}/main.py{% endif %}"
+  - "{% if language == 'python' and profile != 'library' %}/src/{{ package_name }}/py.typed{% endif %}"
+  - "{% if language == 'python' and profile != 'backend' %}/.cursor/rules/backend.mdc{% endif %}"
+  - "{% if language == 'python' and profile != 'backend' %}/.claude/rules/backend.md{% endif %}"
+  # java
+  - "{% if language == 'java' and profile != 'backend' %}/compose.yaml{% endif %}"
+  - "{% if language == 'java' and profile != 'backend' %}/src/main/resources{% endif %}"
+  - "{% if language == 'java' and profile != 'backend' %}/src/main/java/{{ java_package_path }}/web{% endif %}"
+  - "{% if language == 'java' and profile != 'backend' %}/src/test/java/{{ java_package_path }}/web{% endif %}"
+  - "{% if language == 'java' and profile != 'backend' %}/src/test/java/{{ java_package_path }}/ApplicationIntegrationTest.java{% endif %}"
+  - "{% if language == 'java' and profile == 'backend' %}/src/main/java/{{ java_package_path }}/Greeter.java{% endif %}"
+  - "{% if language == 'java' and profile == 'backend' %}/src/test/java/{{ java_package_path }}/GreeterTest.java{% endif %}"
+  - "{% if language == 'java' and profile != 'simple' %}/src/main/java/{{ java_package_path }}/App.java{% endif %}"
+  - "{% if language == 'java' and profile != 'backend' %}/src/main/java/{{ java_package_path }}/Application.java{% endif %}"
+  - "{% if language == 'java' and profile != 'backend' %}/.cursor/rules/spring.mdc{% endif %}"
+  - "{% if language == 'java' and profile != 'backend' %}/.claude/rules/spring.md{% endif %}"
+
+_tasks:
+  - command: [git, init, -b, main]
+    when: "{{ initialize_git and _copier_operation == 'copy' }}"
+  - command: [git, add, --chmod=+x, gradlew]
+    when: "{{ language == 'java' and initialize_git and _copier_operation == 'copy' }}"
+  - command: [uv, sync]
+    when: "{{ language == 'python' and install_deps }}"
+  - command: [uv, run, prek, install]
+    when: "{{ language == 'python' and install_deps and initialize_git and _copier_operation == 'copy' }}"
+  - command: [pnpm, install]
+    when: "{{ language == 'typescript' and install_deps }}"
+  - command: [pnpm, exec, prek, install]
+    when: "{{ language == 'typescript' and install_deps and initialize_git and _copier_operation == 'copy' }}"
+  - command: [uvx, prek, install]
+    when: "{{ language == 'java' and install_deps and initialize_git and _copier_operation == 'copy' }}"
+
+_message_after_copy: |
+  Created {{ project_name }} ({{ language }}/{{ profile }}) in {{ _copier_conf.dst_path }}.
+  Next: read AGENTS.md for the project commands.
+
+language:
+  type: str
+  help: Language
+  choices:
+    Python: python
+    TypeScript: typescript
+    Java: java
+
+python_profile:
+  type: str
+  help: Python profile
+  when: "{{ language == 'python' }}"
+  choices:
+    Simple application (CLI entry point): simple
+    FastAPI backend (SQLModel, Alembic): backend
+    Library (typed, publishable): library
+  default: simple
+
+typescript_profile:
+  type: str
+  help: TypeScript profile
+  when: "{{ language == 'typescript' }}"
+  choices:
+    Next.js app (App Router, Turbopack): next
+  default: next
+
+java_profile:
+  type: str
+  help: Java profile
+  when: "{{ language == 'java' }}"
+  choices:
+    Simple application (main class): simple
+    Spring Boot backend (Web MVC, JDBC, Flyway, Postgres): backend
+    Library: library
+  default: simple
+
+profile:
+  type: str
+  when: false
+  default: "{% if language == 'python' %}{{ python_profile }}{% elif language == 'typescript' %}{{ typescript_profile }}{% else %}{{ java_profile }}{% endif %}"
+
+project_name:
+  type: str
+  help: Human-readable project name
+  default: My Project
+  validator: "{% if not project_name.strip() %}Project name is required{% endif %}"
+
+project_slug:
+  type: str
+  help: Repository / package name (kebab-case)
+  default: "{{ project_name | lower | trim | replace(' ', '-') | replace('_', '-') }}"
+  validator: "{% if not (project_slug | regex_search('^[a-z][a-z0-9]*(-[a-z0-9]+)*$')) %}Use lowercase kebab-case, starting with a letter{% endif %}"
+
+description:
+  type: str
+  help: One-line description
+  default: "{{ project_name }}."
+
+author_name:
+  type: str
+  help: Author name
+  default: Your Name
+
+author_email:
+  type: str
+  help: Author email (may be blank)
+  default: ""
+
+license:
+  type: str
+  help: License
+  choices:
+    MIT: MIT
+    Apache 2.0: Apache-2.0
+    No license file (proprietary): none
+  default: MIT
+
+package_name:
+  type: str
+  help: Importable Python package name
+  when: "{{ language == 'python' }}"
+  default: "{{ project_slug | replace('-', '_') }}"
+  validator: "{% if language == 'python' and not (package_name | regex_search('^[a-z][a-z0-9_]*$')) %}Use a lowercase Python identifier{% endif %}"
+
+python_version:
+  type: str
+  help: Python version
+  when: "{{ language == 'python' }}"
+  choices: ["3.14", "3.13", "3.12"]
+  default: "3.13"
+
+node_version:
+  type: str
+  help: Node.js major version
+  when: "{{ language == 'typescript' }}"
+  choices: ["24", "22"]
+  default: "24"
+
+group_id:
+  type: str
+  help: Java group id (reverse domain)
+  when: "{{ language == 'java' }}"
+  default: com.example
+  validator: "{% if language == 'java' and not (group_id | regex_search('^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$')) %}Use a reverse-domain id such as com.example{% endif %}"
+
+java_package:
+  type: str
+  help: Java base package
+  when: "{{ language == 'java' }}"
+  default: "{{ group_id }}.{{ project_slug | replace('-', '') }}"
+  validator: "{% if language == 'java' and not (java_package | regex_search('^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$')) %}Use a dotted lowercase package name{% endif %}"
+
+java_package_path:
+  type: str
+  when: false
+  default: "{{ java_package | replace('.', '/') }}"
+
+java_version:
+  type: str
+  help: Java version (Gradle toolchain; downloaded automatically if missing)
+  when: "{{ language == 'java' }}"
+  choices: ["25", "21"]
+  default: "25"
+
+agents:
+  type: str
+  help: Agent clients to configure (AGENTS.md is always generated)
+  multiselect: true
+  choices:
+    Cursor: cursor
+    Claude Code: claude
+  default: [cursor, claude]
+
+mcp_servers:
+  type: str
+  help: Remote MCP servers for the selected agent clients (URLs only, no tokens)
+  multiselect: true
+  when: "{{ agents | length > 0 }}"
+  choices:
+    Context7 documentation: context7
+    GitHub (read and write; review approvals): github
+  default: [context7]
+
+docker:
+  type: bool
+  help: Add a Dockerfile
+  when: "{{ profile in ['backend', 'next'] }}"
+  default: "{{ profile in ['backend', 'next'] }}"
+
+github_ci:
+  type: bool
+  help: Add GitHub Actions CI
+  default: true
+
+initialize_git:
+  type: bool
+  help: Initialize a git repository (main branch) and install git hooks
+  default: true
+
+install_deps:
+  type: bool
+  help: Install dependencies after generation
+  default: true

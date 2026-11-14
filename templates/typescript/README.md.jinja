@@ -1,0 +1,21 @@
+# {{ project_name }}
+
+{{ description }}
+
+## Development
+
+Requires Node.js {{ node_version }}+ and pnpm (`corepack enable`).
+
+```shell
+pnpm install
+pnpm dev
+pnpm run check
+```
+
+See [AGENTS.md](AGENTS.md) for the full command reference and conventions.
+{%- if license != "none" %}
+
+## License
+
+{{ license }}. See [LICENSE](LICENSE).
+{%- endif %}

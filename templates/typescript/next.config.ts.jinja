@@ -1,0 +1,11 @@
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+{%- if docker %}
+  output: "standalone",
+{%- endif %}
+  typedRoutes: true,
+  poweredByHeader: false,
+};
+
+export default nextConfig;

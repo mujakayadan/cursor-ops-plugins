@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "ops-scaffold-read": {
+      "command": "node",
+      "args": ["${CURSOR_PLUGIN_ROOT}/lib/core/run-mcp.mjs", "--tier", "read"]
+    },
+    "ops-scaffold-write": {
+      "command": "node",
+      "args": ["${CURSOR_PLUGIN_ROOT}/lib/core/run-mcp.mjs", "--tier", "write"]
+    }
+  }
+}

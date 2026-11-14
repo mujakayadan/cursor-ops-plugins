@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: {{ project_slug }}
+  # Local runs: `./gradlew bootRun` starts compose.yaml and wires the datasource automatically.
+  # Elsewhere set DATABASE_URL, DATABASE_USERNAME and DATABASE_PASSWORD.
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/app}
+    username: ${DATABASE_USERNAME:app}
+    password: ${DATABASE_PASSWORD:}
+  docker:
+    compose:
+      lifecycle-management: start-only
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+server:
+  shutdown: graceful
