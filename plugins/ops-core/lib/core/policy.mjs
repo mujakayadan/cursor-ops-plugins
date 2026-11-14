@@ -1,4 +1,4 @@
-// GENERATED from packages/core/policy.mjs by scripts/sync-core.mjs. Edit the source, then run `npm run sync`.
+// GENERATED from packages/core/policy.mjs by scripts/sync-core.mjs. Edit the source, then run `pnpm run sync`.
 import { privilegedEnabled } from "./config.mjs";
 import { redactDeep, truncate } from "./redact.mjs";
 

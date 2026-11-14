@@ -17,9 +17,12 @@
 
   { "name": "npm install denied in pnpm project", "event": "beforeShellExecution", "input": { "command": "npm install lodash", "cwd": "${REPO_ROOT}/evals/fixtures/projects/pnpm-app" }, "expect": { "permission": "deny" } },
   { "name": "yarn add denied in pnpm project", "event": "beforeShellExecution", "input": { "command": "cd web && yarn add zod", "cwd": "${REPO_ROOT}/evals/fixtures/projects/pnpm-app" }, "expect": { "permission": "deny" } },
+  { "name": "bun add denied in pnpm project", "event": "beforeShellExecution", "input": { "command": "bun add zod", "cwd": "${REPO_ROOT}/evals/fixtures/projects/pnpm-app" }, "expect": { "permission": "deny" } },
+  { "name": "npx denied in pnpm project", "event": "beforeShellExecution", "input": { "command": "npx biome check .", "cwd": "${REPO_ROOT}/evals/fixtures/projects/pnpm-app" }, "expect": { "permission": "deny" } },
+  { "name": "pnpm exec allowed in pnpm project", "event": "beforeShellExecution", "input": { "command": "pnpm exec biome check .", "cwd": "${REPO_ROOT}/evals/fixtures/projects/pnpm-app" }, "expect": { "permission": "allow" } },
   { "name": "pnpm add allowed in pnpm project", "event": "beforeShellExecution", "input": { "command": "pnpm add zod", "cwd": "${REPO_ROOT}/evals/fixtures/projects/pnpm-app" }, "expect": { "permission": "allow" } },
   { "name": "adding eslint asks in biome project", "event": "beforeShellExecution", "input": { "command": "pnpm add -D eslint eslint-config-next", "cwd": "${REPO_ROOT}/evals/fixtures/projects/pnpm-app" }, "expect": { "permission": "ask" } },
-  { "name": "npm install allowed outside pnpm projects", "event": "beforeShellExecution", "input": { "command": "npm install", "cwd": "${REPO_ROOT}/evals/fixtures/projects/uv-app" }, "expect": { "permission": "allow" } },
+  { "name": "npm install allowed outside pnpm projects", "event": "beforeShellExecution", "input": { "command": "npm install", "cwd": "${TMP}" }, "expect": { "permission": "allow" } },
 
   { "name": "system gradle denied in wrapper project", "event": "beforeShellExecution", "input": { "command": "gradle build", "cwd": "${REPO_ROOT}/evals/fixtures/projects/gradle-app" }, "expect": { "permission": "deny" } },
   { "name": "maven denied in wrapper project", "event": "beforeShellExecution", "input": { "command": "mvn -q package", "cwd": "${REPO_ROOT}/evals/fixtures/projects/gradle-app" }, "expect": { "permission": "deny" } },

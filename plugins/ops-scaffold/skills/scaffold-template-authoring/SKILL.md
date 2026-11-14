@@ -16,14 +16,16 @@ Templates live in the `cursor-ops-plugins` repo:
 - Profile-specific files are dropped through `_exclude` entries guarded by `language == ... and profile ...`. Add one for every new profile-only file.
 - Generated code must pass the project's own formatter as rendered. Keep lines that interpolate user input (names, descriptions) on their own lines or behind a magic trailing comma.
 - Wrapper files that end with an `{% include %}` must not have a trailing newline. Keep all template files LF.
-- Pin exact tool versions (npm and the Gradle catalog) or lower bounds (Python). When bumping a version, update `plugins/ops-scaffold/provider.mjs` `CATALOG` if the options changed.
+- The templates are a standard, not a menu. Don't add questions for tool or runtime choices. Every project uses one package manager per language (uv, pnpm, the Gradle wrapper) and one runtime version.
+- Runtime versions (`python_version`, `node_version`, `java_version`) are computed `when: false` values in `copier.yml`. To bump one, change its default and the matching `runtime` entry in `plugins/ops-scaffold/provider.mjs` `CATALOG`. `copier update` then rolls it out to existing projects.
+- Pin exact tool versions (`package.json` and the Gradle catalog) or lower bounds (Python).
 - A new profile needs a choice in `copier.yml`, an entry in `CATALOG`, a case in `scripts/test-templates.mjs`, and a policy or contract eval if the tool surface changes.
 
 ## Prove it
 ```shell
-npm run templates:render    # structure assertions for every case (fast)
-npm run templates:test      # renders every case and runs its full toolchain (uv / pnpm / gradle)
-npm run ci                  # plugin validation, unit tests, evals
+pnpm run templates:render    # structure assertions for every case (fast)
+pnpm run templates:test      # renders every case and runs its full toolchain (uv / pnpm / gradle)
+pnpm run ci                  # plugin validation, unit tests, evals
 ```
 Use `node scripts/test-templates.mjs --only java/backend --keep` to inspect a single rendered case.
 

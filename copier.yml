@@ -153,16 +153,12 @@ package_name:
 
 python_version:
   type: str
-  help: Python version
-  when: "{{ language == 'python' }}"
-  choices: ["3.14", "3.13", "3.12"]
+  when: false
   default: "3.13"
 
 node_version:
   type: str
-  help: Node.js major version
-  when: "{{ language == 'typescript' }}"
-  choices: ["24", "22"]
+  when: false
   default: "24"
 
 group_id:
@@ -186,9 +182,7 @@ java_package_path:
 
 java_version:
   type: str
-  help: Java version (Gradle toolchain; downloaded automatically if missing)
-  when: "{{ language == 'java' }}"
-  choices: ["25", "21"]
+  when: false
   default: "25"
 
 agents:

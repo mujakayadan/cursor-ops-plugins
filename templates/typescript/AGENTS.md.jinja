@@ -36,7 +36,7 @@ Verification sequence: `pnpm run check && pnpm build`
 
 ## Conventions
 
-- Use pnpm only (`pnpm add`, `pnpm add -D`, `pnpm remove`, `pnpm dlx`). Never run npm or yarn here; never hand-edit `pnpm-lock.yaml`.
+- Use pnpm only (`pnpm add`, `pnpm add -D`, `pnpm remove`, `pnpm exec`, `pnpm dlx`). Never run npm, npx, yarn or bun here; never hand-edit `pnpm-lock.yaml`.
 - Server Components by default; add `"use client"` only for interactivity, state or browser APIs, and keep client components small.
 - Fetch data in Server Components or route handlers, not in client effects.
 - Keep business logic in `lib/` as plain functions and test it directly.

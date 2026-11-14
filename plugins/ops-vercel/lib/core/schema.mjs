@@ -1,4 +1,4 @@
-// GENERATED from packages/core/schema.mjs by scripts/sync-core.mjs. Edit the source, then run `npm run sync`.
+// GENERATED from packages/core/schema.mjs by scripts/sync-core.mjs. Edit the source, then run `pnpm run sync`.
 function typeOf(value) {
   if (Array.isArray(value)) return "array";
   if (value === null) return "null";

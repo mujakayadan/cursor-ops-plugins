@@ -1,4 +1,4 @@
-// GENERATED from packages/core/config.mjs by scripts/sync-core.mjs. Edit the source, then run `npm run sync`.
+// GENERATED from packages/core/config.mjs by scripts/sync-core.mjs. Edit the source, then run `pnpm run sync`.
 import { readFileSync, existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";

@@ -1,4 +1,4 @@
-// GENERATED from packages/core/schema-helpers.mjs by scripts/sync-core.mjs. Edit the source, then run `npm run sync`.
+// GENERATED from packages/core/schema-helpers.mjs by scripts/sync-core.mjs. Edit the source, then run `pnpm run sync`.
 /** An expected, user-facing tool failure (bad input, policy, CLI error). */
 export class ToolError extends Error {}
 

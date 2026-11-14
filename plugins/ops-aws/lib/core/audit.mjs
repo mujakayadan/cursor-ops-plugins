@@ -1,4 +1,4 @@
-// GENERATED from packages/core/audit.mjs by scripts/sync-core.mjs. Edit the source, then run `npm run sync`.
+// GENERATED from packages/core/audit.mjs by scripts/sync-core.mjs. Edit the source, then run `pnpm run sync`.
 import { appendFileSync, mkdirSync } from "node:fs";
 import { hostname, userInfo } from "node:os";
 import { join } from "node:path";

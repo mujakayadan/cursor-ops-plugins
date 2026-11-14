@@ -1,4 +1,4 @@
-// GENERATED from packages/core/redact.mjs by scripts/sync-core.mjs. Edit the source, then run `npm run sync`.
+// GENERATED from packages/core/redact.mjs by scripts/sync-core.mjs. Edit the source, then run `pnpm run sync`.
 const SECRET_PATTERNS = [
   { kind: "private-key", re: /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/g },
   { kind: "aws-access-key-id", re: /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g },

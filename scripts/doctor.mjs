@@ -19,7 +19,7 @@ for (const p of listPlugins()) {
   try {
     linked = lstatSync(link).isSymbolicLink() || existsSync(join(link, ".cursor-plugin", "plugin.json"));
   } catch {}
-  row("install", p, linked || null, linked ? link : "not installed — run `npm run install-local`");
+  row("install", p, linked || null, linked ? link : "not installed — run `pnpm run install-local`");
 }
 
 const anyProvider = providerPlugins()[0];

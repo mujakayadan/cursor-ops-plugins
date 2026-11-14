@@ -44,7 +44,7 @@ export function resolveBinary(name) {
       return result;
     }
   }
-  throw new Error(`Required CLI "${name}" was not found on PATH. Run \`npm run doctor\` in the ops plugins repo.`);
+  throw new Error(`Required CLI "${name}" was not found on PATH. Run \`pnpm run doctor\` in the ops plugins repo.`);
 }
 
 /**

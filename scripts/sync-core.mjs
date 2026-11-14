@@ -6,7 +6,7 @@ import { CORE_DIR, PLUGINS_DIR, listPlugins } from "./lib.mjs";
 const PROVIDER_ONLY = new Set(["run-mcp.mjs", "run-guard.mjs"]);
 const check = process.argv.includes("--check");
 const sources = readdirSync(CORE_DIR).filter((f) => f.endsWith(".mjs"));
-const header = (file) => `// GENERATED from packages/core/${file} by scripts/sync-core.mjs. Edit the source, then run \`npm run sync\`.\n`;
+const header = (file) => `// GENERATED from packages/core/${file} by scripts/sync-core.mjs. Edit the source, then run \`pnpm run sync\`.\n`;
 
 let drift = 0;
 for (const plugin of listPlugins()) {
@@ -34,7 +34,7 @@ for (const plugin of listPlugins()) {
 }
 
 if (check && drift) {
-  console.error(`\n${drift} vendored core file(s) out of date. Run \`npm run sync\`.`);
+  console.error(`\n${drift} vendored core file(s) out of date. Run \`pnpm run sync\`.`);
   process.exit(1);
 }
 console.log(check ? "vendored core is in sync" : `synced core into ${listPlugins().length} plugins (${drift} file(s) updated)`);

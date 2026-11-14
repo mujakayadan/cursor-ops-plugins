@@ -20,7 +20,9 @@ Ask only what the request leaves open. Use one AskQuestion form where available:
 | Agent clients | never ask unless the user mentions it | `cursor`, `claude` |
 | MCP servers | user mentions docs or GitHub automation | `context7` |
 | License | user mentions open source or publishing | `MIT` |
-| Language extras | user states a version or a package/group id | template defaults (Python 3.13, Node 24, Java 25, `com.example`) |
+| Package or group id | user states one | derived from the slug; Java group `com.example` |
+
+Runtime versions are fixed by the standard (Python 3.13, Node 24, Java 25) and are not options. If the user asks for a different one, say it is the team standard and that changing it is a template change (`scaffold-template-authoring`).
 
 Map intent to profiles:
 - CLI tool or script: `python/simple` or `java/simple`

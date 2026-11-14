@@ -18,13 +18,13 @@ export const CATALOG = {
     },
     toolchain: "uv, Ruff, ty, pytest, prek",
     requires: ["uv"],
-    versions: { python_version: ["3.14", "3.13", "3.12"] },
+    runtime: { python_version: "3.13" },
   },
   typescript: {
     profiles: { next: "Next.js 16 App Router app (React 19, Turbopack)" },
     toolchain: "pnpm, Biome, TypeScript 7, Vitest, prek",
     requires: ["node", "pnpm"],
-    versions: { node_version: ["24", "22"] },
+    runtime: { node_version: "24" },
   },
   java: {
     profiles: {
@@ -34,7 +34,7 @@ export const CATALOG = {
     },
     toolchain: "Gradle 9 wrapper (Kotlin DSL, version catalog), Spotless/palantir-java-format, Error Prone + NullAway, JUnit 6",
     requires: ["java", "uv"],
-    versions: { java_version: ["25", "21"] },
+    runtime: { java_version: "25" },
   },
 };
 
@@ -143,7 +143,7 @@ export function buildAnswers(a) {
     initialize_git: a.initialize_git,
     install_deps: a.install_deps,
   };
-  const languageOnly = { python: ["package_name", "python_version"], typescript: ["node_version"], java: ["group_id", "java_package", "java_version"] };
+  const languageOnly = { python: ["package_name"], java: ["group_id", "java_package"] };
   for (const [language, keys] of Object.entries(languageOnly)) {
     for (const key of keys) {
       if (a[key] === undefined) continue;
@@ -222,11 +222,8 @@ const tools = [
         initialize_git: bool("git init (main) and install prek hooks.", true),
         install_deps: bool("Install dependencies after generation.", true),
         package_name: str("Python import package name.", { pattern: "^[a-z][a-z0-9_]{0,59}$" }),
-        python_version: oneOf(CATALOG.python.versions.python_version, "Python version."),
-        node_version: oneOf(CATALOG.typescript.versions.node_version, "Node.js major version."),
         group_id: str("Java group id.", { pattern: "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$" }),
         java_package: str("Java base package.", { pattern: "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$" }),
-        java_version: oneOf(CATALOG.java.versions.java_version, "Java toolchain version."),
         ref,
       },
       ["destination", "language", "profile", "project_name"],
@@ -355,6 +352,13 @@ const shellRules = [
     when: inProject("pnpm-lock.yaml"),
     re: new RegExp(`${IN}(npm|yarn|bun)(\\.cmd|\\.exe|\\.ps1)? (install|i|ci|add|remove|rm|uninstall|un|update|up|upgrade)\\b`, "i"),
     reason: "This is a pnpm project: use `pnpm add` / `pnpm add -D` / `pnpm remove` / `pnpm install`. Other package managers corrupt pnpm-lock.yaml.",
+  },
+  {
+    id: "pnpm-project-other-runners",
+    decision: "deny",
+    when: inProject("pnpm-lock.yaml"),
+    re: new RegExp(`${IN}(npx|bunx)(\\.cmd|\\.exe|\\.ps1)?\\s`, "i"),
+    reason: "This is a pnpm project: use `pnpm exec <bin>` for installed tools and `pnpm dlx <pkg>` for one-off packages.",
   },
   {
     id: "biome-project-eslint-prettier",

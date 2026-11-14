@@ -24,6 +24,14 @@ function copierChoices(question) {
   return values;
 }
 
+/** Default of a computed (never asked) Copier question. */
+function copierDefault(question) {
+  const block = copierYml.split(/\n(?=[A-Za-z_]+:)/).find((b) => b.startsWith(`${question}:`));
+  assert.ok(block, `copier.yml has no ${question} question`);
+  assert.match(block, /\n {2}when: false\n/, `${question} must be computed, not asked`);
+  return block.match(/\n {2}default: "?([^"\n]*)"?/)[1];
+}
+
 describe("scaffold catalog", () => {
   it("languages match copier.yml", () => {
     assert.deepEqual(copierChoices("language").sort(), Object.keys(CATALOG).sort());
@@ -32,9 +40,9 @@ describe("scaffold catalog", () => {
     it(`${language} profiles match copier.yml`, () => {
       assert.deepEqual(copierChoices(`${language}_profile`).sort(), Object.keys(entry.profiles).sort());
     });
-    for (const [key, versions] of Object.entries(entry.versions)) {
-      it(`${language} ${key} options match copier.yml`, () => {
-        assert.deepEqual(copierChoices(key), versions);
+    for (const [key, version] of Object.entries(entry.runtime)) {
+      it(`${language} ${key} is pinned to the copier.yml value`, () => {
+        assert.equal(copierDefault(key), version);
       });
     }
   }
@@ -44,9 +52,9 @@ describe("scaffold buildAnswers", () => {
   const base = { destination: "/tmp/x", language: "python", profile: "backend", project_name: "Billing API", license: "MIT", agents: ["cursor"], mcp_servers: [], github_ci: true, initialize_git: false, install_deps: false };
 
   it("maps the profile to the language-specific question and drops unset values", () => {
-    const data = buildAnswers({ ...base, python_version: "3.14" });
+    const data = buildAnswers({ ...base, package_name: "billing" });
     assert.equal(data.python_profile, "backend");
-    assert.equal(data.python_version, "3.14");
+    assert.equal(data.package_name, "billing");
     assert.equal("destination" in data, false);
     assert.equal("docker" in data, false);
   });

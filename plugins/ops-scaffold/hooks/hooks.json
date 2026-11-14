@@ -7,7 +7,7 @@
     "beforeShellExecution": [
       {
         "command": "node ./lib/core/run-guard.mjs beforeShellExecution",
-        "matcher": "\\b(pip3?|python3?|py|uv|poetry|pipenv|conda|npm|yarn|bun|pnpm|gradle|mvnw?|copier)(\\.exe|\\.cmd|\\.bat|\\.ps1)?\\s",
+        "matcher": "\\b(pip3?|python3?|py|uv|poetry|pipenv|conda|npm|npx|yarn|bun|bunx|pnpm|gradle|mvnw?|copier)(\\.exe|\\.cmd|\\.bat|\\.ps1)?\\s",
         "timeout": 10,
         "failClosed": true
       }

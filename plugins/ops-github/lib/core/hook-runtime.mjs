@@ -1,4 +1,4 @@
-// GENERATED from packages/core/hook-runtime.mjs by scripts/sync-core.mjs. Edit the source, then run `npm run sync`.
+// GENERATED from packages/core/hook-runtime.mjs by scripts/sync-core.mjs. Edit the source, then run `pnpm run sync`.
 function readStdin() {
   return new Promise((resolve, reject) => {
     let data = "";

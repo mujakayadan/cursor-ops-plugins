@@ -1,4 +1,4 @@
-// GENERATED from packages/core/run-mcp.mjs by scripts/sync-core.mjs. Edit the source, then run `npm run sync`.
+// GENERATED from packages/core/run-mcp.mjs by scripts/sync-core.mjs. Edit the source, then run `pnpm run sync`.
 import { startServer } from "./mcp-server.mjs";
 import provider from "../../provider.mjs";
 

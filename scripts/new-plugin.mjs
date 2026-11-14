@@ -5,7 +5,7 @@ import { PLUGINS_DIR, REPO_ROOT } from "./lib.mjs";
 
 const [id, bin, displayName = id] = process.argv.slice(2);
 if (!/^[a-z][a-z0-9]{1,30}$/.test(id ?? "") || !bin) {
-  console.error('Usage: npm run new-plugin -- <provider-id> <cli-binary> "<Display Name>"\n  e.g. npm run new-plugin -- cloudflare wrangler "Cloudflare"');
+  console.error('Usage: pnpm run new-plugin -- <provider-id> <cli-binary> "<Display Name>"\n  e.g. pnpm run new-plugin -- cloudflare wrangler "Cloudflare"');
   process.exit(64);
 }
 const name = `ops-${id}`;
@@ -100,4 +100,4 @@ const market = JSON.parse(readFileSync(marketPath, "utf8"));
 market.plugins.push({ name, source: `./plugins/${name}` });
 writeFileSync(marketPath, `${JSON.stringify(market, null, 2)}\n`);
 
-console.log(`Created plugins/${name}. Next: edit provider.mjs, add skills/, then run \`npm run sync && npm run ci\`.`);
+console.log(`Created plugins/${name}. Next: edit provider.mjs, add skills/, then run \`pnpm run sync && pnpm run ci\`.`);

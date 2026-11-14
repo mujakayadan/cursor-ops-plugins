@@ -1,4 +1,4 @@
-// GENERATED from packages/core/cli.mjs by scripts/sync-core.mjs. Edit the source, then run `npm run sync`.
+// GENERATED from packages/core/cli.mjs by scripts/sync-core.mjs. Edit the source, then run `pnpm run sync`.
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { delimiter, dirname, join, resolve } from "node:path";
@@ -45,7 +45,7 @@ export function resolveBinary(name) {
       return result;
     }
   }
-  throw new Error(`Required CLI "${name}" was not found on PATH. Run \`npm run doctor\` in the ops plugins repo.`);
+  throw new Error(`Required CLI "${name}" was not found on PATH. Run \`pnpm run doctor\` in the ops plugins repo.`);
 }
 
 /**

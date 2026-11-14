@@ -1,6 +1,6 @@
 # TypeScript conventions
 
-- pnpm only: `pnpm add`, `pnpm add -D`, `pnpm remove`, `pnpm dlx`. Never npm or yarn.
+- pnpm only: `pnpm add`, `pnpm add -D`, `pnpm remove`, `pnpm exec`, `pnpm dlx`. Never npm, npx, yarn or bun.
 - Biome owns formatting and linting: `pnpm run format`, then `pnpm run lint`. Do not add ESLint or Prettier.
 - Strict TypeScript: no `any` (use `unknown` and narrow), no non-null assertions without a comment explaining the invariant.
 - Indexed access is `T | undefined` (`noUncheckedIndexedAccess`); handle the undefined case.

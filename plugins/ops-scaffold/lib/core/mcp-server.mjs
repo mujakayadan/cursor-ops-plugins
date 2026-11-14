@@ -1,4 +1,4 @@
-// GENERATED from packages/core/mcp-server.mjs by scripts/sync-core.mjs. Edit the source, then run `npm run sync`.
+// GENERATED from packages/core/mcp-server.mjs by scripts/sync-core.mjs. Edit the source, then run `pnpm run sync`.
 import { createInterface } from "node:readline";
 import { audit } from "./audit.mjs";
 import { runCommand, tryParseJson } from "./cli.mjs";
