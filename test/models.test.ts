@@ -119,6 +119,17 @@ describe("model routing", () => {
       subagents: SUBAGENTS,
     });
     assert.equal(routeResult.model, "grok-4.7");
+    assert.equal(routeResult.effort, "high");
     assert.equal(routeResult.billing, "included");
+  });
+
+  it("allows credit on Premium when the model list is missing", () => {
+    const named = route({
+      task: "frontier",
+      prefer: "claude-opus-5-5",
+      account: account({ plan: "premium", thirdParty: null, models: [], includedRemaining: 70 }),
+      subagents: SUBAGENTS,
+    });
+    assert.equal(named.billing, "credit");
   });
 });
