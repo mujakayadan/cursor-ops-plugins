@@ -86,7 +86,7 @@ export function profileContext(profile: Profile | undefined): string {
   for (const note of profile.notes ?? []) lines.push(`- ${note}`);
   lines.push(
     "Update the profile with control_profile_set when the user states a lasting preference.",
-    "Model routing: call models_route (ops-models) before a substantial task or a subagent. Included Cursor models are the default (Composer 2.5 for routine work, Grok 4.7 at medium effort for implementation). Raise effort only when the route says high. A third-party model spends prepaid credit; use one only when the route's billing is credit.",
+    "Model routing: call models_route (ops-models) before a substantial task or a subagent. Included Cursor models are the default (Composer 2.5 for routine and parallel work, Grok 4.7 at medium effort for implementation). Raise effort only when the route says high. A third-party model spends prepaid credit; use one only when the route's billing is credit.",
   );
   return lines.join("\n");
 }
