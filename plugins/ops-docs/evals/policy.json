@@ -1,0 +1,55 @@
+[
+  {
+    "name": "user prompt starts a reviewed turn",
+    "event": "beforeSubmitPrompt",
+    "input": { "conversation_id": "docs-1", "generation_id": "g1", "prompt": "rename loadOrderTotals" },
+    "expect": { "continue": true }
+  },
+  {
+    "name": "code edit removing a documented identifier is recorded",
+    "event": "afterFileEdit",
+    "input": {
+      "conversation_id": "docs-1",
+      "generation_id": "g1",
+      "workspace_roots": ["${REPO_ROOT}/evals/fixtures/projects/docs-app"],
+      "file_path": "${REPO_ROOT}/evals/fixtures/projects/docs-app/src/orders.ts",
+      "edits": [
+        {
+          "old_string": "export function loadOrderTotals(lines: number[]): number {",
+          "new_string": "export function orderTotals(lines: number[]): number {"
+        }
+      ]
+    },
+    "expect": {}
+  },
+  {
+    "name": "stop requests a docs review pointing at the stale mention",
+    "event": "stop",
+    "input": { "conversation_id": "docs-1", "generation_id": "g1", "status": "completed", "loop_count": 0 },
+    "expect": {},
+    "match": {
+      "followup_message": "^\\[ops-review\\][\\s\\S]*docs-review[\\s\\S]*docs/stale-reference: `README\\.md:3` mentions `loadOrderTotals`"
+    }
+  },
+  {
+    "name": "doc edit with a broken link and a missing path is recorded",
+    "event": "afterFileEdit",
+    "input": {
+      "conversation_id": "docs-2",
+      "generation_id": "g1",
+      "workspace_roots": ["${REPO_ROOT}/evals/fixtures/projects/docs-app"],
+      "file_path": "${REPO_ROOT}/evals/fixtures/projects/docs-app/guide.md",
+      "edits": [{ "old_string": "", "new_string": "# Guide\n\nSee [setup](setup.md) and [orders](src/orders.ts).\nTotals live in `src/totals.ts`, next to `src/orders.ts`." }]
+    },
+    "expect": {}
+  },
+  {
+    "name": "stop flags only the unresolved link and path",
+    "event": "stop",
+    "input": { "conversation_id": "docs-2", "generation_id": "g1", "status": "completed", "loop_count": 0 },
+    "expect": {},
+    "match": {
+      "followup_message": "^(?![\\s\\S]*`src/orders\\.ts` does not exist)[\\s\\S]*docs/broken-link: link target `setup\\.md` does not exist[\\s\\S]*docs/missing-path: `src/totals\\.ts` does not exist"
+    }
+  }
+]

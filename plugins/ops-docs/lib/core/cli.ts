@@ -1,0 +1,128 @@
+// GENERATED from packages/core/cli.ts by scripts/sync-core.ts. Edit the source, then run `pnpm run sync`.
+import { spawn } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import { delimiter, dirname, join, resolve } from "node:path";
+
+const IS_WINDOWS = process.platform === "win32";
+const SHIM_EXTENSIONS = [".cmd", ".bat", ".ps1"];
+
+export interface ResolvedBinary {
+  command: string;
+  prefixArgs: string[];
+}
+
+export interface CommandResult {
+  code: number | null;
+  stdout: string;
+  stderr: string;
+  timedOut: boolean;
+}
+
+export interface RunOptions {
+  env?: Record<string, string>;
+  timeoutMs?: number;
+  input?: string | undefined;
+  cwd?: string | undefined;
+}
+
+const resolved = new Map<string, ResolvedBinary>();
+
+function candidates(name: string): string[] {
+  if (!IS_WINDOWS) return [name];
+  const exts = (process.env.PATHEXT || ".EXE;.CMD;.BAT").toLowerCase().split(";").filter(Boolean);
+  return [...exts.map((e) => name + e), `${name}.ps1`];
+}
+
+/** Locate a package-manager shim's JS entry point so it can run under node without a shell. */
+function shimTarget(shimPath: string): string | null {
+  const text = readFileSync(shimPath, "utf8");
+  // pnpm and npm shims launch `<shim dir>/<path>.js`; NODE_PATH lines also mention node_modules.
+  const anchored = text.match(/(?:%~dp0|%dp0%|\$basedir)[\\/]([^"'\s;%$]+?\.[cm]?js)\b/);
+  const loose = text.match(/node_modules[\\/][^"'\s$;]+?\.[cm]?js/);
+  for (const rel of [anchored?.[1], loose?.[0]]) {
+    if (!rel) continue;
+    const target = resolve(dirname(shimPath), rel);
+    if (existsSync(target)) return target;
+  }
+  return null;
+}
+
+/**
+ * Resolve a binary on PATH. Commands never go through a shell, so Windows .cmd/.ps1
+ * shims are unwrapped into `node <entry.js>`.
+ */
+export function resolveBinary(name: string): ResolvedBinary {
+  const cached = resolved.get(name);
+  if (cached) return cached;
+  for (const dir of (process.env.PATH || "").split(delimiter).filter(Boolean)) {
+    for (const file of candidates(name)) {
+      const full = join(dir, file);
+      if (!existsSync(full)) continue;
+      const lower = full.toLowerCase();
+      if (SHIM_EXTENSIONS.some((e) => lower.endsWith(e))) {
+        const target = shimTarget(full);
+        if (!target) continue;
+        const result = { command: process.execPath, prefixArgs: [target] };
+        resolved.set(name, result);
+        return result;
+      }
+      const result = { command: full, prefixArgs: [] };
+      resolved.set(name, result);
+      return result;
+    }
+  }
+  throw new Error(
+    `Required CLI "${name}" was not found on PATH. Run \`pnpm run doctor\` in the ops plugins repo.`,
+  );
+}
+
+/** Run a CLI with an argv array (no shell interpolation). Never rejects for non-zero exit codes. */
+export function runCommand(
+  bin: string,
+  args: string[],
+  { env = {}, timeoutMs = 120000, input, cwd }: RunOptions = {},
+): Promise<CommandResult> {
+  const { command, prefixArgs } = resolveBinary(bin);
+  return new Promise((resolvePromise, reject) => {
+    const child = spawn(command, [...prefixArgs, ...args], {
+      env: { ...process.env, ...env },
+      cwd,
+      shell: false,
+      windowsHide: true,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    let stdout = "";
+    let stderr = "";
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      child.kill();
+    }, timeoutMs);
+    child.stdout.on("data", (d: Buffer) => {
+      stdout += d;
+    });
+    child.stderr.on("data", (d: Buffer) => {
+      stderr += d;
+    });
+    child.on("error", (err) => {
+      clearTimeout(timer);
+      reject(err);
+    });
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      resolvePromise({ code, stdout, stderr, timedOut });
+    });
+    if (input !== undefined) child.stdin.write(input);
+    child.stdin.end();
+  });
+}
+
+export function tryParseJson(text: unknown): unknown {
+  const trimmed = typeof text === "string" ? text.trim() : "";
+  if (!trimmed || !/^[[{]/.test(trimmed)) return undefined;
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return undefined;
+  }
+}

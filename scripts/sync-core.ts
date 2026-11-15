@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { CORE_DIR, listPlugins, PLUGINS_DIR } from "./lib.ts";
 
 const PROVIDER_ONLY = new Set(["run-mcp.ts", "run-guard.ts"]);
-const REVIEW_ONLY = new Set(["review.ts", "review-scan.ts"]);
+const REVIEW_ONLY = new Set(["review.ts", "review-scan.ts", "review-docs.ts"]);
 const check = process.argv.includes("--check");
 const sources = readdirSync(CORE_DIR).filter((f) => f.endsWith(".ts"));
 const header = (file: string) =>
