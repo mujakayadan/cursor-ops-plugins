@@ -1,7 +1,7 @@
 {
   "name": "ops-standards",
   "displayName": "Ops: Coding Standards",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "description": "Keeps code and docs clean, current and portable: no history narration, backward-compatibility shims, legacy, dead or commented-out code, or personal and machine-specific values. Static hints on each edit, then an automatic standards review of every turn that changes code or docs.",
   "author": {
     "name": "Muja Kayadan"

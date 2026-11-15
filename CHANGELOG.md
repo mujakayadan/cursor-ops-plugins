@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.2](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.6.1...v1.6.2) (2026-11-15)
+
+
+### Bug Fixes
+
+* catch lowercase and WSL personal paths, cover portability in reviews ([#38](https://github.com/mujakayadan/cursor-ops-plugins/issues/38)) ([4985ea9](https://github.com/mujakayadan/cursor-ops-plugins/commit/4985ea9af6e9f254f9aa5b8d1ac9da391bf69d94))
+
 ## [1.6.1](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.6.0...v1.6.1) (2026-11-15)
 
 
