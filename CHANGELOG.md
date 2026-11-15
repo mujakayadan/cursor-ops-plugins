@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.4.0...v1.5.0) (2026-11-15)
+
+
+### Features
+
+* **scaffold:** API contract checks for backends and opt-in Git LFS ([#11](https://github.com/mujakayadan/cursor-ops-plugins/issues/11)) ([62862ff](https://github.com/mujakayadan/cursor-ops-plugins/commit/62862ff4ae65ca9aa8fbaf1f429b8e1235254a5b))
+
 ## [1.4.0](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.3.0...v1.4.0) (2026-11-14)
 
 
