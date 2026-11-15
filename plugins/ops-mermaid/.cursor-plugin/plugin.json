@@ -1,7 +1,7 @@
 {
   "name": "ops-mermaid",
   "displayName": "Ops: Mermaid Diagrams",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "description": "Author Mermaid diagrams (flowcharts, sequence, state, class, ER, Gantt, mind maps): validate and preview to PNG, render to SVG/PNG/PDF, and route complicated diagrams to LaTeX/TikZ.",
   "author": {
     "name": "Muja Kayadan"
