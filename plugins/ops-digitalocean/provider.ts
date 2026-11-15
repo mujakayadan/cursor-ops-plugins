@@ -430,6 +430,13 @@ const provider: Provider = {
       docs: "https://docs.digitalocean.com/reference/doctl/how-to/install/",
     },
   ],
+  onboarding: {
+    whoami: "digitalocean_account_get",
+    signIn: {
+      command: "doctl auth init",
+      note: "paste an API token created at https://cloud.digitalocean.com/account/api/tokens",
+    },
+  },
   baseArgs: ["--output", "json"],
   baseEnv: { NO_COLOR: "1" },
   instructions: {

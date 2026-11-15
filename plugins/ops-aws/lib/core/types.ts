@@ -166,6 +166,18 @@ export interface Install {
   optional?: string;
 }
 
+/** How `ops doctor` decides a provider is ready, and what it tells the user when it isn't. */
+export interface Onboarding {
+  /** Read tool returning the signed-in identity; doctor runs it once per credential tier. */
+  whoami?: string;
+  /** Read tool returning `{ ready }` (or `{ engines }`) for a local toolchain. */
+  status?: string;
+  /** Sign-in the user completes in their own terminal (browser, device code or pasted token). */
+  signIn?: { command: string; note?: string };
+  /** Skill with the full setup walkthrough. */
+  skill?: string;
+}
+
 export interface Provider {
   id: string;
   displayName: string;
@@ -177,6 +189,7 @@ export interface Provider {
   requires?: string[];
   /** Install recipes for `bin` and `requires`. */
   setup?: Install[];
+  onboarding?: Onboarding;
   instructions?: Partial<Record<ServerTier, string>>;
   tools: Tool[];
   shellRules?: ShellRule[];

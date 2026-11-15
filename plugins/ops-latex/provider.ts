@@ -575,6 +575,7 @@ const provider: Provider = {
       optional: "PNG and SVG previews",
     },
   ],
+  onboarding: { status: "latex_status", skill: "latex-documents" },
   baseEnv: { openout_any: "p" },
   instructions: {
     read: "Compiles LaTeX and TikZ in throwaway directories and returns PNG previews, errors and warnings. Use it for complex diagrams that need precise layout, math, grouping or 3D shapes.",

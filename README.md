@@ -20,6 +20,14 @@ Cursor plugin suite for operating **GitHub, DigitalOcean, Vercel, AWS and Micros
 
 `ops-control` is the suite's control plane (see [Suite control](#suite-control)): the agent can report what is installed and enabled, query the audit log and review activity, and, with your approval, change review settings and which plugins load.
 
+## Get started
+
+On any machine with Cursor, tell the agent:
+
+> Set up https://github.com/mujakayadan/cursor-ops-plugins on this machine.
+
+The agent follows [AGENTS.md](AGENTS.md#set-up-the-suite-on-this-machine): it installs Git, Node and pnpm if needed, clones the repo, installs the suite and the provider CLIs, and after the restart it checks everything with `ops doctor` and fixes what fails. You do three things: accept the approval prompts, quit and reopen Cursor once when asked, and complete the provider sign-ins it hands you in the terminal (browser, device code or pasted token, so no credential passes through the chat). To do it by hand, see [Setup](#setup-any-machine).
+
 ## Architecture
 
 ```mermaid
@@ -74,6 +82,7 @@ plugins/
   ops-standards/ ops-docs/        # review lenses for clean code and docs freshness (same layout)
   ops-mermaid/ ops-latex/         # diagram/document rendering, routing rule, authoring skills
   ops-control/                    # suite status, audit and review queries, review and plugin toggles
+AGENTS.md                         # agent guide: setting up a machine, changing the suite
 copier.yml                        # scaffold questions; selects templates/<language>
 templates/
   python/ typescript/ java/       # rendered trees (*.jinja files are templated)
@@ -232,29 +241,30 @@ The template source defaults to this repo's GitHub URL. Set `providers.scaffold.
 
 ## Setup (any machine)
 
-Requirements: Node 24 and pnpm (`corepack enable pnpm`). `ops setup` installs the provider CLIs.
+Requirements: Git, Node 24 or newer, and pnpm (`winget install --id pnpm.pnpm --exact` or `brew install pnpm`). The suite has no runtime dependencies, so there is nothing to `pnpm install` unless you develop it.
 
 ```powershell
 git clone https://github.com/mujakayadan/cursor-ops-plugins.git D:\Codes\cursor-ops-plugins
 cd D:\Codes\cursor-ops-plugins
-pnpm run install-local   # suite loader for Cursor, the `ops` command, ~/.ops/config.json
-ops setup                # install the CLIs the enabled plugins need
-ops doctor               # CLIs, loader, plugins, config, identity per tier
+node scripts/ops.ts install   # suite loader for Cursor, the `ops` command, ~/.ops/config.json
+node scripts/ops.ts setup     # install the CLIs the enabled plugins need
+# quit and reopen Cursor, then in a new terminal:
+ops doctor                    # CLIs, loader, read server, config, sign-in per tier, with a fix for each failure
 ```
 
-`install-local` does four things:
+`ops install` does four things:
 - adds a user-level `workspaceOpen` hook that runs `scripts/workspace-plugins.ts`. When any workspace opens, it starts the shared read server if needed, then returns the paths of every enabled plugin in this checkout, so every project gets the whole suite and `git pull` updates it in place. (Cursor skips links in `~/.cursor/plugins/local` that point elsewhere, so the suite keeps none there.)
 - creates the read server's token (`~/.ops/serve.token`, a random local secret, not a provider credential) and sets it as the `OPS_MCP_TOKEN` user environment variable.
 - writes the `ops` launcher to `~/.ops/bin` and adds that folder to your user PATH. On macOS and Linux it prints the two profile lines instead; `--no-user-env` skips both.
 - creates `~/.ops/config.json` from `config.example.json` if it doesn't exist.
 
-Then **quit and reopen Cursor once**, so it picks up `OPS_MCP_TOKEN`. After that, Developer: Reload Window is enough, including after each `git pull`. The plugins appear under Customize → Plugins, and their MCP servers under Settings → MCP. `pnpm run uninstall-local` (or `ops uninstall`) removes the hook, the token, the launcher and the PATH entry.
+Then **quit and reopen Cursor once**, so it picks up `OPS_MCP_TOKEN`. After that, Developer: Reload Window is enough, including after each `git pull`. The plugins appear under Customize → Plugins, and their MCP servers under Settings → MCP. `ops uninstall` removes the hook, the token, the launcher and the PATH entry.
 
 | Command | What it does |
 |---|---|
 | `ops status` | Checkout, loader, read server, plugins and review settings |
 | `ops setup [--optional] [--yes] [--dry-run] [plugin...]` | Installs missing CLIs for the enabled plugins. Each provider declares its recipes in `provider.ts` (`setup`). npm-based CLIs go into `~/.ops/tools` with pnpm (no admin rights, no PATH change); others use winget on Windows or Homebrew elsewhere. `--optional` adds feature-only tools such as Poppler and a JDK |
-| `ops doctor` | The checks above, plus sign-in per credential tier |
+| `ops doctor [--json]` | Runtime, loader, token, read server, config, plugins, and per provider its CLIs, toolchain and sign-in per credential tier. Every failure comes with a fix; sign-in fixes come from the provider's `onboarding` in `provider.ts`. `--json` is for agents |
 | `ops serve [--background\|--stop\|--restart]` | The shared read server; foreground by default, logs to `~/.ops/serve.log` |
 | `ops agent [args...]` | The Cursor CLI agent (`agent`) with every enabled suite plugin passed as `--plugin-dir` |
 | `ops install` / `ops uninstall` | Same as `install-local` / `uninstall-local` |
@@ -272,7 +282,7 @@ Configure least-privilege credentials per tier in `~/.ops/config.json`. See `con
 
 ## Distribution
 
-- **Personal (several PCs):** clone the repo and run `pnpm run install-local` on each machine.
+- **Personal (several PCs):** on each machine, ask the agent to set it up (see [Get started](#get-started)), or clone the repo and run `node scripts/ops.ts install`.
 - **Team/Enterprise:** in the Cursor Dashboard, go to Plugins & MCPs → Add Marketplace → Import from Repo and point it at this repo (`.cursor-plugin/marketplace.json`). For private repos, enable *Serve marketplace from Cursor*. Local plugin imports may need the admin setting *Allow Local Plugin Imports*.
 
 ## Development
@@ -292,7 +302,7 @@ pnpm run templates:render   # scaffold structure checks (fast)
 pnpm run templates:test     # render every scaffold profile and run its toolchain (needs uv, pnpm, a JDK)
 ```
 
-To add a tool, add a `tool({...})` entry to the provider's `tools` array with a `tier`, an `input` schema built from the `schema-helpers` (`str`, `int`, `oneOf`, `obj`, ...) and a `run` function. The argument types of `run`, `summarize`, `confirm` and `scope` are inferred from `input`. Mutating tools need `summarize`; privileged tools need `confirm`/`confirmHint`. Then add policy and contract cases. The contract suite enforces naming, tier placement and confirmation automatically.
+To add a tool, add a `tool({...})` entry to the provider's `tools` array with a `tier`, an `input` schema built from the `schema-helpers` (`str`, `int`, `oneOf`, `obj`, ...) and a `run` function. The argument types of `run`, `summarize`, `confirm` and `scope` are inferred from `input`. Mutating tools need `summarize`; privileged tools need `confirm`/`confirmHint`. Then add policy and contract cases. The contract suite enforces naming, tier placement and confirmation automatically. Each provider also declares `setup` (how `ops setup` installs its CLIs) and `onboarding` (the read tool that proves sign-in or toolchain readiness, the sign-in command, and its setup skill); `test/providers.test.ts` requires a recipe for every binary and checks that the onboarding tools and skill exist.
 
 ## Configuration reference
 

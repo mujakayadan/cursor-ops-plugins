@@ -352,6 +352,7 @@ const provider: Provider = {
       docs: "https://github.com/mermaid-js/mermaid-cli",
     },
   ],
+  onboarding: { status: "mermaid_status", skill: "mermaid-diagrams" },
   baseEnv: { NO_COLOR: "1" },
   instructions: {
     read: "Validates and previews Mermaid diagrams to throwaway PNGs. Complicated diagrams that need precise layout, math or 3D blocks belong in ops-latex (TikZ).",
