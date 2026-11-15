@@ -22,7 +22,7 @@ Review the **changes** first: the files and hints in the request, or `git diff` 
 | Injection | SQL/NoSQL built from strings; shell commands via a shell or string concat; template, LDAP, XPath, regex (ReDoS) injection; `eval`/`Function`; prompt injection where model output drives tools |
 | Path & files | Traversal (`..`, absolute paths, symlinks) outside an allowed root; unrestricted uploads (type, size, location); zip slip |
 | AuthN / AuthZ | Missing or client-side-only checks; IDOR (object fetched by id without owner check); privilege escalation via mass assignment; insecure session/JWT handling (no expiry, `alg: none`, unsigned) |
-| Secrets & data | Hardcoded credentials; secrets or PII in logs, errors, URLs, analytics or client bundles; overly broad API responses |
+| Secrets & data | Hardcoded credentials; secrets or PII in logs, errors, URLs, analytics or client bundles; real emails, names, account or tenant IDs in code, fixtures or examples; overly broad API responses |
 | Web | XSS sinks (`innerHTML`, `dangerouslySetInnerHTML`, `v-html`, the template `safe` filter); CSRF on state-changing cookie routes; open redirects; CORS `*` with credentials; missing security headers on new apps |
 | SSRF & network | Server-side fetches of user-supplied URLs without an allowlist; TLS verification disabled; plaintext protocols |
 | Crypto | MD5/SHA-1 for security, ECB, static IVs, home-made crypto; `Math.random`/`random` for tokens; passwords not hashed with bcrypt/scrypt/argon2 |
