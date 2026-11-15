@@ -5,7 +5,7 @@ description: Set up, sign in to or troubleshoot the ops-google tools (Gmail, Cal
 
 # Google setup
 
-The ops-google tools call Gmail, Calendar, People (contacts), Meet and Drive through [gog](https://gogcli.sh/) (`gog`). The CLI owns OAuth and the token cache; never read, print or copy refresh tokens, `client_secret_*.json` contents, or keyring material, and never create OAuth client secrets for a desktop app (public client only).
+The ops-google tools call Gmail, Calendar, contacts and profile (People API), Meet and Drive through [gog](https://gogcli.sh/) (`gog`). The CLI owns OAuth and the token cache; never read, print or copy refresh tokens, `client_secret_*.json` contents, or keyring material, and never create OAuth client secrets for a desktop app (public client only).
 
 Google Chat is out of scope for this plugin.
 
