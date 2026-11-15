@@ -1,0 +1,6 @@
+[
+  { "name": "check is allowed", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-architecture-read", "tool_name": "architecture_check", "tool_input": "{\"project\":\"/home/me/app\"}" }, "expect": { "permission": "allow" } },
+  { "name": "preview is allowed", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-architecture-read", "tool_name": "architecture_preview", "tool_input": "{\"file\":\"/home/me/app/docs/architecture/production.diagram.json\"}" }, "expect": { "permission": "allow" } },
+  { "name": "icon lookup is allowed", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-architecture-read", "tool_name": "architecture_icons", "tool_input": "{\"provider\":\"aws\",\"query\":\"queue\"}" }, "expect": { "permission": "allow" } },
+  { "name": "render asks", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-architecture-write", "tool_name": "architecture_render", "tool_input": "{\"file\":\"/home/me/app/docs/architecture/production.diagram.json\"}" }, "expect": { "permission": "ask" } }
+]

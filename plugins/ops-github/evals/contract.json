@@ -1,4 +1,6 @@
 [
+  { "name": "plan import rejects duplicate keys", "tool": "github_issues_import", "server": "write", "arguments": { "repo": "acme/app", "issues": [{ "key": "T-001", "title": "a", "body": "x" }, { "key": "T-001", "title": "b", "body": "y" }] }, "expectError": "appears twice" },
+  { "name": "plan import rejects malformed keys", "tool": "github_issues_import", "server": "write", "arguments": { "repo": "acme/app", "issues": [{ "key": "task-1", "title": "a", "body": "x" }] }, "expectError": "invalid format" },
   { "tool": "github_repo_set_visibility", "arguments": { "repo": "acme/app", "visibility": "public" } },
   { "name": "api gateway blocks secret endpoints", "tool": "github_api_get", "server": "read", "arguments": { "path": "repos/acme/app/actions/secrets/NPM_TOKEN" }, "expectError": "blocked by policy" },
   { "name": "api gateway blocks path traversal", "tool": "github_api_get", "server": "read", "arguments": { "path": "repos/../user" }, "expectError": "must not contain" },

@@ -1,0 +1,18 @@
+{
+  "name": "ops-architecture",
+  "displayName": "Ops: Architecture",
+  "version": "1.6.2",
+  "description": "Enterprise architecture and delivery plans for new projects: interview, ARCHITECTURE.md with C4, use-case, sequence and data diagrams, platform diagrams with official AWS/Azure/GCP/Kubernetes icons, ADRs, a runbook, and a traceable TODO.md synced to GitHub issues.",
+  "author": {
+    "name": "Muja Kayadan"
+  },
+  "license": "MIT",
+  "keywords": [
+    "architecture",
+    "diagrams",
+    "adr",
+    "planning",
+    "documentation"
+  ],
+  "category": "developer-tools"
+}

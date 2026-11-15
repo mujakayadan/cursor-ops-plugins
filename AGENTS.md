@@ -48,7 +48,7 @@ This registers the `workspaceOpen` loader in `~/.cursor/hooks.json`, writes the 
 node scripts/ops.ts setup --yes
 ```
 
-It installs whatever the enabled plugins need and is missing (gh, doctl, AWS CLI, Vercel CLI, m365, mermaid-cli, MiKTeX, uv, …): npm-based tools with pnpm into `~/.ops/tools`, the rest with winget or Homebrew. Some winget installers (AWS CLI, MiKTeX) show a Windows elevation prompt, which the user has to accept. Add `--optional` when the user wants PNG/SVG previews from LaTeX or Java projects; `--dry-run` shows the plan. If the user only wants some providers, name their plugins (`setup --yes ops-github ops-vercel`).
+It installs whatever the enabled plugins need and is missing (gh, doctl, AWS CLI, Vercel CLI, m365, mermaid-cli, MiKTeX, uv, Graphviz, …): npm-based tools with pnpm into `~/.ops/tools`, the rest with winget or Homebrew. Some winget installers (AWS CLI, MiKTeX) show a Windows elevation prompt, which the user has to accept. Add `--optional` when the user wants PNG/SVG previews from LaTeX or Java projects; `--dry-run` shows the plan. If the user only wants some providers, name their plugins (`setup --yes ops-github ops-vercel`).
 
 ### 5. Restart Cursor (the user)
 

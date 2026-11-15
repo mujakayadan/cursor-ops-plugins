@@ -14,6 +14,8 @@ Cursor plugin suite for operating **GitHub, DigitalOcean, Vercel, AWS and Micros
 
 `ops-mermaid` and `ops-latex` are authoring plugins: Mermaid for flowcharts, sequence, state and ER diagrams, and LaTeX/TikZ for documents and complicated figures such as deep-learning architectures (see [Authoring](#authoring-mermaid-and-latex)).
 
+`ops-architecture` writes the architecture and delivery plan of a new or existing application, after interviewing you on what is still open. The set is `ARCHITECTURE.md`, ADRs, a runbook and a `TODO.md` that traces every requirement and syncs to GitHub issues. Its platform diagrams use the official AWS, Azure, Google Cloud and Kubernetes icons (see [Architecture and delivery plans](#architecture-and-delivery-plans)).
+
 `ops-core` adds cross-cutting guardrails (secret blocking in prompts/commands/MCP args, [safety guardrails](#safety-guardrails) against destructive git, database, filesystem and system commands, risk classification for **third-party** MCP servers such as the official Vercel or GitHub MCP), the audit trail, the operating-model rule, change-management/incident skills and a read-only `ops-investigator` subagent.
 
 `ops-security`, `ops-performance`, `ops-standards` and `ops-docs` review the agent's own work. Once installed, every turn that changes code or docs ends with a review of exactly those changes for security, performance, clean code (current state only, no legacy or dead code) and documentation freshness (see [Automatic code review](#automatic-code-review)).
@@ -81,6 +83,7 @@ plugins/
   ops-security/ ops-performance/  # review lenses: hooks, rule, review skill, read-only reviewer subagent
   ops-standards/ ops-docs/        # review lenses for clean code and docs freshness (same layout)
   ops-mermaid/ ops-latex/         # diagram/document rendering, routing rule, authoring skills
+  ops-architecture/               # architecture and delivery plans: document checker, platform diagram renderer, skills
   ops-control/                    # suite status, audit and review queries, review and plugin toggles
 AGENTS.md                         # agent guide: setting up a machine, changing the suite
 copier.yml                        # scaffold questions; selects templates/<language>
@@ -135,7 +138,7 @@ Releases use [release-please](https://github.com/googleapis/release-please). Con
 
 Workflows on PRs opened with the default `GITHUB_TOKEN` (the release and sync PRs) don't run on their own: GitHub holds them as *action required* until a maintainer clicks **Approve and run**. To skip that step, add a fine-grained token with Contents and Pull requests read/write on the repo as the `GITOPS_TOKEN` Actions secret. The workflows use it when present.
 
-The `gitops-workflow` skill (ops-github) drives this from the agent. `github_repo_create` always asks for the visibility. `github_repo_bootstrap` creates `dev` and any extra environments, sets the merge settings, labels and rulesets, lets Actions open PRs, links a project board, and reports whether `GITOPS_TOKEN` is set. `github_release_list`, `github_project_list` and `github_project_item_add` cover releases and boards. The project tools need the `project` token scope (`gh auth refresh -s project`).
+The `gitops-workflow` skill (ops-github) drives this from the agent. `github_repo_create` always asks for the visibility. `github_repo_bootstrap` creates `dev` and any extra environments, sets the merge settings, labels and rulesets, lets Actions open PRs, links a project board, and reports whether `GITOPS_TOKEN` is set. `github_release_list`, `github_project_list` and `github_project_item_add` cover releases and boards. `github_issues_import` creates a delivery plan's epics and tasks as issues in one approved call (see [Architecture and delivery plans](#architecture-and-delivery-plans)). The project tools need the `project` token scope (`gh auth refresh -s project`).
 
 ## Microsoft 365
 
@@ -190,9 +193,50 @@ Both plugins render locally and show the agent its own output: preview tools wri
 | Write (always approved) | `mermaid_render` to `.svg`, `.png` or `.pdf` | `latex_render` to `.pdf`, `.svg` or `.png` |
 | Needs (`ops setup`) | mermaid-cli plus Chrome, Chromium or Edge | MiKTeX or TeX Live (`pdftocairo` from Poppler, or `dvisvgm`, for images; `ops setup --optional`) |
 
-**Routing.** The shared `diagram-routing` rule decides by complexity, not by topic. Mermaid gets diagrams that its automatic layout handles well. LaTeX/TikZ gets complicated ones: figures that need precise placement, nested or repeated groups, untangled parallel and skip paths, math labels, 3D blocks or publication quality. Deep-learning architectures are typical, as are detailed block diagrams, circuits and commutative diagrams. `mermaid_preview` and `mermaid_render` add an `advice` field when a Mermaid source shows such signs (math, subgraphs nested three deep, more than 40 edges, spacer links fighting the layout). The `latex-diagrams` skill covers how to design these figures from scratch: layout, styles, routing, grouping, 3D blocks, math annotations and a review checklist.
+**Routing.** The shared `diagram-routing` rule sends deployment and infrastructure views with cloud service icons to `ops-architecture` (see [Architecture and delivery plans](#architecture-and-delivery-plans)). Everything else it decides by complexity, not by topic. Mermaid gets diagrams that its automatic layout handles well. LaTeX/TikZ gets complicated ones: figures that need precise placement, nested or repeated groups, untangled parallel and skip paths, math labels, 3D blocks or publication quality. Deep-learning architectures are typical, as are detailed block diagrams, circuits and commutative diagrams. `mermaid_preview` and `mermaid_render` add an `advice` field when a Mermaid source shows such signs (math, subgraphs nested three deep, more than 40 edges, spacer links fighting the layout). The `latex-diagrams` skill covers how to design these figures from scratch: layout, styles, routing, grouping, 3D blocks, math annotations and a review checklist.
 
 **Safety.** LaTeX compiles call the engine directly, never latexmk or a `latexmkrc`, with shell escape off, `openout_any=p` (no writes outside the output folder) and MiKTeX's on-the-fly package installer disabled. Missing packages are reported with the `miktex packages install …` or `tlmgr install …` command to run, and the shell guard asks before shell escape or package installs. Mermaid renders with `securityLevel: strict`. Both write tools refuse to overwrite files unless `overwrite` is set, and honor `providers.<p>.scope.allowedRoots`.
+
+## Architecture and delivery plans
+
+After scaffolding an application, `scaffold-project` hands over to the `architecture-blueprint` skill. You can also ask for it in an existing repository. The agent first reads the repository and the conversation, then asks you about every open decision in up to three short forms:
+- actors and use cases;
+- load, latency, availability, RPO and RTO;
+- cloud, regions and compute model;
+- data classification, compliance, identity and tenancy;
+- integrations, observability, budget, team and dates.
+
+Unknown numbers become proposals you confirm, never guesses. The output is written so a developer can build, deploy and operate the system from it alone:
+
+| File | Contents |
+|---|---|
+| `ARCHITECTURE.md` | 18 sections: context and scope, requirements (`FR-01`, `NFR-01` with measurable targets), use cases, C4 system context and containers, platform deployment, runtime flows, data, interfaces, security with a STRIDE threat model, observability and SLOs, scalability, resilience and DR, environments and delivery, cost, decisions, risks, glossary |
+| `docs/adr/NNNN-*.md` | One record per significant decision with the alternatives considered; it states the decision in force and is rewritten when the decision changes |
+| `docs/runbook.md` | Deploy, rollback, configuration and secrets, monitoring and alerts, incident response, backup and restore, disaster recovery, routine operations |
+| `docs/architecture/<view>.diagram.json` + `.png`/`.svg` | Platform diagrams with official service icons |
+| `TODO.md` | Milestones with a Gantt chart, a definition of done, and epics of tasks of at most 3 days. Each task has its milestone, dependencies, the requirements and sections it traces, an estimate, implementation notes and checkbox acceptance criteria |
+
+Use-case, C4, sequence, ER, state and Gantt diagrams are Mermaid blocks that GitHub renders inline. Platform diagrams are JSON specs drawn with the Python [`diagrams`](https://diagrams.mingrammer.com/) library and Graphviz. Its icon sets cover AWS, Azure, Google Cloud, Kubernetes, DigitalOcean, OCI, on-prem and SaaS services. Accounts, regions, VPCs, subnets and namespaces become nested clusters.
+
+| Tool | Tier | What it does |
+|---|---|---|
+| `architecture_status` | read | Whether uv and Graphviz are installed (`ops setup ops-architecture`) |
+| `architecture_icons` | read | The icon classes of a provider, filtered by a search term |
+| `architecture_preview` | read | Validates a spec and draws it to a throwaway PNG the agent reads |
+| `architecture_render` | write | Draws a spec to the PNG or SVG next to it; SVGs embed their icons |
+| `architecture_check` | read | See below |
+
+`architecture_check` checks the whole set:
+- every required section and diagram type is present;
+- every requirement is traced by a task, and every reference points to a defined requirement, task or milestone;
+- every task has its fields, a valid estimate and acceptance criteria, and dependencies have no cycles;
+- ADRs have the required sections, a valid status and a link from `ARCHITECTURE.md`;
+- every platform diagram is rendered and newer than its spec;
+- relative links resolve, and no placeholder or template guide comment is left.
+
+Once you approve the plan, `github_issues_import` (ops-github) creates the milestones, then the task and epic issues, each title starting with its key (`T-012 …`). Epic bodies link their tasks' issues, and new issues can go onto a Project board. Keys that already have an issue are skipped, so a later run adds only new tasks. The agent writes each issue number back into `TODO.md`. The generated project's `AGENTS.md` keeps both documents current: a design change updates `ARCHITECTURE.md` and its ADR, and the pull request that completes a task ticks its box and closes its issue.
+
+**Safety.** A spec is data: the renderer is a fixed script that resolves icons by name inside the `diagrams` package, so previews run no workspace code and are auto-allowed. `diagrams` is pinned, and uv runs it in an isolated environment without touching the project. Renders and issue imports need approval, and `providers.architecture.scope.allowedRoots` limits which folders the tools read and write.
 
 ## Scaffolders
 
@@ -220,7 +264,7 @@ Every project gets the same set of shared files:
 
 Backend profiles (`python/backend`, `java/backend`) also commit `openapi.json` as the API contract, generated from FastAPI or springdoc. A test fails when it is stale (regenerate with `UPDATE_OPENAPI=1`). The `api-compat` workflow diffs it against the base branch with [oasdiff](https://github.com/oasdiff/oasdiff) and fails the PR on error-level breaking changes unless the PR declares them: `!` in the title and a `BREAKING CHANGE:` line in the body. release-please then bumps the major version (minor before 1.0). Changelogs stay with release-please; git-cliff is not used.
 
-**From the agent:** the `scaffold-project` skill interviews the user, always including the project's license, copyright holder and GitHub visibility, and calls `scaffold_create`. It then publishes and bootstraps the repo through `gitops-workflow`. Calls to `scaffold_create` and `scaffold_update` always ask for approval. The tools refuse non-empty destinations, relative paths, and paths outside `providers.scaffold.scope.allowedRoots` when that is set.
+**From the agent:** the `scaffold-project` skill interviews the user, always including the project's license, copyright holder and GitHub visibility, and calls `scaffold_create`. It then publishes and bootstraps the repo through `gitops-workflow`, and hands over to `architecture-blueprint` for the architecture and delivery plan. Calls to `scaffold_create` and `scaffold_update` always ask for approval. The tools refuse non-empty destinations, relative paths, and paths outside `providers.scaffold.scope.allowedRoots` when that is set.
 
 **From a shell:**
 ```sh
