@@ -77,6 +77,11 @@
           "type": "json",
           "path": "plugins/ops-docs/.cursor-plugin/plugin.json",
           "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "plugins/ops-control/.cursor-plugin/plugin.json",
+          "jsonpath": "$.version"
         }
       ]
     }

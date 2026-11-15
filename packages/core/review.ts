@@ -8,7 +8,7 @@ import {
   statSync,
 } from "node:fs";
 import { dirname, isAbsolute, join, relative } from "node:path";
-import { loadConfig, opsHome } from "./config.ts";
+import { loadConfig, reviewDir } from "./config.ts";
 import type { HookHandler } from "./hook-runtime.ts";
 import { referenceHints, removedIdentifiers, staleMentions } from "./review-docs.ts";
 import { DOC, HISTORY_FILE, lineOf, type ReviewHint, scanEdit } from "./review-scan.ts";
@@ -151,10 +151,6 @@ const isRequest = (e: ReviewEvent): e is RequestEvent => e.t === "request";
 
 const DELEGATE_AT_FILES = 8;
 const RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
-
-export function reviewDir(): string {
-  return process.env.OPS_REVIEW_DIR || join(opsHome(), "review");
-}
 
 function logPath(conversation: string): string {
   return join(reviewDir(), `${conversation.replace(/[^\w.-]/g, "_")}.jsonl`);

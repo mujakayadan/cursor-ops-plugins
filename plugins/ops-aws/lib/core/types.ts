@@ -54,6 +54,7 @@ export interface Config {
   guardrails: { shell: { overrides: Record<string, Decision> } };
   prompts: { blockSecrets: boolean };
   review: ReviewConfig;
+  suite: { disabledPlugins: string[] };
 }
 
 export type ReviewLensId = "security" | "performance" | "standards" | "docs";

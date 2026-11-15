@@ -9,6 +9,7 @@
     "minChangedLines": 3,
     "ignore": ["^docs/generated/"]
   },
+  "suite": { "disabledPlugins": [] },
 
   "thirdPartyMcp": {
     "read": "allow",

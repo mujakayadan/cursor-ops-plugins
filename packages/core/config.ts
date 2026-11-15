@@ -9,6 +9,10 @@ export function opsHome(): string {
   return process.env.OPS_HOME || join(homedir(), ".ops");
 }
 
+export function reviewDir(): string {
+  return process.env.OPS_REVIEW_DIR || join(opsHome(), "review");
+}
+
 export function configPath(): string {
   return process.env.OPS_CONFIG || join(opsHome(), "config.json");
 }
@@ -38,6 +42,7 @@ const DEFAULTS: Config = {
     maxFiles: 30,
     ignore: [],
   },
+  suite: { disabledPlugins: [] },
 };
 
 const PROVIDER_DEFAULTS: ProviderConfig = {

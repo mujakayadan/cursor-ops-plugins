@@ -59,6 +59,10 @@
     {
       "name": "ops-docs",
       "source": "./plugins/ops-docs"
+    },
+    {
+      "name": "ops-control",
+      "source": "./plugins/ops-control"
     }
   ]
 }
