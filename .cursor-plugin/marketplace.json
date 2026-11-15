@@ -4,7 +4,7 @@
     "name": "mujak"
   },
   "metadata": {
-    "description": "Operations plugin suite: core guardrails, GitHub, DigitalOcean, Vercel and AWS with tiered read/write MCP servers, and Copier-based project scaffolders.",
+    "description": "Operations plugin suite: core guardrails, GitHub, DigitalOcean, Vercel, AWS and Microsoft 365 with tiered read/write MCP servers, automatic security and performance review of agent changes, and Copier-based project scaffolders.",
     "version": "1.4.0"
   },
   "plugins": [
@@ -35,6 +35,14 @@
     {
       "name": "ops-msgraph",
       "source": "./plugins/ops-msgraph"
+    },
+    {
+      "name": "ops-security",
+      "source": "./plugins/ops-security"
+    },
+    {
+      "name": "ops-performance",
+      "source": "./plugins/ops-performance"
     }
   ]
 }

@@ -1,0 +1,146 @@
+[
+  {
+    "name": "user prompt starts a reviewed turn",
+    "event": "beforeSubmitPrompt",
+    "input": { "conversation_id": "sec-1", "generation_id": "g1", "prompt": "add a user lookup" },
+    "expect": { "continue": true }
+  },
+  {
+    "name": "code edit is recorded",
+    "event": "afterFileEdit",
+    "input": {
+      "conversation_id": "sec-1",
+      "generation_id": "g1",
+      "workspace_roots": ["${TMP}"],
+      "file_path": "${TMP}/app/users.ts",
+      "edits": [
+        {
+          "old_string": "",
+          "new_string": "export async function find(id: string) {\n  return db.query(`SELECT * FROM users WHERE id = ${id}`);\n}"
+        }
+      ]
+    },
+    "expect": {}
+  },
+  {
+    "name": "stop requests a security review with static hints",
+    "event": "stop",
+    "input": { "conversation_id": "sec-1", "generation_id": "g1", "status": "completed", "loop_count": 0 },
+    "expect": {},
+    "match": {
+      "followup_message": "^\\[ops-review\\][\\s\\S]*security-review[\\s\\S]*`app/users\\.ts`[\\s\\S]*security/sql-injection"
+    }
+  },
+  {
+    "name": "repeated stop for the same turn returns the same request",
+    "event": "stop",
+    "input": { "conversation_id": "sec-1", "generation_id": "g1", "status": "completed", "loop_count": 0 },
+    "expect": {},
+    "match": { "followup_message": "^\\[ops-review\\][\\s\\S]*security/sql-injection" }
+  },
+  {
+    "name": "review follow-up is not a new user turn",
+    "event": "beforeSubmitPrompt",
+    "input": {
+      "conversation_id": "sec-1",
+      "generation_id": "g2",
+      "prompt": "[ops-review] Automatic review of the changes from this turn"
+    },
+    "expect": { "continue": true }
+  },
+  {
+    "name": "fix made during the review is recorded",
+    "event": "afterFileEdit",
+    "input": {
+      "conversation_id": "sec-1",
+      "generation_id": "g2",
+      "workspace_roots": ["${TMP}"],
+      "file_path": "${TMP}/app/users.ts",
+      "edits": [
+        {
+          "old_string": "db.query(`SELECT * FROM users WHERE id = ${id}`)",
+          "new_string": "db.query(\"SELECT id, name FROM users WHERE id = $1\", [id])"
+        }
+      ]
+    },
+    "expect": {}
+  },
+  {
+    "name": "stop after the review round does not loop",
+    "event": "stop",
+    "input": { "conversation_id": "sec-1", "generation_id": "g2", "status": "completed", "loop_count": 1 },
+    "expect": {},
+    "match": { "followup_message": "^$" }
+  },
+  {
+    "name": "docs-only turn is not reviewed",
+    "event": "beforeSubmitPrompt",
+    "input": { "conversation_id": "sec-2", "generation_id": "g1", "prompt": "fix the readme" },
+    "expect": { "continue": true }
+  },
+  {
+    "name": "markdown edit is ignored",
+    "event": "afterFileEdit",
+    "input": {
+      "conversation_id": "sec-2",
+      "generation_id": "g1",
+      "workspace_roots": ["${TMP}"],
+      "file_path": "${TMP}/README.md",
+      "edits": [{ "old_string": "a", "new_string": "b\nc\nd\ne" }]
+    },
+    "expect": {}
+  },
+  {
+    "name": "stop without reviewable changes stays quiet",
+    "event": "stop",
+    "input": { "conversation_id": "sec-2", "generation_id": "g1", "status": "completed", "loop_count": 0 },
+    "expect": {},
+    "match": { "followup_message": "^$" }
+  },
+  {
+    "name": "workflow edit is reviewed for injection",
+    "event": "afterFileEdit",
+    "input": {
+      "conversation_id": "sec-3",
+      "generation_id": "g1",
+      "workspace_roots": ["${TMP}"],
+      "file_path": "${TMP}/.github/workflows/greet.yml",
+      "edits": [{ "old_string": "", "new_string": "      - run: echo \"${{ github.event.pull_request.title }}\"" }]
+    },
+    "expect": {}
+  },
+  {
+    "name": "aborted turn is not reviewed",
+    "event": "stop",
+    "input": { "conversation_id": "sec-3", "generation_id": "g1", "status": "aborted", "loop_count": 0 },
+    "expect": {},
+    "match": { "followup_message": "^$" }
+  },
+  {
+    "name": "hinted one-line change is reviewed",
+    "event": "stop",
+    "input": { "conversation_id": "sec-3", "generation_id": "g1", "status": "completed", "loop_count": 0 },
+    "expect": {},
+    "match": { "followup_message": "security/workflow-injection" }
+  },
+  {
+    "name": "OPS_REVIEW=off disables recording",
+    "event": "afterFileEdit",
+    "env": { "OPS_REVIEW": "off" },
+    "input": {
+      "conversation_id": "sec-4",
+      "generation_id": "g1",
+      "workspace_roots": ["${TMP}"],
+      "file_path": "${TMP}/app/run.py",
+      "edits": [{ "old_string": "", "new_string": "subprocess.run(cmd, shell=True)" }]
+    },
+    "expect": {}
+  },
+  {
+    "name": "nothing to review when disabled",
+    "event": "stop",
+    "input": { "conversation_id": "sec-4", "generation_id": "g1", "status": "completed", "loop_count": 0 },
+    "expect": {},
+    "match": { "followup_message": "^$" }
+  }
+]

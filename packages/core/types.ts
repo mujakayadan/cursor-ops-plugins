@@ -48,6 +48,22 @@ export interface Config {
   thirdPartyMcp: ThirdPartyMcpPolicy;
   guardrails: { shell: { overrides: Record<string, Decision> } };
   prompts: { blockSecrets: boolean };
+  review: ReviewConfig;
+}
+
+export type ReviewLensId = "security" | "performance";
+
+export interface ReviewConfig {
+  enabled: boolean;
+  lenses: Record<ReviewLensId, boolean>;
+  /** Follow-up review requests per user prompt; fixes made during a review are not re-reviewed beyond this. */
+  maxRounds: number;
+  /** Turns with fewer changed lines and no static hints are not reviewed. */
+  minChangedLines: number;
+  /** Changed files listed in the review request. */
+  maxFiles: number;
+  /** Workspace-relative path regexes that are never reviewed. */
+  ignore: string[];
 }
 
 export interface CliOptions {
@@ -94,6 +110,7 @@ export interface Tool<A extends object = Args> {
 export interface HookPayload {
   hook_event_name?: string;
   conversation_id?: string;
+  generation_id?: string;
   command?: string;
   cwd?: string;
   workspace_roots?: string[];
@@ -105,6 +122,10 @@ export interface HookPayload {
   duration?: number;
   sandbox?: boolean;
   result_json?: string;
+  file_path?: string;
+  edits?: { old_string?: string; new_string?: string }[];
+  status?: "completed" | "aborted" | "error";
+  loop_count?: number;
 }
 
 export interface HookResponse {
@@ -112,6 +133,7 @@ export interface HookResponse {
   continue?: boolean;
   user_message?: string;
   agent_message?: string;
+  followup_message?: string;
 }
 
 export interface ShellRule {

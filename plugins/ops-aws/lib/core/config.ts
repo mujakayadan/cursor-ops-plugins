@@ -31,6 +31,14 @@ const DEFAULTS: Config = {
   },
   guardrails: { shell: { overrides: {} } },
   prompts: { blockSecrets: true },
+  review: {
+    enabled: true,
+    lenses: { security: true, performance: true },
+    maxRounds: 1,
+    minChangedLines: 3,
+    maxFiles: 30,
+    ignore: [],
+  },
 };
 
 const PROVIDER_DEFAULTS: ProviderConfig = {
