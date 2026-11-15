@@ -141,5 +141,9 @@ if (!uninstall) {
       `\ncreated ${cfg} from config.example.json — review credentials/scope before using write tools`,
     );
   }
-  console.log("\nReload Cursor (Developer: Reload Window) to load the suite in every workspace.");
+  console.log(
+    process.env[SERVE_TOKEN_ENV] === token
+      ? "\nReload Cursor (Developer: Reload Window) to load the suite in every workspace."
+      : `\nQuit and reopen Cursor so it has ${SERVE_TOKEN_ENV}; then the suite loads in every workspace.`,
+  );
 }

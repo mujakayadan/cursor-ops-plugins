@@ -16,7 +16,7 @@ Check `git --version`, `node --version` (24 or newer) and `pnpm --version`. Inst
 | Node 24+ | `winget install --id OpenJS.NodeJS.LTS --exact` | `brew install node` |
 | pnpm | `winget install --id pnpm.pnpm --exact` | `brew install pnpm` |
 
-On Linux, use the distribution's packages or the projects' installers. On Windows, winget updates PATH only for new processes, so refresh it in your shell before continuing:
+On Linux, use the distribution's packages; don't pipe remote install scripts into a shell. On Windows, winget updates PATH only for new processes, so refresh it in your shell before continuing:
 
 ```powershell
 $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
@@ -30,7 +30,7 @@ Clone to the folder the user named, otherwise `~/Codes/cursor-ops-plugins`. Skip
 git clone https://github.com/mujakayadan/cursor-ops-plugins.git <folder>
 ```
 
-The loader records this path, so the checkout must stay where it is. After moving it, run `ops install` again. The suite has no runtime dependencies, so `pnpm install` is only needed for development.
+The loader and the `ops` launcher record this path, so the checkout must stay where it is. After moving it, run `node scripts/ops.ts install` from the new location. The suite has no runtime dependencies, so `pnpm install` is only needed for development.
 
 ### 3. Install the suite
 
@@ -40,7 +40,7 @@ From the checkout (`ops` isn't on PATH in this shell yet, so call the script dir
 node scripts/ops.ts install
 ```
 
-This registers the `workspaceOpen` loader in `~/.cursor/hooks.json`, writes the `ops` launcher to `~/.ops/bin` and adds it to the user PATH, creates the read server token and the `OPS_MCP_TOKEN` user variable, and creates `~/.ops/config.json`. It changes user-level settings, so expect an approval prompt. On macOS and Linux it prints two `export` lines instead of changing the environment: add them to the user's shell profile (`~/.zshrc` or `~/.bashrc`).
+This registers the `workspaceOpen` loader in `~/.cursor/hooks.json`, writes the `ops` launcher to `~/.ops/bin` and adds it to the user PATH, creates the read server token and the `OPS_MCP_TOKEN` user variable, and creates `~/.ops/config.json`. It changes user-level settings, so run it only as part of a setup the user asked for. On macOS and Linux it prints two `export` lines instead of changing the environment: add them to the user's shell profile (`~/.zshrc` or `~/.bashrc`).
 
 ### 4. Install the provider CLIs
 
@@ -84,6 +84,6 @@ If a read tool fails to connect, follow the troubleshooting section of `ops-onbo
 
 - Toolchain: Node 24 runs the `.ts` files directly, strict TypeScript 7, Biome, Vitest, prek. Run `pnpm install` and `pnpm exec prek install` once.
 - `packages/core` is the single source; `lib/core` in each plugin is generated. After editing core or `templates/_shared/standards`, run `pnpm run sync`, then `pnpm run format`, then `pnpm run sync` again.
-- A provider plugin is `provider.ts`: tools, shell rules, `setup` install recipes and `onboarding` (the read tool that proves sign-in or toolchain readiness, the sign-in command, the setup skill). `test/providers.test.ts` enforces the recipes and onboarding fields; `pnpm run new-plugin` scaffolds them.
+- A provider plugin is `provider.ts`: tools, shell rules, `setup` install recipes and, where it needs a sign-in or a local toolchain, `onboarding` (the read tool that proves readiness, the sign-in command, the setup skill). `test/providers.test.ts` covers every provider plugin: a recipe for each binary, and onboarding tools and skills that exist. `pnpm run new-plugin` scaffolds both.
 - `pnpm run ci` must pass before a PR. Branches, PR targets and merge methods follow the [GitOps](README.md#gitops) section.
 - Code and docs describe the current state only: no history, no compatibility shims, no stale docs.

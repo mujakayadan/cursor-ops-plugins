@@ -13,9 +13,9 @@ A machine without the suite starts with the bootstrap in the repository's `AGENT
 2. Apply fixes yourself: `ops setup <plugin> --yes` for missing CLIs (`--optional` for feature-only tools), `ops serve --restart` for the read server, `ops install` for the loader or token.
 3. Hand sign-ins to the user. Their fix reads `in your terminal: <command>`, because they open a browser, show a device code or prompt for a pasted token. Ask the user to run it in Cursor's terminal (`` Ctrl+` ``). Never take a token in chat or run a sign-in that would pass one through your tools.
 4. Run the doctor again until no `FAIL` remains for the providers the user wants. Skipped providers can stay failing; say which.
-5. Verify from chat: call `control_status` and one read tool per signed-in provider (`github_whoami`, `vercel_whoami`, `aws_whoami`, `digitalocean_account_get`, `msgraph_whoami`).
+5. Verify from chat: call `control_status` and, for each signed-in provider, its `onboarding.whoami` read tool (for example `github_whoami`).
 
-Each provider declares its install recipes, readiness tool and sign-in in its `provider.ts` (`setup`, `onboarding`), which is where the doctor's fixes come from. Microsoft 365 also needs an Entra app: follow `msgraph-setup`.
+Each provider declares its install recipes in `provider.ts` (`setup`) and, where it needs a sign-in or a local toolchain, its readiness tool and sign-in command (`onboarding`). That is where the doctor's fixes come from. Microsoft 365 also needs an Entra app: follow `msgraph-setup`.
 
 ## Credential model
 
@@ -45,7 +45,7 @@ Privileged actions are disabled by default. To enable them for one provider, set
 ## Troubleshooting
 - **Tool says a CLI was not found:** `ops setup <plugin> --yes`. The servers find new installs on the next call.
 - **`ops` itself is not found:** run `node scripts/ops.ts install` in the suite checkout and open a new terminal.
-- **Read tools fail to connect or return 401:** read tiers run on the shared server. The doctor shows whether it is up and whether `OPS_MCP_TOKEN` matches; after a fresh install, quit and reopen Cursor once so it has the variable. `ops serve --restart` restarts the server. Its log, `~/.ops/serve.log`, records each refused request with the reason and whether the `Authorization` header was missing, uninterpolated (`${env:...}` sent literally) or wrong, never the token itself.
+- **Read tools fail to connect or return 401:** read tiers run on the shared server. The doctor shows whether it is up and whether `OPS_MCP_TOKEN` matches; after a fresh install, quit and reopen Cursor once so it has the variable. `ops serve --restart` restarts the server. Its log, `~/.ops/serve.log`, records each refused request with the reason and whether the `Authorization` header was missing, uninterpolated (`${env:...}` sent literally), wrong or accepted, never the token itself.
 - **A read server shows an error in Settings → MCP while the doctor says the server is up:** Cursor connected while the server was down or restarting, and it doesn't retry a failed server on its own. Ask the user to toggle that server off and on in Settings → MCP; a quit and reopen of Cursor also works.
 - **The read tier shows the same identity as the write tier:** the per-tier credentials aren't configured, so both tiers use the default login.
 - **Audit records** are in `~/.ops/audit/YYYY-MM-DD.jsonl`, with secrets redacted.

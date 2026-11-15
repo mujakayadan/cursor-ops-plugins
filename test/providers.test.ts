@@ -19,9 +19,15 @@ import msgraph, {
 } from "../plugins/ops-msgraph/provider.ts";
 import scaffold from "../plugins/ops-scaffold/provider.ts";
 import vercel from "../plugins/ops-vercel/provider.ts";
-import { PLUGINS_DIR } from "../scripts/lib.ts";
+import { PLUGINS_DIR, providerPlugins } from "../scripts/lib.ts";
 
 const providers = [github, digitalocean, vercel, aws, scaffold, msgraph, mermaid, latex, control];
+
+describe("provider list", () => {
+  it("covers every provider plugin", () => {
+    assert.deepEqual(providers.map((p) => `ops-${p.id}`).sort(), providerPlugins());
+  });
+});
 
 describe("provider catalogs", () => {
   for (const p of providers) {

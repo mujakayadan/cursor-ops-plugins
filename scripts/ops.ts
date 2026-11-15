@@ -68,7 +68,7 @@ async function status(): Promise<number> {
   return 0;
 }
 
-async function stop(): Promise<boolean> {
+async function stopOrReport(): Promise<boolean> {
   const stopped = await stopServer();
   if (!stopped) console.error(`the read server did not stop; see ${serveLogPath()}`);
   return stopped;
@@ -80,10 +80,10 @@ async function serve(args: string[]): Promise<number> {
     case undefined:
       return script("serve.ts", []);
     case "--stop":
-      return (await stop()) ? 0 : 1;
+      return (await stopOrReport()) ? 0 : 1;
     case "--restart":
     case "--background": {
-      if (mode === "--restart" && !(await stop())) return 1;
+      if (mode === "--restart" && !(await stopOrReport())) return 1;
       const health = await ensureServer();
       console.log(
         health ? `read server pid ${health.pid}` : `did not start; see ${serveLogPath()}`,

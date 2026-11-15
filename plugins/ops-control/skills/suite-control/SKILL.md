@@ -21,6 +21,8 @@ Each change asks the user for approval.
 
 These stay with the user, outside the agent:
 - the guardrail overrides, privileged tools (`allowPrivileged`), credentials, scope and third-party MCP policy in `~/.ops/config.json`;
-- editing the loader entry by hand. If `control_status` reports it unregistered, the suite's own installer fixes it: with the user's go-ahead, run `node scripts/ops.ts install` in the suite checkout (it changes user-level settings, so it asks for approval), then ask for a window reload. Machine setup as a whole follows the `ops-onboarding` skill.
+- the loader entry in `~/.cursor/hooks.json`.
 
 Never work around this by editing those files from the shell; the guardrails deny it.
+
+If `control_status` reports the loader unregistered, the suite's own installer fixes it: run `node scripts/ops.ts install` in the suite checkout with the user's go-ahead (it changes user-level settings), then ask for a window reload. Machine setup as a whole follows the `ops-onboarding` skill.

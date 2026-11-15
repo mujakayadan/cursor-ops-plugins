@@ -77,7 +77,7 @@ try {
     "workspaceOpen loader",
     loader ? current || null : false,
     loader ? (current ? loader : `points at another checkout: ${loader}`) : "not registered",
-    "ops install, then quit and reopen Cursor",
+    "node scripts/ops.ts install in this checkout, then Developer: Reload Window",
   );
 } catch (err) {
   row("install", userHooksPath(), false, message(err), `fix the JSON in ${userHooksPath()}`);
@@ -142,8 +142,8 @@ function identity(out: unknown): string {
 }
 
 function signInFix(provider: Provider, tier: ServerTier): string {
-  const own = cfg?.providers[provider.id]?.credentials?.[tier];
-  if (own && (own.args.length || Object.keys(own.env).length)) {
+  const configured = cfg?.providers[provider.id]?.credentials?.[tier];
+  if (configured && (configured.args.length || Object.keys(configured.env).length)) {
     return `sign in the identity set in providers.${provider.id}.credentials.${tier} (ops-onboarding skill)`;
   }
   const signIn = provider.onboarding?.signIn;
@@ -210,7 +210,9 @@ for (const p of providerPlugins()) {
     "privileged tools",
     privileged ? null : true,
     privileged ? "ENABLED" : "disabled (default)",
-    `set providers.${provider.id}.allowPrivileged to false when you are done`,
+    process.env.OPS_ALLOW_PRIVILEGED === "1"
+      ? "unset OPS_ALLOW_PRIVILEGED when you are done"
+      : `set providers.${provider.id}.allowPrivileged to false when you are done`,
   );
 }
 
