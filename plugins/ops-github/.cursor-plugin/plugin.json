@@ -1,7 +1,7 @@
 {
   "name": "ops-github",
   "displayName": "Ops: GitHub",
-  "version": "1.7.1",
+  "version": "1.8.0",
   "description": "GitHub operations with separate read and write MCP servers, PR/CI skills, and gh CLI guardrails.",
   "author": {
     "name": "Muja Kayadan"
