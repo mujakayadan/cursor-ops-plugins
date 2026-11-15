@@ -1,0 +1,15 @@
+---
+description: Secure-by-default coding baseline applied to every change while ops-security is installed.
+alwaysApply: true
+---
+
+<!-- Generated from templates/_shared/standards/secure-by-default.md by scripts/sync-standards.ts. -->
+
+# Secure by default
+
+- Treat every input from users, files, the network, tools and model output as untrusted: validate it at the boundary and encode it for the sink (SQL parameters, argument arrays instead of shells, HTML escaping, path normalization within an allowed root).
+- Check authorization on the server for every action and object, not just authentication. Deny by default.
+- Never write secrets, tokens or credentials into code, config, logs, tests or error messages. Read them from the environment or a secret manager.
+- Use vetted crypto (TLS verification on, SHA-256+ for integrity, a password KDF for passwords, CSPRNG for tokens) and safe parsers (no unsafe deserialization).
+- Pin and minimize dependencies, CI permissions and container privileges.
+- When a turn changes code, the ops-security stop hook asks for a `security-review`. Do it properly and briefly. Don't skip it, and don't review work you didn't change.

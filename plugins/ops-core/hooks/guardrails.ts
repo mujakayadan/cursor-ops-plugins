@@ -103,7 +103,7 @@ export const GIT_RULES: ShellRule[] = [
     id: "git-delete-protected-branch",
     decision: "deny",
     re: re(
-      `${GIT}(?:push\\b(?=${A}\\s(?:--delete|-d)\\b)(?=${A}\\s${PROTECTED_BRANCHES}${END})|push\\b${A}\\s:${PROTECTED_BRANCHES}${END}|branch\\b${A}\\s(?:-D|-d|--delete)\\s+(?:\\S+\\s+)*${PROTECTED_BRANCHES}${END})`,
+      `${GIT}(?:push\\b(?=${A}\\s(?:--delete|-d)\\b)(?=${A}\\s${PROTECTED_BRANCHES}${END})|push\\b${A}\\s:${PROTECTED_BRANCHES}${END}|branch\\b${A}\\s(?:-D|-d|--delete)\\s+(?:[^\\s;&|]+\\s+)*${PROTECTED_BRANCHES}${END})`,
       "i",
     ),
     reason: "Deleting a protected branch is not allowed.",
@@ -433,13 +433,13 @@ export const SECRET_RULES: ShellRule[] = [
   {
     id: "secret-file-read",
     decision: "ask",
-    re: /\b(?:cat|type|Get-Content|gc|less|more|head|tail|bat|nl|xxd|base64|Copy-Item|cp|scp)\b[^;&|]*(?:\.ssh[\\/]id_|\.ssh[\\/][^\s"']*\.pem|\.aws[\\/]credentials|\.docker[\\/]config\.json|\.kube[\\/]config|\.netrc|\.pgpass|\.git-credentials|\.npmrc|\.pypirc|gcloud[\\/](?:credentials|application_default)|\.azure[\\/](?:accessTokens|msal_token_cache))/i,
+    re: /\b(?:cat|type|Get-Content|gc|less|more|head|tail|bat|nl|xxd|base64|Copy-Item|cp|scp)\b[^;&|]*(?:\.ssh[\\/]id_|\.ssh[\\/][^\s"']*\.pem|\.aws[\\/]credentials|\.docker[\\/]config\.json|\.kube[\\/]config|\.netrc|\.pgpass|\.git-credentials|\.npmrc|\.pypirc|gcloud[\\/](?:credentials|application_default)|\.azure[\\/](?:accessTokens|msal_token_cache)|\.cli-m365-(?:msal|tokens|msal-cache)\.json)/i,
     reason: "Reading a credential file into the agent context.",
   },
   {
     id: "secret-token-print",
     decision: "ask",
-    re: /\bgh\s+auth\s+token\b|\baws\s+(?:configure\s+export-credentials|sts\s+get-session-token|ecr\s+get-login-password)\b|\bgcloud\s+auth\s+(?:print-access-token|print-identity-token)\b|\baz\s+account\s+get-access-token\b|\bdoctl\s+auth\s+token\b|\bvercel\s+(?:whoami\s+--token|tokens?\s+(?:ls|add))\b/i,
+    re: /\bgh\s+auth\s+token\b|\baws\s+(?:configure\s+export-credentials|sts\s+get-session-token|ecr\s+get-login-password)\b|\bgcloud\s+auth\s+(?:print-access-token|print-identity-token)\b|\baz\s+account\s+get-access-token\b|\bdoctl\s+auth\s+token\b|\bm365\s+util\s+accesstoken\s+get\b|\bvercel\s+(?:whoami\s+--token|tokens?\s+(?:ls|add))\b/i,
     reason: "Printing an access token into the agent context.",
   },
 ];

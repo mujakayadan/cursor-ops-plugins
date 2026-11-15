@@ -1,0 +1,19 @@
+---
+description: Choose Mermaid or LaTeX/TikZ for diagrams by complexity; complicated diagrams use LaTeX/TikZ.
+alwaysApply: true
+---
+
+# Diagram routing
+
+Decide by how complicated the figure is, not by its topic.
+
+- **Mermaid** (`mermaid-diagrams` skill, ops-mermaid): diagrams whose automatic layout is good enough, meaning standard flowcharts, sequence, state, class and ER diagrams, Gantt charts, git graphs, mind maps and timelines, and simple system overviews. Prefer a ```mermaid block in Markdown, which GitHub renders natively.
+- **LaTeX/TikZ** (`latex-diagrams` skill, ops-latex): complicated diagrams. Use it when a figure needs any of the following:
+  - precise placement or alignment, such as columns, stacks or layers;
+  - repeated or nested groups, or parallel and skip paths that must not tangle;
+  - math in labels, or 3D and volumetric shapes;
+  - a publication-quality result.
+
+  Deep-learning architectures (transformer-like models, for example) are typical. So are signal-processing and control block diagrams, detailed system or data-flow figures, circuits, commutative diagrams, and geometry or physics sketches.
+- When in doubt, ask whether Mermaid's auto-layout would produce something a reader can follow. If not, use TikZ. Use Mermaid for a complicated diagram only when the user asks for Mermaid. `mermaid_preview` returns `advice` when a diagram looks too complex.
+- Always preview (`mermaid_preview` / `latex_preview`) and read the PNG before you call a diagram done. Fix overlaps, crossing arrows and unreadable labels.

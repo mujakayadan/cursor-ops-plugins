@@ -10,6 +10,15 @@ export function opsHome(): string {
   return process.env.OPS_HOME || join(homedir(), ".ops");
 }
 
+/** Where `ops setup` installs npm-based CLIs; their binaries resolve before PATH. */
+export function toolsDir(): string {
+  return join(opsHome(), "tools");
+}
+
+export function reviewDir(): string {
+  return process.env.OPS_REVIEW_DIR || join(opsHome(), "review");
+}
+
 export function configPath(): string {
   return process.env.OPS_CONFIG || join(opsHome(), "config.json");
 }
@@ -31,6 +40,15 @@ const DEFAULTS: Config = {
   },
   guardrails: { shell: { overrides: {} } },
   prompts: { blockSecrets: true },
+  review: {
+    enabled: true,
+    lenses: { security: true, performance: true, standards: true, docs: true },
+    maxRounds: 1,
+    minChangedLines: 3,
+    maxFiles: 30,
+    ignore: [],
+  },
+  suite: { disabledPlugins: [] },
 };
 
 const PROVIDER_DEFAULTS: ProviderConfig = {
@@ -67,7 +85,9 @@ export function loadConfig({ reload = false }: { reload?: boolean } = {}): Confi
     try {
       user = JSON.parse(readFileSync(path, "utf8"));
     } catch (err) {
-      throw new Error(`Invalid ops config at ${path}: ${(err as Error).message}`);
+      // V8 quotes the surrounding source, which can hold credential env values.
+      const reason = (err as Error).message.replace(/, .* is not valid JSON$/s, ": not valid JSON");
+      throw new Error(`Invalid ops config at ${path}: ${reason}`);
     }
   }
   cached = deepMerge(DEFAULTS, user);

@@ -1,0 +1,16 @@
+---
+description: Clean-code standard applied to every change while ops-standards is installed; code and docs describe only the current state.
+alwaysApply: true
+---
+
+<!-- Generated from templates/_shared/standards/clean-code.md by scripts/sync-standards.ts. -->
+
+# Clean code, current state only
+
+- **Only the latest state.** Code, comments, docs, rules, skills, READMEs and notes describe how things are now. Never narrate history or corrections, such as "previously", "no longer", "was renamed", "now uses", "we changed", "correction", "as of v2" or "replaces the old …". Git history and PRs are the record; anyone interested can read them there. The one exception is changelogs generated from commits.
+- **No backward compatibility inside the codebase.** When you change a name, signature, format, config key or behavior, update every caller, test, doc and example in the same change. Delete the old path. Don't add aliases, shims, deprecation wrappers, fallbacks for old formats, `v1`/`legacy`/`old` duplicates or migration notes. Published contracts that outside clients depend on, such as a public API or a released package, change only as the user decides.
+- **No dead code.** Delete unused functions, parameters, flags, branches, files, assets, config and dependencies. Never comment code out. Don't leave TODO/FIXME markers: finish the work, or say in your reply what remains.
+- **Clean code.** Clear, intention-revealing names. Small functions and modules with one responsibility each. No duplication; extract the shared piece. Early returns over deep nesting. Explicit types at boundaries. Errors handled or surfaced, never swallowed. Match the surrounding code's idioms, formatting and comment density.
+- **Comments state constraints the code can't show**, such as why a limit exists or what an external system requires. They don't restate the code, explain where it came from, or argue that a change is correct.
+- **No leftovers.** No debug output, `debugger` statements, stray scratch files, or lint and type suppressions without a stated reason.
+- When a turn changes code or docs, the ops-standards stop hook asks for a `standards-review`. Do it properly and briefly. Don't skip it, and don't review work you didn't change.

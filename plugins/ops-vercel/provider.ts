@@ -389,6 +389,11 @@ const provider: Provider = {
   displayName: "Vercel",
   version: "1.0.0",
   bin: "vercel",
+  setup: [{ bin: "vercel", pnpm: "vercel", docs: "https://vercel.com/docs/cli" }],
+  onboarding: {
+    whoami: "vercel_whoami",
+    signIn: { command: "vercel login", note: "opens the browser" },
+  },
   baseArgs: ["--non-interactive"],
   baseEnv: { NO_COLOR: "1", FORCE_COLOR: "0" },
   instructions: {

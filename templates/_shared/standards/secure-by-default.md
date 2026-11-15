@@ -1,0 +1,5 @@
+- Treat every input from users, files, the network, tools and model output as untrusted: validate it at the boundary and encode it for the sink (SQL parameters, argument arrays instead of shells, HTML escaping, path normalization within an allowed root).
+- Check authorization on the server for every action and object, not just authentication. Deny by default.
+- Never write secrets, tokens or credentials into code, config, logs, tests or error messages. Read them from the environment or a secret manager.
+- Use vetted crypto (TLS verification on, SHA-256+ for integrity, a password KDF for passwords, CSPRNG for tokens) and safe parsers (no unsafe deserialization).
+- Pin and minimize dependencies, CI permissions and container privileges.

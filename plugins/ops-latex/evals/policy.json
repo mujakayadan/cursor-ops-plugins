@@ -1,0 +1,15 @@
+[
+  { "name": "status allowed", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-latex-read", "tool_name": "latex_status", "tool_input": "{}" }, "expect": { "permission": "allow" } },
+  { "name": "preview allowed", "event": "beforeMCPExecution", "input": { "mcp_server_name": "plugin-ops-latex-ops-latex-read", "tool_name": "latex_preview", "tool_input": "{\"source\":\"\\\\begin{tikzpicture}\\\\end{tikzpicture}\"}" }, "expect": { "permission": "allow" } },
+  { "name": "render asks", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-latex-write", "tool_name": "latex_render", "tool_input": "{\"file\":\"D:\\\\Codes\\\\docs\\\\model.tex\",\"output\":\"D:\\\\Codes\\\\docs\\\\model.svg\"}" }, "expect": { "permission": "ask" } },
+  { "name": "render on read server denied", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-latex-read", "tool_name": "latex_render", "tool_input": "{}" }, "expect": { "permission": "deny" } },
+  { "name": "unknown latex tool denied", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-latex-write", "tool_name": "latex_shell", "tool_input": "{}" }, "expect": { "permission": "deny" } },
+
+  { "name": "plain pdflatex allowed", "event": "beforeShellExecution", "input": { "command": "pdflatex -interaction=nonstopmode paper.tex" }, "expect": { "permission": "allow" } },
+  { "name": "shell escape asks", "event": "beforeShellExecution", "input": { "command": "pdflatex --shell-escape paper.tex" }, "expect": { "permission": "ask" } },
+  { "name": "latexmk shell escape asks", "event": "beforeShellExecution", "input": { "command": "latexmk -pdf -shell-escape paper.tex" }, "expect": { "permission": "ask" } },
+  { "name": "write18 asks", "event": "beforeShellExecution", "input": { "command": "xelatex -enable-write18 paper.tex" }, "expect": { "permission": "ask" } },
+  { "name": "miktex package install asks", "event": "beforeShellExecution", "input": { "command": "miktex packages install pgfplots" }, "expect": { "permission": "ask" } },
+  { "name": "tlmgr install asks", "event": "beforeShellExecution", "input": { "command": "tlmgr install tikz-cd" }, "expect": { "permission": "ask" } },
+  { "name": "tlmgr info allowed", "event": "beforeShellExecution", "input": { "command": "tlmgr info pgfplots" }, "expect": { "permission": "allow" } }
+]

@@ -5,13 +5,9 @@
  * Usage: node scripts/smoke.ts [provider ...]
  */
 import { spawn } from "node:child_process";
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { PLUGINS_DIR } from "./lib.ts";
 
-interface McpFile {
-  mcpServers: Record<string, { command: string; args: string[] }>;
-}
 interface RpcResponse {
   id: number;
   result: { isError?: boolean; content: { text: string }[] };
@@ -33,6 +29,13 @@ const CALLS: Record<string, [string, Record<string, unknown>][]> = {
     ["aws_s3_buckets", {}],
   ],
   scaffold: [["scaffold_list_templates", {}]],
+  mermaid: [["mermaid_status", {}]],
+  latex: [["latex_status", {}]],
+  msgraph: [
+    ["msgraph_whoami", {}],
+    ["msgraph_mail_list", { top: 3 }],
+    ["msgraph_event_list", { top: 5 }],
+  ],
 };
 
 function shape(text: string): string {
@@ -49,12 +52,9 @@ function shape(text: string): string {
 
 async function smoke(id: string): Promise<void> {
   const root = join(PLUGINS_DIR, `ops-${id}`);
-  const mcp = JSON.parse(readFileSync(join(root, "mcp.json"), "utf8")) as McpFile;
-  const def = mcp.mcpServers[`ops-${id}-read`];
-  if (!def) throw new Error(`ops-${id} has no read server in mcp.json`);
   const proc = spawn(
-    def.command,
-    def.args.map((a) => a.replaceAll("${CURSOR_PLUGIN_ROOT}", root)),
+    process.execPath,
+    [join(root, "lib", "core", "run-mcp.ts"), "--tier", "read"],
     { stdio: ["pipe", "pipe", "inherit"] },
   );
   let buf = "";

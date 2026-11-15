@@ -1,0 +1,72 @@
+[
+  {
+    "name": "user prompt starts a reviewed turn",
+    "event": "beforeSubmitPrompt",
+    "input": { "conversation_id": "std-1", "generation_id": "g1", "prompt": "rename the config loader" },
+    "expect": { "continue": true }
+  },
+  {
+    "name": "code edit with history and compatibility leftovers is recorded",
+    "event": "afterFileEdit",
+    "input": {
+      "conversation_id": "std-1",
+      "generation_id": "g1",
+      "workspace_roots": ["${TMP}"],
+      "file_path": "${TMP}/src/config.ts",
+      "edits": [
+        {
+          "old_string": "",
+          "new_string": "// Previously this read config.yaml; now uses JSON.\nexport function loadConfig() {\n  return readJson(PATH);\n}\n// const legacy = readYaml(OLD_PATH);\nexport const loadConfigLegacy = loadConfig;"
+        }
+      ]
+    },
+    "expect": {}
+  },
+  {
+    "name": "stop requests a standards review with static hints",
+    "event": "stop",
+    "input": { "conversation_id": "std-1", "generation_id": "g1", "status": "completed", "loop_count": 0 },
+    "expect": {},
+    "match": {
+      "followup_message": "^\\[ops-review\\][\\s\\S]*standards-review[\\s\\S]*standards/history-comment[\\s\\S]*standards/commented-out-code[\\s\\S]*standards/compat-shim"
+    }
+  },
+  {
+    "name": "doc edit narrating history is recorded",
+    "event": "afterFileEdit",
+    "input": {
+      "conversation_id": "std-2",
+      "generation_id": "g1",
+      "workspace_roots": ["${TMP}"],
+      "file_path": "${TMP}/docs/setup.md",
+      "edits": [{ "old_string": "", "new_string": "## Setup\n\nThe `serve` command was renamed from `start`.\nRun `pnpm serve`." }]
+    },
+    "expect": {}
+  },
+  {
+    "name": "stop flags history narration in docs",
+    "event": "stop",
+    "input": { "conversation_id": "std-2", "generation_id": "g1", "status": "completed", "loop_count": 0 },
+    "expect": {},
+    "match": { "followup_message": "`docs/setup\\.md` standards/history-doc" }
+  },
+  {
+    "name": "changelog edits are not standards-reviewed",
+    "event": "afterFileEdit",
+    "input": {
+      "conversation_id": "std-3",
+      "generation_id": "g1",
+      "workspace_roots": ["${TMP}"],
+      "file_path": "${TMP}/CHANGELOG.md",
+      "edits": [{ "old_string": "", "new_string": "## 1.2.0\n\n- The `start` command was renamed to `serve`.\n- Deprecated `--port`." }]
+    },
+    "expect": {}
+  },
+  {
+    "name": "stop after a changelog-only change stays quiet",
+    "event": "stop",
+    "input": { "conversation_id": "std-3", "generation_id": "g1", "status": "completed", "loop_count": 0 },
+    "expect": {},
+    "match": { "followup_message": "^$" }
+  }
+]

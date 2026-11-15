@@ -22,6 +22,7 @@ export interface ProviderScope {
   allowedRegions?: string[];
   allowedAccounts?: string[];
   allowedRoots?: string[];
+  allowedRecipientDomains?: string[];
 }
 
 export interface ProviderConfig {
@@ -29,6 +30,11 @@ export interface ProviderConfig {
   credentials: { read: Credentials; write: Credentials };
   scope: ProviderScope;
   defaultRegion?: string | null;
+  timeZone?: string | null;
+  /** Chrome/Chromium/Edge executable for mermaid-cli. */
+  browserPath?: string | null;
+  /** TeX engine used when a LaTeX tool call doesn't pick one. */
+  engine?: string | null;
   source?: string | null;
   ref?: string | null;
 }
@@ -46,6 +52,23 @@ export interface Config {
   thirdPartyMcp: ThirdPartyMcpPolicy;
   guardrails: { shell: { overrides: Record<string, Decision> } };
   prompts: { blockSecrets: boolean };
+  review: ReviewConfig;
+  suite: { disabledPlugins: string[] };
+}
+
+export type ReviewLensId = "security" | "performance" | "standards" | "docs";
+
+export interface ReviewConfig {
+  enabled: boolean;
+  lenses: Record<ReviewLensId, boolean>;
+  /** Follow-up review requests per user prompt; fixes made during a review are not re-reviewed beyond this. */
+  maxRounds: number;
+  /** Turns with fewer changed lines and no static hints are not reviewed. */
+  minChangedLines: number;
+  /** Changed files listed in the review request. */
+  maxFiles: number;
+  /** Workspace-relative path regexes that are never reviewed. */
+  ignore: string[];
 }
 
 export interface CliOptions {
@@ -92,6 +115,7 @@ export interface Tool<A extends object = Args> {
 export interface HookPayload {
   hook_event_name?: string;
   conversation_id?: string;
+  generation_id?: string;
   command?: string;
   cwd?: string;
   workspace_roots?: string[];
@@ -103,6 +127,10 @@ export interface HookPayload {
   duration?: number;
   sandbox?: boolean;
   result_json?: string;
+  file_path?: string;
+  edits?: { old_string?: string; new_string?: string }[];
+  status?: "completed" | "aborted" | "error";
+  loop_count?: number;
 }
 
 export interface HookResponse {
@@ -110,6 +138,7 @@ export interface HookResponse {
   continue?: boolean;
   user_message?: string;
   agent_message?: string;
+  followup_message?: string;
 }
 
 export interface ShellRule {
@@ -121,6 +150,33 @@ export interface ShellRule {
   when?(payload: HookPayload): boolean;
 }
 
+/** How `ops setup` installs a binary; it prefers pnpm, then winget on Windows or Homebrew elsewhere. */
+export interface Install {
+  bin: string;
+  /** npm package installed into the suite's tools directory (no admin rights, no PATH change). */
+  pnpm?: string;
+  /** winget package id. */
+  winget?: string;
+  /** Homebrew formula, or `--cask <name>`. */
+  brew?: string;
+  /** Where to get it when no method applies. */
+  docs: string;
+  /** Needed only for some features; installed with `ops setup --optional`. */
+  optional?: string;
+}
+
+/** How `ops doctor` decides a provider is ready, and what it tells the user when it isn't. */
+export interface Onboarding {
+  /** Read tool returning the signed-in identity; doctor runs it once per credential tier. */
+  whoami?: string;
+  /** Read tool returning `{ ready }` (or `{ engines }`) for a local toolchain. */
+  status?: string;
+  /** Sign-in the user completes in their own terminal (browser, device code or pasted token). */
+  signIn?: { command: string; note?: string };
+  /** Skill with the full setup walkthrough. */
+  skill?: string;
+}
+
 export interface Provider {
   id: string;
   displayName: string;
@@ -130,6 +186,9 @@ export interface Provider {
   baseEnv?: Record<string, string>;
   /** Extra binaries the tools need besides `bin`. */
   requires?: string[];
+  /** Install recipes for `bin` and `requires`. */
+  setup?: Install[];
+  onboarding?: Onboarding;
   instructions?: Partial<Record<ServerTier, string>>;
   tools: Tool[];
   shellRules?: ShellRule[];

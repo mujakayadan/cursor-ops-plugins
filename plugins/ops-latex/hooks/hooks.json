@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeMCPExecution": [
+      {
+        "command": "node ./lib/core/run-guard.ts beforeMCPExecution",
+        "timeout": 10,
+        "failClosed": true
+      }
+    ],
+    "beforeShellExecution": [
+      {
+        "command": "node ./lib/core/run-guard.ts beforeShellExecution",
+        "matcher": "\\b(((pdf|xe|lua)?la)?tex|latexmk|tlmgr|miktex|mpm)(\\.exe|\\.cmd)?\\s",
+        "timeout": 10,
+        "failClosed": true
+      }
+    ]
+  }
+}

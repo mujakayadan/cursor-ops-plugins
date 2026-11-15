@@ -129,6 +129,12 @@ const CASES: Case[] = [
       ".github/workflows/ci.yml": { "lfs: true": true },
       ".github/workflows/image.yml": { "lfs: true": true },
       ".github/workflows/api-compat.yml": { "tufin/oasdiff:v": true },
+      "AGENTS.md": {
+        "### Clean code, current state only": true,
+        "### Docs match the code": true,
+        "Prefer additive changes to the published contract": true,
+        "{%": false,
+      },
     },
     setup: ["uv sync", "uv run pytest tests/test_openapi.py -q --no-cov"],
     checks: "python",

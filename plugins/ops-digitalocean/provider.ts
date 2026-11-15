@@ -422,6 +422,21 @@ const provider: Provider = {
   displayName: "DigitalOcean",
   version: "1.0.0",
   bin: "doctl",
+  setup: [
+    {
+      bin: "doctl",
+      winget: "DigitalOcean.Doctl",
+      brew: "doctl",
+      docs: "https://docs.digitalocean.com/reference/doctl/how-to/install/",
+    },
+  ],
+  onboarding: {
+    whoami: "digitalocean_account_get",
+    signIn: {
+      command: "doctl auth init",
+      note: "paste an API token created at https://cloud.digitalocean.com/account/api/tokens",
+    },
+  },
   baseArgs: ["--output", "json"],
   baseEnv: { NO_COLOR: "1" },
   instructions: {

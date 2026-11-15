@@ -2,6 +2,14 @@
   "audit": { "enabled": true, "dir": null, "maxFieldChars": 4000 },
   "execution": { "timeoutMs": 120000, "maxOutputChars": 60000 },
   "prompts": { "blockSecrets": true },
+  "review": {
+    "enabled": true,
+    "lenses": { "security": true, "performance": true, "standards": true, "docs": true },
+    "maxRounds": 1,
+    "minChangedLines": 3,
+    "ignore": ["^docs/generated/"]
+  },
+  "suite": { "disabledPlugins": [] },
 
   "thirdPartyMcp": {
     "read": "allow",
@@ -57,6 +65,18 @@
     "scaffold": {
       "source": null,
       "ref": null,
+      "scope": { "allowedRoots": [] }
+    },
+    "msgraph": {
+      "timeZone": null,
+      "scope": { "allowedRecipientDomains": [] }
+    },
+    "mermaid": {
+      "browserPath": null,
+      "scope": { "allowedRoots": [] }
+    },
+    "latex": {
+      "engine": null,
       "scope": { "allowedRoots": [] }
     }
   }

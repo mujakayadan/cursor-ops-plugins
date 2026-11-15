@@ -1,0 +1,38 @@
+[
+  {
+    "name": "status is a read",
+    "event": "beforeMCPExecution",
+    "input": { "mcp_server_name": "ops-control-read", "tool_name": "control_status", "tool_input": "{}" },
+    "expect": { "permission": "allow" }
+  },
+  {
+    "name": "audit query is a read",
+    "event": "beforeMCPExecution",
+    "input": {
+      "mcp_server_name": "ops-control-read",
+      "tool_name": "control_audit",
+      "tool_input": "{\"decision\":\"deny\"}"
+    },
+    "expect": { "permission": "allow" }
+  },
+  {
+    "name": "review settings change asks",
+    "event": "beforeMCPExecution",
+    "input": {
+      "mcp_server_name": "ops-control-write",
+      "tool_name": "control_review_set",
+      "tool_input": "{\"lens\":\"docs\",\"lensEnabled\":false}"
+    },
+    "expect": { "permission": "ask" }
+  },
+  {
+    "name": "plugin toggle asks",
+    "event": "beforeMCPExecution",
+    "input": {
+      "mcp_server_name": "ops-control-write",
+      "tool_name": "control_plugin_set",
+      "tool_input": "{\"plugin\":\"ops-latex\",\"enabled\":false}"
+    },
+    "expect": { "permission": "ask" }
+  }
+]

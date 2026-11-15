@@ -1,0 +1,5 @@
+- Know the size of the data each code path handles. Prefer linear or better work, and index with a Map or Set instead of scanning a list inside a loop.
+- Batch I/O: no database or network call per item (N+1). Paginate or limit queries and select only the needed columns.
+- Keep hot paths non-blocking: no synchronous file or process I/O or sleeps in servers, handlers or render paths. Run independent async work concurrently, with a bound.
+- Cache only with a clear key, invalidation and size limit. Release listeners, timers, streams and connections you open.
+- Don't micro-optimize cold code or trade readability for unmeasured gains. When it matters, measure before and after.
