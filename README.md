@@ -130,11 +130,11 @@ Every repository, this one included, follows one branch and release flow:
 | `dev` | integration | PRs from `<github-user>/<type>/<kebab-name>` branches; the automatic `main → dev` sync | squash (features), merge commit (sync) |
 | `qa`, `staging` | optional, only when asked | promotions | merge commit |
 
-Work branch types are `feat`, `fix`, `chore`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `style`, `revert` and `hotfix`. PR titles follow Conventional Commits.
+Work branch types are `feat`, `fix`, `chore`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `style`, `revert` and `hotfix`. PR titles follow Conventional Commits. Each PR covers one concern; leave unrelated dirty files out of the commit. Concurrent agents use linked worktrees (`ops worktree add <user>/<type>/<name>`) so they do not share a working tree. The shared read server tracks git HEAD and refreshes on `ops status`, `ops doctor` and workspace open.
 
 The flow is enforced in layers that all work on GitHub Free:
 - **CI:** the `pr-policy` workflow checks the target, the branch name (its user part must match the PR author) and the title.
-- **Local hooks:** prek's `no-commit-to-branch` blocks commits on environment branches.
+- **Local hooks:** prek's `no-commit-to-branch` blocks commits on environment branches; push also runs biome, tsc and vitest.
 - **Agent guardrails:** ops-core denies pushes and commits to environment branches and badly named branches. `github_pr_merge` refuses red checks, work branches into `main`, and squashed promotions.
 - **Rulesets:** `github_repo_bootstrap` applies them where the plan allows (public repos on Free, any repo on paid plans). They block deletion and force pushes, require a PR, resolved conversations and `pr-policy`, and set the merge methods. There are no bypass actors.
 
