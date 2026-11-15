@@ -152,9 +152,7 @@ async function render(
   try {
     resolveBinary("mmdc");
   } catch {
-    throw new ToolError(
-      "mmdc not found on PATH. Install it with `pnpm add -g @mermaid-js/mermaid-cli`.",
-    );
+    throw new ToolError("mmdc not found. Install it with `ops setup ops-mermaid`.");
   }
   const work = mkdtempSync(join(tmpdir(), "ops-mermaid-"));
   try {
@@ -235,7 +233,7 @@ const tools = [
       const browser = resolveBrowser(ctx.provider);
       return {
         mmdc: version?.code === 0 ? version.stdout.trim() : null,
-        install: version?.code === 0 ? undefined : "pnpm add -g @mermaid-js/mermaid-cli",
+        install: version?.code === 0 ? undefined : "ops setup ops-mermaid",
         browser,
         ready: version?.code === 0 && browser.source !== "none found",
         routing:
@@ -347,6 +345,13 @@ const provider: Provider = {
   displayName: "Mermaid",
   version: "1.0.0",
   bin: "mmdc",
+  setup: [
+    {
+      bin: "mmdc",
+      pnpm: "@mermaid-js/mermaid-cli",
+      docs: "https://github.com/mermaid-js/mermaid-cli",
+    },
+  ],
   baseEnv: { NO_COLOR: "1" },
   instructions: {
     read: "Validates and previews Mermaid diagrams to throwaway PNGs. Complicated diagrams that need precise layout, math or 3D blocks belong in ops-latex (TikZ).",

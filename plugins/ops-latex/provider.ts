@@ -184,7 +184,7 @@ async function runBibliography(
   const usesBibtex = !usesBiber && existsSync(aux) && /\\bibdata\{/.test(readFileSync(aux, "utf8"));
   if (!usesBiber && !usesBibtex) return undefined;
   const tool = usesBiber ? "biber" : "bibtex";
-  if (!available(tool)) return { tool, ok: false, detail: `${tool} not found on PATH` };
+  if (!available(tool)) return { tool, ok: false, detail: `${tool} not found` };
   const args = usesBiber
     ? ["--input-directory", job.cwd, "--output-directory", job.outDir, name]
     : [name];
@@ -210,7 +210,7 @@ async function runBibliography(
 async function compile(job: CompileJob): Promise<CompileResult> {
   if (!available(job.engine)) {
     throw new ToolError(
-      `${job.engine} not found on PATH. Install MiKTeX or TeX Live (see latex_status).`,
+      `${job.engine} not found. Install it with \`ops setup ops-latex\` (see latex_status).`,
     );
   }
   const dist = await distribution(job.engine);
@@ -403,7 +403,7 @@ const tools = [
         },
         packages,
         install: !first
-          ? "Install MiKTeX (Windows: winget install MiKTeX.MiKTeX) or TeX Live (tug.org/texlive)."
+          ? "Run `ops setup ops-latex` (MiKTeX on Windows, BasicTeX on macOS) or install TeX Live (tug.org/texlive)."
           : missing.length
             ? installHint(dist, missing)
             : undefined,
@@ -560,6 +560,21 @@ const provider: Provider = {
   displayName: "LaTeX",
   version: "1.0.0",
   bin: "pdflatex",
+  setup: [
+    {
+      bin: "pdflatex",
+      winget: "MiKTeX.MiKTeX",
+      brew: "--cask basictex",
+      docs: "https://miktex.org/download (Windows), https://tug.org/texlive/ (Linux, macOS)",
+    },
+    {
+      bin: "pdftoppm",
+      winget: "oschwartz10612.Poppler",
+      brew: "poppler",
+      docs: "https://poppler.freedesktop.org",
+      optional: "PNG and SVG previews",
+    },
+  ],
   baseEnv: { openout_any: "p" },
   instructions: {
     read: "Compiles LaTeX and TikZ in throwaway directories and returns PNG previews, errors and warnings. Use it for complex diagrams that need precise layout, math, grouping or 3D shapes.",

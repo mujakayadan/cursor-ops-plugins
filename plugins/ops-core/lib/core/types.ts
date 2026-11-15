@@ -151,6 +151,21 @@ export interface ShellRule {
   when?(payload: HookPayload): boolean;
 }
 
+/** How `ops setup` installs a binary; it prefers pnpm, then winget on Windows or Homebrew elsewhere. */
+export interface Install {
+  bin: string;
+  /** npm package installed into the suite's tools directory (no admin rights, no PATH change). */
+  pnpm?: string;
+  /** winget package id. */
+  winget?: string;
+  /** Homebrew formula, or `--cask <name>`. */
+  brew?: string;
+  /** Where to get it when no method applies. */
+  docs: string;
+  /** Needed only for some features; installed with `ops setup --optional`. */
+  optional?: string;
+}
+
 export interface Provider {
   id: string;
   displayName: string;
@@ -160,6 +175,8 @@ export interface Provider {
   baseEnv?: Record<string, string>;
   /** Extra binaries the tools need besides `bin`. */
   requires?: string[];
+  /** Install recipes for `bin` and `requires`. */
+  setup?: Install[];
   instructions?: Partial<Record<ServerTier, string>>;
   tools: Tool[];
   shellRules?: ShellRule[];

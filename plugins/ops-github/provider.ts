@@ -890,6 +890,7 @@ const provider: Provider = {
   displayName: "GitHub",
   version: "1.0.0",
   bin: "gh",
+  setup: [{ bin: "gh", winget: "GitHub.cli", brew: "gh", docs: "https://cli.github.com" }],
   baseEnv: { GH_PROMPT_DISABLED: "1", NO_COLOR: "1", GH_NO_UPDATE_NOTIFIER: "1" },
   instructions: {
     read: "Read-only GitHub access (repos, PRs, issues, Actions). Prefer these tools for investigation.",

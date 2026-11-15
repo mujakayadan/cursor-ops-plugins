@@ -10,6 +10,11 @@ export function opsHome(): string {
   return process.env.OPS_HOME || join(homedir(), ".ops");
 }
 
+/** Where `ops setup` installs npm-based CLIs; their binaries resolve before PATH. */
+export function toolsDir(): string {
+  return join(opsHome(), "tools");
+}
+
 export function reviewDir(): string {
   return process.env.OPS_REVIEW_DIR || join(opsHome(), "review");
 }

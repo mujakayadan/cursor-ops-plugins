@@ -8,7 +8,7 @@ description: Set up, sign in to or switch accounts for the ops-msgraph tools (Ou
 The ops-msgraph tools call Microsoft Graph through the [CLI for Microsoft 365](https://pnp.github.io/cli-microsoft365/) (`m365`). The CLI owns sign-in and the token cache; never read, print or copy tokens or the `~/.cli-m365-*.json` files, and never create app secrets for the user.
 
 ## 1. Install
-`npm install -g @pnp/cli-microsoft365`, then `m365 version`. Optional: `m365 cli config set --key disableTelemetry --value true`.
+`ops setup ops-msgraph`, then `m365 version`. Optional: `m365 cli config set --key disableTelemetry --value true`.
 
 ## 2. Entra app (once per user or tenant)
 m365 signs in with an Entra app registration the user owns. Either run `m365 setup` and let it create one, or register it by hand in the Entra admin center (App registrations, New registration):

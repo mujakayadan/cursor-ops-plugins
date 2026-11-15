@@ -32,6 +32,12 @@ describe("provider catalogs", () => {
       for (const t of p.tools.filter((x) => x.tier !== "read"))
         assert.equal(typeof t.summarize, "function", t.name);
     });
+    it(`${p.id}: every binary it needs has an install recipe`, () => {
+      const recipes = new Set((p.setup ?? []).map((s) => s.bin));
+      for (const bin of [p.bin, ...(p.requires ?? [])].filter((b) => b !== "node")) {
+        assert.ok(recipes.has(bin), bin);
+      }
+    });
     it(`${p.id}: has at least one read and one write tool`, () => {
       assert.ok(p.tools.some((t) => t.tier === "read"));
       assert.ok(p.tools.some((t) => t.tier === "write"));

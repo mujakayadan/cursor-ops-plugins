@@ -772,6 +772,14 @@ const provider: Provider = {
   displayName: "AWS",
   version: "1.0.0",
   bin: "aws",
+  setup: [
+    {
+      bin: "aws",
+      winget: "Amazon.AWSCLI",
+      brew: "awscli",
+      docs: "https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html",
+    },
+  ],
   baseArgs: ["--output", "json", "--no-cli-pager"],
   baseEnv: { AWS_PAGER: "", AWS_CLI_AUTO_PROMPT: "off" },
   instructions: {
