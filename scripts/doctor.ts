@@ -3,7 +3,12 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { resolveBinary } from "../packages/core/cli.ts";
-import { configPath, loadConfig, privilegedEnabled } from "../packages/core/config.ts";
+import {
+  configPath,
+  loadConfig,
+  privilegedEnabled,
+  tierCredentials,
+} from "../packages/core/config.ts";
 import { makeContext } from "../packages/core/mcp-server.ts";
 import {
   gitHead,
@@ -202,11 +207,20 @@ async function checkProvider(plugin: string): Promise<Row[]> {
   }
   const probe = provider.tools.find((t) => t.name === whoami);
   if (!probe) return out;
+  // Tiers with the same credentials share one probe, so a CLI never refreshes one login twice at once.
+  const probes = new Map<string, Promise<string>>();
   const tiers = await Promise.all(
     TIERS.map(async (tier) => {
+      const key = cfg ? JSON.stringify(tierCredentials(id, tier, cfg)) : tier;
+      const identityOf =
+        probes.get(key) ??
+        (async () => {
+          const res = await probe.run({}, makeContext(provider, { ...probe, tier }, probeCfg));
+          return identity(res).slice(0, 80);
+        })();
+      probes.set(key, identityOf);
       try {
-        const res = await probe.run({}, makeContext(provider, { ...probe, tier }, probeCfg));
-        return toRow(id, `${tier} credentials`, true, identity(res).slice(0, 80));
+        return toRow(id, `${tier} credentials`, true, await identityOf);
       } catch (err) {
         return toRow(id, `${tier} credentials`, false, firstLine(err), signInFix(provider, tier));
       }
