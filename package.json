@@ -4,7 +4,7 @@
   "private": true,
   "license": "MIT",
   "author": "Muja Kayadan",
-  "description": "Enterprise Cursor plugin suite for GitHub, DigitalOcean, Vercel and AWS operations with tiered MCP servers, guardrail hooks, automatic security, performance, clean-code and docs-freshness review, skills and evals, plus Copier project scaffolders and Mermaid/LaTeX authoring.",
+  "description": "Enterprise Cursor plugin suite for GitHub, DigitalOcean, Vercel, AWS, Microsoft 365 and Google operations with tiered MCP servers, guardrail hooks, automatic security, performance, clean-code and docs-freshness review, skills and evals, plus Copier project scaffolders and Mermaid/LaTeX authoring.",
   "type": "module",
   "packageManager": "pnpm@11.20.0",
   "engines": {

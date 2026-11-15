@@ -1,0 +1,14 @@
+{
+  "name": "ops-google",
+  "displayName": "Ops: Google",
+  "version": "1.9.1",
+  "description": "Google operations with separate read and write MCP servers and gog guardrails.",
+  "author": {
+    "name": "Muja Kayadan"
+  },
+  "license": "MIT",
+  "keywords": [
+    "google"
+  ],
+  "category": "developer-tools"
+}

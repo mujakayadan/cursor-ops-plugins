@@ -15,6 +15,10 @@ import github, {
   rulesetFor,
   updatedBody,
 } from "../plugins/ops-github/provider.ts";
+import google, {
+  outsideDomains as googleOutsideDomains,
+  pickGoogleAccount,
+} from "../plugins/ops-google/provider.ts";
 import latex from "../plugins/ops-latex/provider.ts";
 import memory from "../plugins/ops-memory/provider.ts";
 import mermaid from "../plugins/ops-mermaid/provider.ts";
@@ -36,6 +40,7 @@ const providers = [
   aws,
   scaffold,
   msgraph,
+  google,
   mermaid,
   latex,
   architecture,
@@ -247,6 +252,34 @@ describe("msgraph requests", () => {
       stripHtml("<p>Hi&nbsp;<b>Ana</b></p><p>a &lt;b&gt; &amp;amp;</p>"),
       "Hi Ana\na <b> &amp;",
     );
+  });
+});
+
+describe("google recipient scope", () => {
+  it("fences recipients to allowed domains and their subdomains", () => {
+    const pcfg = {
+      allowPrivileged: false,
+      credentials: { read: { env: {}, args: [] }, write: { env: {}, args: [] } },
+      scope: { allowedRecipientDomains: ["Example.com"] },
+    };
+    assert.deepEqual(
+      googleOutsideDomains(["ana@example.com", "bo@eu.example.com", "x@evilexample.com"], pcfg),
+      ["x@evilexample.com"],
+    );
+    assert.deepEqual(googleOutsideDomains(["x@anything.io"], { ...pcfg, scope: {} }), []);
+  });
+});
+
+describe("google pickGoogleAccount", () => {
+  it("prefers a configured account, else first by email, and skips invalid", () => {
+    const accounts = [
+      { email: "zeta@example.com", valid: true },
+      { email: "alpha@example.com", valid: true },
+      { email: "bad@example.com", valid: false },
+    ];
+    assert.equal(pickGoogleAccount(accounts, "zeta@example.com"), "zeta@example.com");
+    assert.equal(pickGoogleAccount(accounts), "alpha@example.com");
+    assert.equal(pickGoogleAccount([{ email: "only@example.com", valid: false }]), undefined);
   });
 });
 

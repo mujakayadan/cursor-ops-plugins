@@ -8,7 +8,7 @@ description: Apply and follow the team's GitOps flow on GitHub - main is product
 ## The rules
 - **Environment branches:** `main` (production) and `dev` (integration) in every repo; `qa` and `staging` only when the user asks. They change only through pull requests. Never commit or push to them; the ops-core guardrails and the repo's git hooks refuse it.
 - **Work branches:** `<github-user>/<type>/<kebab-name>`, cut from `dev`. Type is one of `feat fix chore docs refactor perf test build ci style revert hotfix`. Get the login from `github_whoami`. Example: `git switch -c octocat/fix/login-timeout origin/dev`.
-- **Targets:** work PRs go to `dev` and are squash-merged. `main` accepts PRs only from `dev`, `qa`, `staging`, Dependabot and release-please, merged with a merge commit. After anything lands on `main`, the `sync-main-to-dev` workflow opens a `main → dev` PR; merge it with a merge commit.
+- **Targets:** work PRs go to `dev` (agent squash-merges when green). `main` accepts PRs only from `dev`, `qa`, `staging`, Dependabot and release-please (merge commit; the user merges promote and release-please). After anything lands on `main`, the `sync-main-to-dev` workflow opens a `main → dev` PR; the agent merges that with a merge commit.
 - **Titles:** Conventional Commits (`feat(api): add health check`, `fix!: drop v1 endpoint`). The squash commit takes the PR title, and release-please reads it.
 - **Checks:** the `pr-policy` workflow enforces targets, branch names and titles. `github_pr_merge` also refuses to merge until every check is green. On GitHub Free, private repos have no rulesets, so these checks plus the local hooks are the enforcement.
 - **API contract:** backend repos commit `openapi.json`, and the `api-compat` job diffs it against the base branch with oasdiff. Error-level breaking changes fail the PR unless declared with `!` in the title and a line starting `BREAKING CHANGE: <migration>` in the body; that also makes release-please bump the major version (minor before 1.0). Promotions and bot PRs only report. Suggest a compatible alternative before declaring a break.
@@ -27,14 +27,15 @@ Changing an existing repo to public is `github_repo_set_visibility` (privileged,
 3. One concern per PR. Commit only the files for this change; leave unrelated dirty files unstaged. Conventional commit messages.
 4. `git push -u origin <branch>`. Local hooks run lint and tests (suite: biome and tsc on commit, vitest on push); never `--no-verify`. Fix hook failures before opening the PR.
 5. `github_pr_create` with `base: "dev"` and a conventional title; the body says `Closes #N` and sticks to this change.
-6. Keep checks green (`github-ci-triage`), then `github_pr_merge` (method `auto` squashes into dev). It needs the user's approval.
+6. Keep checks green (`github-ci-triage`). **Squash-merge the work PR into `dev` yourself** (`github_pr_merge` method `auto`, or `gh pr merge --squash`). Do not wait for the user to merge work→`dev`. Own every file you touched: commit, push, resolve conflicts (rebase onto `origin/dev`), and leave the suite checkout clean (no leftover uncommitted copies of the PR).
 7. After a **suite** change lands and you keep this Cursor window, run `ops status` (or `ops serve --restart`) so the shared read server matches the new HEAD. Opening a workspace does the same.
+8. When the change should ship to production, open the promote PR (`dev` → `main`, title `chore: release`) yourself. **Do not merge promote or release-please PRs** — the user merges those.
 
 ## Promote and release
-1. Promote: `github_pr_create` with `head: "dev"`, `base: "main"` and title `chore: release`. Merge it with `github_pr_merge` (`auto` uses a merge commit).
-2. release-please opens or updates its `chore(main): release X.Y.Z` PR on `main`. Review the changelog with the user, then merge it the same way. That tags `vX.Y.Z`, publishes the GitHub release and, for Docker projects, pushes `ghcr.io/<owner>/<repo>:X.Y.Z` and `:latest` with provenance. Pushes to `dev` publish `:dev` and `:sha-<short>`.
-3. Merge the follow-up `chore: sync main into dev` PR.
+1. Promote: `github_pr_create` with `head: "dev"`, `base: "main"` and title `chore: release`. Tell the user the URL; they merge it (merge commit).
+2. release-please opens or updates its `chore(main): release X.Y.Z` PR on `main`. Review the changelog with the user; they merge it. That tags `vX.Y.Z`, publishes the GitHub release and, for Docker projects, pushes `ghcr.io/<owner>/<repo>:X.Y.Z` and `:latest` with provenance. Pushes to `dev` publish `:dev` and `:sha-<short>`.
+3. After sync opens `chore: sync main into dev`, merge it into `dev` yourself with a **merge commit** when checks are green (or ask the user if anything looks wrong).
 4. Check with `github_release_list`.
 
 ## Hotfix
-Branch `<user>/hotfix/<name>` from `dev`, PR to `dev`, then promote `dev → main` right away. Don't open PRs from work branches to `main`; `pr-policy` rejects them.
+Branch `<user>/hotfix/<name>` from `dev`, PR to `dev`, squash-merge into `dev`, then open the promote PR (`dev` → `main`) right away for the user to merge. Don't open PRs from work branches to `main`; `pr-policy` rejects them.

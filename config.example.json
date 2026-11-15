@@ -71,6 +71,11 @@
       "timeZone": null,
       "scope": { "allowedRecipientDomains": [] }
     },
+    "google": {
+      "timeZone": null,
+      "account": null,
+      "scope": { "allowedRecipientDomains": [] }
+    },
     "mermaid": {
       "browserPath": null,
       "scope": { "allowedRoots": [] }

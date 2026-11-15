@@ -1,6 +1,6 @@
 # cursor-ops-plugins
 
-Cursor plugin suite for operating **GitHub, DigitalOcean, Vercel, AWS and Microsoft 365** (Outlook mail, calendar and Teams through Microsoft Graph) from the agent with least privilege. Each provider plugin ships:
+Cursor plugin suite for operating **GitHub, DigitalOcean, Vercel, AWS, Microsoft 365 and Google** (Gmail, Calendar, contacts, Meet and Drive) from the agent with least privilege. Each provider plugin ships:
 
 | Layer | What it is | Where |
 |---|---|---|
@@ -127,8 +127,8 @@ Every repository, this one included, follows one branch and release flow:
 
 | Branch | Role | Receives | Merge method |
 |---|---|---|---|
-| `main` | production | PRs from `dev` (or `qa`/`staging`), Dependabot, release-please | merge commit |
-| `dev` | integration | PRs from `<github-user>/<type>/<kebab-name>` branches; the automatic `main → dev` sync | squash (features), merge commit (sync) |
+| `main` | production | PRs from `dev` (or `qa`/`staging`), Dependabot, release-please | merge commit (user merges promote and release-please) |
+| `dev` | integration | PRs from `<github-user>/<type>/<kebab-name>` branches; the automatic `main → dev` sync | squash (agent merges features), merge commit (agent merges sync) |
 | `qa`, `staging` | optional, only when asked | promotions | merge commit |
 
 Work branch types are `feat`, `fix`, `chore`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `style`, `revert` and `hotfix`. PR titles follow Conventional Commits. Each PR covers one concern; leave unrelated dirty files out of the commit. Concurrent agents use linked git worktrees so they do not share a working tree. In this suite, that is `ops worktree add <user>/<type>/<name>` (creates `<repo>-wt/<user>/<type>/<kebab>` beside the primary checkout); other repos use plain `git worktree add`. This suite's shared read server tracks git HEAD and refreshes on `ops status`, `ops doctor` and workspace open.
@@ -143,7 +143,7 @@ Releases use [release-please](https://github.com/googleapis/release-please). Con
 
 Workflows on PRs opened with the default `GITHUB_TOKEN` (the release and sync PRs) don't run on their own: GitHub holds them as *action required* until a maintainer clicks **Approve and run**. To skip that step, add a fine-grained token with Contents and Pull requests read/write on the repo as the `GITOPS_TOKEN` Actions secret. The workflows use it when present.
 
-The `gitops-workflow` skill (ops-github) drives this from the agent. `github_repo_create` always asks for the visibility. `github_repo_bootstrap` creates `dev` and any extra environments, sets the merge settings, labels and rulesets, lets Actions open PRs, links a project board, and reports whether `GITOPS_TOKEN` is set. `github_release_list`, `github_project_list` and `github_project_item_add` cover releases and boards. `github_issues_import` creates a delivery plan's epics and tasks as issues in one approved call (see [Architecture and delivery plans](#architecture-and-delivery-plans)). The project tools need the `project` token scope (`gh auth refresh -s project`).
+The `gitops-workflow` skill (ops-github) drives this from the agent. Agents squash-merge their own work PRs into `dev` once checks are green, open the `dev` → `main` promote PR when the suite should ship, and leave promote / release-please merges to the user. `github_repo_create` always asks for the visibility. `github_repo_bootstrap` creates `dev` and any extra environments, sets the merge settings, labels and rulesets, lets Actions open PRs, links a project board, and reports whether `GITOPS_TOKEN` is set. `github_release_list`, `github_project_list` and `github_project_item_add` cover releases and boards. `github_issues_import` creates a delivery plan's epics and tasks as issues in one approved call (see [Architecture and delivery plans](#architecture-and-delivery-plans)). The project tools need the `project` token scope (`gh auth refresh -s project`).
 
 ## Microsoft 365
 
@@ -155,6 +155,17 @@ The `gitops-workflow` skill (ops-github) drives this from the agent. `github_rep
 - **Guards:** `providers.msgraph.scope.allowedRecipientDomains` fences who mail, replies, forwards and invitations can reach. Message and event bodies are treated as untrusted content. The shell guard asks before `m365` sends, removals, raw write requests and Entra changes, and ops-core asks before tokens or the m365 token cache are read.
 
 The `msgraph-setup` skill covers the Entra app registration (delegated permissions), sign-in and troubleshooting; `m365-assistant` covers inbox triage, scheduling and Teams.
+
+## Google
+
+`ops-google` reads and acts on Gmail, Google Calendar, contacts (People), Meet and Drive through [gog](https://gogcli.sh/) (`gog`). Google Chat is out of scope.
+
+- **Read (auto-allowed):** identity and auth list, Gmail search/get/labels, contacts search, calendars, events, free/busy, Meet space get/history/participants, Drive list/search/get/tree.
+- **Write (always approved):** send, draft, reply, forward, trash, archive and mark mail; create, update, respond to and delete events (optional Meet link); create/update/end Meet spaces; create Drive folders, share and trash files. Nothing permanently deletes Drive or mail outside Trash.
+- **Accounts:** `gog auth credentials` then `gog auth add you@gmail.com --services gmail,calendar,drive,contacts,people,meet` (repeat for each mailbox). Tools auto-pick when several are stored (`providers.google.account` or first by email); pass `account` to target another.
+- **Guards:** `providers.google.scope.allowedRecipientDomains` fences who mail, invitations and Drive shares may reach. Message and event bodies are untrusted content. The shell guard asks before `gog` sends, deletes, shares or changes auth.
+
+The `google-setup` skill covers the Google Cloud OAuth desktop client, API enablement, sign-in and troubleshooting; `google-assistant` covers inbox triage, scheduling and Drive.
 
 ## Automatic code review
 
@@ -405,6 +416,8 @@ To add a tool, add a `tool({...})` entry to the provider's `tools` array with a 
 | `providers.scaffold.scope.allowedRoots` | `[]` (anywhere) | Directories new projects may be created in |
 | `providers.msgraph.scope.allowedRecipientDomains` | `[]` (anyone) | Domains (and subdomains) mail, replies, forwards and invitations may reach |
 | `providers.msgraph.timeZone` | `null` (this machine's zone) | Default time zone for calendar tools |
+| `providers.google.scope.allowedRecipientDomains` | `[]` (anyone) | Domains (and subdomains) Gmail, invitations and Drive shares may reach |
+| `providers.google.timeZone` | `null` (this machine's zone) | Default time zone for calendar create |
 | `providers.mermaid.browserPath` | `null` (puppeteer cache, then system Chrome/Edge) | Browser mermaid-cli renders with (`PUPPETEER_EXECUTABLE_PATH` also works) |
 | `providers.latex.engine` | `null` (`pdflatex`; `xelatex` for fontspec documents) | Default TeX engine when a call or `% !TEX program` doesn't pick one |
 | `providers.{mermaid,latex}.scope.allowedRoots` | `[]` (anywhere) | Directories rendered files may be read from and written to |
