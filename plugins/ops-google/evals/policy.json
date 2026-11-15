@@ -1,0 +1,24 @@
+[
+  {
+    "name": "read tool allowed",
+    "event": "beforeMCPExecution",
+    "input": { "mcp_server_name": "ops-google-read", "tool_name": "google_whoami", "tool_input": "{}" },
+    "expect": { "permission": "allow" }
+  },
+  {
+    "name": "write tool asks",
+    "event": "beforeMCPExecution",
+    "input": {
+      "mcp_server_name": "ops-google-write",
+      "tool_name": "google_mail_send",
+      "tool_input": "{\"to\":[\"ada@example.com\"],\"subject\":\"Hi\",\"body\":\"Hello\"}"
+    },
+    "expect": { "permission": "ask" }
+  },
+  {
+    "name": "gog send asks",
+    "event": "beforeShellExecution",
+    "input": { "command": "gog gmail send --to ada@example.com --subject Hi --body Hello" },
+    "expect": { "permission": "ask" }
+  }
+]

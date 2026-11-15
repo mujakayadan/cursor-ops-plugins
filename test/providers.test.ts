@@ -15,6 +15,7 @@ import github, {
   rulesetFor,
   updatedBody,
 } from "../plugins/ops-github/provider.ts";
+import google, { outsideDomains as googleOutsideDomains } from "../plugins/ops-google/provider.ts";
 import latex from "../plugins/ops-latex/provider.ts";
 import memory from "../plugins/ops-memory/provider.ts";
 import mermaid from "../plugins/ops-mermaid/provider.ts";
@@ -36,6 +37,7 @@ const providers = [
   aws,
   scaffold,
   msgraph,
+  google,
   mermaid,
   latex,
   architecture,
@@ -247,6 +249,21 @@ describe("msgraph requests", () => {
       stripHtml("<p>Hi&nbsp;<b>Ana</b></p><p>a &lt;b&gt; &amp;amp;</p>"),
       "Hi Ana\na <b> &amp;",
     );
+  });
+});
+
+describe("google recipient scope", () => {
+  it("fences recipients to allowed domains and their subdomains", () => {
+    const pcfg = {
+      allowPrivileged: false,
+      credentials: { read: { env: {}, args: [] }, write: { env: {}, args: [] } },
+      scope: { allowedRecipientDomains: ["Example.com"] },
+    };
+    assert.deepEqual(
+      googleOutsideDomains(["ana@example.com", "bo@eu.example.com", "x@evilexample.com"], pcfg),
+      ["x@evilexample.com"],
+    );
+    assert.deepEqual(googleOutsideDomains(["x@anything.io"], { ...pcfg, scope: {} }), []);
   });
 });
 
