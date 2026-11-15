@@ -1,7 +1,7 @@
 {
   "name": "ops-aws",
   "displayName": "Ops: AWS",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "description": "AWS operations (EC2, ECS, Lambda, CloudWatch, CloudFormation, cost) with separate read and write MCP servers and aws CLI guardrails.",
   "author": {
     "name": "Muja Kayadan"
