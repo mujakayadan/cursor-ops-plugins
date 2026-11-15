@@ -58,6 +58,10 @@
       "source": null,
       "ref": null,
       "scope": { "allowedRoots": [] }
+    },
+    "msgraph": {
+      "timeZone": null,
+      "scope": { "allowedRecipientDomains": [] }
     }
   }
 }

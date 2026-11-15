@@ -23,6 +23,7 @@ export interface ProviderScope {
   allowedRegions?: string[];
   allowedAccounts?: string[];
   allowedRoots?: string[];
+  allowedRecipientDomains?: string[];
 }
 
 export interface ProviderConfig {
@@ -30,6 +31,7 @@ export interface ProviderConfig {
   credentials: { read: Credentials; write: Credentials };
   scope: ProviderScope;
   defaultRegion?: string | null;
+  timeZone?: string | null;
   source?: string | null;
   ref?: string | null;
 }

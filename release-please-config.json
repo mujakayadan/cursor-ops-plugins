@@ -42,6 +42,11 @@
           "type": "json",
           "path": "plugins/ops-vercel/.cursor-plugin/plugin.json",
           "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "plugins/ops-msgraph/.cursor-plugin/plugin.json",
+          "jsonpath": "$.version"
         }
       ]
     }

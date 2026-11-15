@@ -1,6 +1,6 @@
 ---
 name: ops-onboarding
-description: Set up and troubleshoot the ops plugin suite - per-tier credentials (read-only vs write) for gh, doctl, aws and vercel, ~/.ops/config.json, privileged-action enablement, and the doctor check. Use when installing the ops plugins, when ops-* MCP tools fail with auth errors, or when the user asks how to configure read/write credentials.
+description: Set up and troubleshoot the ops plugin suite - per-tier credentials (read-only vs write) for gh, doctl, aws, vercel and m365, ~/.ops/config.json, privileged-action enablement, and the doctor check. Use when installing the ops plugins, when ops-* MCP tools fail with auth errors, or when the user asks how to configure read/write credentials.
 ---
 
 # Ops plugin onboarding
@@ -20,8 +20,9 @@ Credentials never live in Cursor config. They come from the provider CLI's own l
 | DigitalOcean | custom-scoped read token: `doctl auth init --context ops-read`, `args: ["--context","ops-read"]` | `doctl auth init --context ops-write`, `args: ["--context","ops-write"]` |
 | AWS | SSO profile with ReadOnlyAccess: `args: ["--profile","acme-readonly"]` | scoped deploy role: `args: ["--profile","acme-deployer"]` |
 | Vercel | `args: ["--global-config","C:/Users/<you>/.ops/vercel-read"]` + `vercel login` with that flag | default `vercel login` |
+| Microsoft Graph | the active `m365 login` connection (shared: m365 can't pick an account per process) | same; writes rely on approvals and `msgraph.scope.allowedRecipientDomains` (see `msgraph-setup`) |
 
-Also set scope guards: `github.scope.owners`, `vercel.scope.teamId`, `aws.scope.allowedAccounts` / `allowedRegions`, `digitalocean.scope.protectedTags`.
+Also set scope guards: `github.scope.owners`, `vercel.scope.teamId`, `aws.scope.allowedAccounts` / `allowedRegions`, `digitalocean.scope.protectedTags`, `msgraph.scope.allowedRecipientDomains`.
 
 ## Privileged actions
 Privileged actions are disabled by default. To enable them for one provider, set `providers.<p>.allowPrivileged: true`. For a temporary break-glass session, set `OPS_ALLOW_PRIVILEGED=1` in Cursor's environment. Both are audited. After changing either, restart the MCP servers (Settings → MCP, toggle the server off and on).

@@ -1,0 +1,10 @@
+[
+  { "name": "send requires a recipient", "tool": "msgraph_mail_send", "server": "write", "arguments": { "to": [], "subject": "Hi", "body": "x" }, "expectError": "Invalid arguments" },
+  { "name": "send rejects malformed addresses", "tool": "msgraph_mail_send", "server": "write", "arguments": { "to": ["Ana <ana@contoso.com>"], "subject": "Hi", "body": "x" }, "expectError": "Invalid arguments" },
+  { "name": "event times are local wall-clock values", "tool": "msgraph_event_create", "server": "write", "arguments": { "subject": "Sync", "start": "2026-11-20T10:00:00Z", "end": "2026-11-20T10:30:00Z" }, "expectError": "Invalid arguments" },
+  { "name": "event end must follow start", "tool": "msgraph_event_create", "server": "write", "arguments": { "subject": "Sync", "start": "2026-11-20T10:30", "end": "2026-11-20T10:00" }, "expectError": "end must be after start" },
+  { "name": "event update needs a change", "tool": "msgraph_event_update", "server": "write", "arguments": { "id": "AAMkAGI2" }, "expectError": "nothing to update" },
+  { "name": "search cannot be combined with filters", "tool": "msgraph_mail_list", "server": "read", "arguments": { "search": "invoice", "unreadOnly": true }, "expectError": "cannot be combined" },
+  { "name": "ids reject path traversal characters", "tool": "msgraph_mail_get", "server": "read", "arguments": { "id": "../users/ceo" }, "expectError": "Invalid arguments" },
+  { "name": "unknown arguments rejected", "tool": "msgraph_mail_list", "server": "read", "arguments": { "folder": "inbox", "extra": true }, "expectError": "is not allowed" }
+]

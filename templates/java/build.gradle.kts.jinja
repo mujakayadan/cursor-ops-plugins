@@ -86,6 +86,15 @@ tasks.withType<JavaCompile>().configureEach {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+{%- if profile == "backend" %}
+    // The OpenAPI spec test compares the app with openapi.json, or rewrites it when UPDATE_OPENAPI=1.
+    val spec = layout.projectDirectory.file("openapi.json").asFile
+    inputs.property("updateOpenApi", providers.environmentVariable("UPDATE_OPENAPI").orElse(""))
+    inputs.files(spec).withPropertyName("openApiSpec").withPathSensitivity(PathSensitivity.RELATIVE)
+    outputs.cacheIf("openapi.json exists and is not being rewritten") {
+        spec.exists() && System.getenv("UPDATE_OPENAPI") != "1"
+    }
+{%- endif %}
 }
 
 spotless {

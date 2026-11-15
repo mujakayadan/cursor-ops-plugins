@@ -143,6 +143,8 @@
   {"name":"asks for cat ~/.ssh/id_ed25519","event":"beforeShellExecution","input":{"command":"cat ~/.ssh/id_ed25519"},"expect":{"permission":"ask"}},
   {"name":"asks for Get-Content ~/.aws/credentials","event":"beforeShellExecution","input":{"command":"Get-Content ~/.aws/credentials"},"expect":{"permission":"ask"}},
   {"name":"asks for gh auth token","event":"beforeShellExecution","input":{"command":"gh auth token"},"expect":{"permission":"ask"}},
+  {"name":"asks for Get-Content ~/.cli-m365-msal-cache.json","event":"beforeShellExecution","input":{"command":"Get-Content ~/.cli-m365-msal-cache.json"},"expect":{"permission":"ask"}},
+  {"name":"asks for m365 util accesstoken get","event":"beforeShellExecution","input":{"command":"m365 util accesstoken get --resource graph"},"expect":{"permission":"ask"}},
   {"name":"allows cat README.md","event":"beforeShellExecution","input":{"command":"cat README.md"},"expect":{"permission":"allow"}},
   {"name":"denies Set-Content ~/.ops/config.json \"{}\"","event":"beforeShellExecution","input":{"command":"Set-Content ~/.ops/config.json \"{}\""},"expect":{"permission":"deny"}},
   {"name":"denies rm ~/.cursor/hooks.json","event":"beforeShellExecution","input":{"command":"rm ~/.cursor/hooks.json"},"expect":{"permission":"deny"}},

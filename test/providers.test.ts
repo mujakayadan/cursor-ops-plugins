@@ -7,10 +7,15 @@ import github, {
   mergeMethodFor,
   rulesetFor,
 } from "../plugins/ops-github/provider.ts";
+import msgraph, {
+  outsideDomains,
+  requestArgs,
+  stripHtml,
+} from "../plugins/ops-msgraph/provider.ts";
 import scaffold from "../plugins/ops-scaffold/provider.ts";
 import vercel from "../plugins/ops-vercel/provider.ts";
 
-const providers = [github, digitalocean, vercel, aws, scaffold];
+const providers = [github, digitalocean, vercel, aws, scaffold, msgraph];
 
 describe("provider catalogs", () => {
   for (const p of providers) {
@@ -71,6 +76,56 @@ describe("github gitops merge rules", () => {
     assert.equal(methods("main"), '["merge"]');
     assert.equal(methods("dev"), '["squash","merge"]');
     assert.match(JSON.stringify(rulesetFor("dev", ["pr-policy", "ci"])), /"context":"ci"/);
+  });
+});
+
+describe("msgraph requests", () => {
+  it("builds m365 request argv with literal OData keys and encoded values", () => {
+    assert.deepEqual(
+      requestArgs({
+        path: "/me/mailFolders/inbox/messages",
+        query: { $top: 5, $filter: "isRead eq false", $search: undefined },
+        headers: { prefer: 'outlook.timezone="UTC"' },
+      }),
+      [
+        "request",
+        "--url",
+        "https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$top=5&$filter=isRead%20eq%20false",
+        "--method",
+        "get",
+        "--prefer",
+        'outlook.timezone="UTC"',
+        "--output",
+        "json",
+      ],
+    );
+  });
+  it("sends JSON bodies with a content type", () => {
+    const args = requestArgs({ method: "post", path: "/me/sendMail", body: { a: 1 } });
+    assert.deepEqual(args.slice(args.indexOf("--body"), args.indexOf("--body") + 4), [
+      "--body",
+      '{"a":1}',
+      "--content-type",
+      "application/json",
+    ]);
+  });
+  it("fences recipients to allowed domains and their subdomains", () => {
+    const pcfg = {
+      allowPrivileged: false,
+      credentials: { read: { env: {}, args: [] }, write: { env: {}, args: [] } },
+      scope: { allowedRecipientDomains: ["Contoso.com"] },
+    };
+    assert.deepEqual(
+      outsideDomains(["ana@contoso.com", "bo@eu.contoso.com", "x@evilcontoso.com"], pcfg),
+      ["x@evilcontoso.com"],
+    );
+    assert.deepEqual(outsideDomains(["x@anything.io"], { ...pcfg, scope: {} }), []);
+  });
+  it("flattens Teams HTML to text", () => {
+    assert.equal(
+      stripHtml("<p>Hi&nbsp;<b>Ana</b></p><p>a &lt;b&gt; &amp;amp;</p>"),
+      "Hi Ana\na <b> &amp;",
+    );
   });
 });
 

@@ -1,0 +1,16 @@
+[
+  { "name": "read tool allowed", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-msgraph-read", "tool_name": "msgraph_mail_list", "tool_input": "{}" }, "expect": { "permission": "allow" } },
+  { "name": "meeting time suggestions are read-only", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-msgraph-read", "tool_name": "msgraph_meeting_times_find", "tool_input": "{}" }, "expect": { "permission": "allow" } },
+  { "name": "sending mail asks", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-msgraph-write", "tool_name": "msgraph_mail_send", "tool_input": "{\"to\":[\"ana@contoso.com\"],\"subject\":\"Hi\",\"body\":\"Hello\"}" }, "expect": { "permission": "ask" } },
+  { "name": "creating an event asks", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-msgraph-write", "tool_name": "msgraph_event_create", "tool_input": "{}" }, "expect": { "permission": "ask" } },
+  { "name": "teams chat message asks", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-msgraph-write", "tool_name": "msgraph_chat_message_send", "tool_input": "{}" }, "expect": { "permission": "ask" } },
+  { "name": "namespaced plugin server name recognised", "event": "beforeMCPExecution", "input": { "mcp_server_name": "plugin-ops-msgraph-ops-msgraph-write", "tool_name": "msgraph_mail_reply", "tool_input": "{}" }, "expect": { "permission": "ask" } },
+  { "name": "allows m365 status", "event": "beforeShellExecution", "input": { "command": "m365 status" }, "expect": { "permission": "allow" } },
+  { "name": "allows m365 request GET", "event": "beforeShellExecution", "input": { "command": "m365 request --url \"@graph/me/messages?$top=5\"" }, "expect": { "permission": "allow" } },
+  { "name": "asks for m365 outlook mail send", "event": "beforeShellExecution", "input": { "command": "m365 outlook mail send --to ana@contoso.com --subject Hi --bodyContents x" }, "expect": { "permission": "ask" } },
+  { "name": "asks for m365 teams chat message send", "event": "beforeShellExecution", "input": { "command": "m365 teams chat message send --chatId 19:abc@thread.v2 --message hi" }, "expect": { "permission": "ask" } },
+  { "name": "asks for m365 request POST", "event": "beforeShellExecution", "input": { "command": "m365 request --method post --url \"@graph/me/sendMail\" --body \"{}\"" }, "expect": { "permission": "ask" } },
+  { "name": "asks for m365 request -m delete", "event": "beforeShellExecution", "input": { "command": "m365 request -m delete --url @graph/me/events/AAMk" }, "expect": { "permission": "ask" } },
+  { "name": "asks for m365 removal", "event": "beforeShellExecution", "input": { "command": "m365 outlook room remove --id x" }, "expect": { "permission": "ask" } },
+  { "name": "asks for m365 entra permission grant", "event": "beforeShellExecution", "input": { "command": "m365 entra app permission add --appId x --delegatedPermissions Mail.Send" }, "expect": { "permission": "ask" } }
+]
