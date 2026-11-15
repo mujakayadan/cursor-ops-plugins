@@ -1,7 +1,7 @@
 {
   "name": "ops-performance",
   "displayName": "Ops: Performance Review",
-  "version": "1.6.2",
+  "version": "1.7.0",
   "description": "Reviews every agent turn that changes code for performance: static hints on each edit, then an automatic follow-up review of complexity, N+1 and unbounded queries, blocking I/O, caching and memory.",
   "author": {
     "name": "Muja Kayadan"
