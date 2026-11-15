@@ -1,11 +1,12 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { ToolError } from "./lib/core/schema-helpers.ts";
 
-export const ARCHITECTURE_FILE = "ARCHITECTURE.md";
-export const TODO_FILE = "TODO.md";
-export const RUNBOOK_FILE = "docs/runbook.md";
-export const ADR_DIR = "docs/adr";
-export const DIAGRAM_DIR = "docs/architecture";
+const ARCHITECTURE_FILE = "ARCHITECTURE.md";
+const TODO_FILE = "TODO.md";
+const RUNBOOK_FILE = "docs/runbook.md";
+const ADR_DIR = "docs/adr";
+const DIAGRAM_DIR = "docs/architecture";
 export const SPEC_SUFFIX = ".diagram.json";
 
 /** Section titles of ARCHITECTURE.md, in order; a heading may carry a number such as `## 6. Deployment`. */
@@ -50,7 +51,7 @@ export const RUNBOOK_SECTIONS = [
   "Routine operations",
 ] as const;
 
-export const ADR_SECTIONS = [
+const ADR_SECTIONS = [
   "Status",
   "Context",
   "Decision",
@@ -76,14 +77,15 @@ const PLACEHOLDER =
   /\bTBD\b|\bTBC\b|\bFIXME\b|\bTODO:|lorem ipsum|\?\?\?|<!--\s*guide:|<System name>|<(?:fill|placeholder|insert|describe|todo)\b[^>]*>/i;
 const LINK = /!?\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
 const MAX_FINDINGS = 100;
+const MAX_DOC_BYTES = 2000000;
 
-export interface Finding {
+interface Finding {
   file: string;
   line?: number;
   message: string;
 }
 
-export interface CheckResult {
+interface CheckResult {
   ok: boolean;
   errors: Finding[];
   warnings: Finding[];
@@ -113,6 +115,8 @@ interface Task {
 function readDoc(root: string, file: string): Doc | undefined {
   const path = join(root, file);
   if (!existsSync(path)) return undefined;
+  if (statSync(path).size > MAX_DOC_BYTES)
+    throw new ToolError(`${file} is larger than ${MAX_DOC_BYTES / 1000000} MB`);
   const lines = readFileSync(path, "utf8").split(/\r?\n/);
   const fenced = new Set<number>();
   let fence: string | undefined;
@@ -193,9 +197,19 @@ function checkCommon(root: string, doc: Doc, report: Report): void {
     if (doc.fenced.has(n)) return;
     for (const m of line.matchAll(LINK)) {
       const target = (m[1] ?? "").split("#")[0] ?? "";
-      if (!target || /^[a-z][a-z0-9+.-]*:/i.test(target)) continue;
-      const path = resolve(root, dirname(doc.file), decodeURI(target));
-      if (!existsSync(path)) report.error(doc.file, `link target ${target} does not exist`, n);
+      if (!target || /^[a-z][a-z0-9+.-]*:/i.test(target) || target.startsWith("//")) continue;
+      let decoded: string;
+      try {
+        decoded = decodeURI(target);
+      } catch {
+        report.error(doc.file, `link target ${target} is not a valid URI`, n);
+        continue;
+      }
+      const path = resolve(root, dirname(doc.file), decoded);
+      const inside = relative(root, path);
+      if (isAbsolute(decoded) || inside.startsWith("..") || isAbsolute(inside))
+        report.warn(doc.file, `link target ${target} leaves the project`, n);
+      else if (!existsSync(path)) report.error(doc.file, `link target ${target} does not exist`, n);
     }
   });
 }

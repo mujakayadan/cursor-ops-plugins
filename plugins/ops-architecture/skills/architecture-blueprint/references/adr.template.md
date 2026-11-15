@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Proposed
 
 <!-- guide: Proposed while the user reviews it, Accepted once approved. An ADR states the decision
 in force: when it changes, rewrite the ADR to the new decision (git keeps the old one), and delete

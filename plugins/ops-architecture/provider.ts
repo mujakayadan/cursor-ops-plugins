@@ -4,7 +4,9 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -17,10 +19,14 @@ import { absPath, checkPath, previewDir } from "./lib/core/paths.ts";
 import { bool, freeform, obj, oneOf, str, ToolError, tool } from "./lib/core/schema-helpers.ts";
 import type { Provider, ProviderConfig } from "./lib/core/types.ts";
 
-/** Pinned so every machine draws the same icons; bump deliberately and re-render the diagrams. */
-export const DIAGRAMS_VERSION = "0.25.1";
 const PYTHON_VERSION = "3.13";
-const RENDERER = fileURLToPath(new URL("./renderer/render_diagram.py", import.meta.url));
+const RENDERER_DIR = fileURLToPath(new URL("./renderer/", import.meta.url));
+const RENDERER = join(RENDERER_DIR, "render_diagram.py");
+/**
+ * `diagrams` and its dependencies, pinned with hashes so every machine draws the same icons and an
+ * auto-allowed preview never installs an unreviewed release. Regenerate with `uv pip compile`.
+ */
+const REQUIREMENTS = join(RENDERER_DIR, "requirements.txt");
 /** The first run downloads the diagrams package and its icons (about 35 MB) into the uv cache. */
 const RENDER_TIMEOUT_MS = 180000;
 const MAX_SPEC_BYTES = 200000;
@@ -28,13 +34,16 @@ const MAX_ICONS = 400;
 const FORMATS = ["png", "svg"] as const;
 type Format = (typeof FORMATS)[number];
 
-const iconCache = new Map<string, Record<string, string[]>>();
+const iconCache = new Map<string, Promise<Record<string, string[]>>>();
 
 function pathKey(): string {
   return Object.keys(process.env).find((k) => k.toUpperCase() === "PATH") ?? "PATH";
 }
 
-/** uv runs the renderer; Graphviz's `dot` has to be on its PATH even when only the registry PATH has it. */
+/**
+ * uv runs the renderer; Graphviz's `dot` has to be on its PATH even when only the registry PATH
+ * has it. Its folder goes last so it can't shadow the Python that uv picks.
+ */
 function rendererEnv(): Record<string, string> {
   let dot: string;
   try {
@@ -48,25 +57,39 @@ function rendererEnv(): Record<string, string> {
     throw new ToolError("uv not found. Install it with `ops setup ops-architecture`.");
   }
   const key = pathKey();
-  return { [key]: `${dirname(dot)}${delimiter}${process.env[key] ?? ""}`, NO_COLOR: "1" };
+  return {
+    [key]: `${process.env[key] ?? ""}${delimiter}${dirname(dot)}`,
+    UV_NO_CONFIG: "1",
+    NO_COLOR: "1",
+  };
 }
 
+/**
+ * The read server's working directory can be any opened repository, so uv runs from the renderer
+ * folder with config discovery off: a repo's uv.toml must not choose the package index.
+ */
 async function runRenderer(args: string[], input?: string): Promise<string> {
   const res = await runCommand(
     "uv",
     [
       "run",
       "--no-project",
+      "--no-config",
       "--quiet",
       "--python",
       PYTHON_VERSION,
-      "--with",
-      `diagrams==${DIAGRAMS_VERSION}`,
+      "--with-requirements",
+      REQUIREMENTS,
       "python",
       RENDERER,
       ...args,
     ],
-    { env: rendererEnv(), timeoutMs: RENDER_TIMEOUT_MS, ...(input === undefined ? {} : { input }) },
+    {
+      env: rendererEnv(),
+      cwd: RENDERER_DIR,
+      timeoutMs: RENDER_TIMEOUT_MS,
+      ...(input === undefined ? {} : { input }),
+    },
   );
   if (res.timedOut) throw new ToolError(`renderer timed out after ${RENDER_TIMEOUT_MS}ms`);
   if (res.code !== 0) {
@@ -81,12 +104,25 @@ async function runRenderer(args: string[], input?: string): Promise<string> {
 
 /**
  * Graphviz SVGs reference each icon by its absolute path inside the diagrams package; embed them
- * as data URIs so the SVG renders anywhere. Only PNGs under a `resources` folder are read.
+ * as data URIs so the SVG renders anywhere. Only PNGs whose real path is in a package's
+ * `site-packages/resources` folder are read.
  */
 export function inlineIcons(svg: string): string {
+  const icons = new Map<string, string | undefined>();
+  const icon = (path: string): string | undefined => {
+    if (icons.has(path)) return icons.get(path);
+    let data: string | undefined;
+    if (isAbsolute(path) && existsSync(path)) {
+      const real = realpathSync(path);
+      if (/[\\/]site-packages[\\/]resources[\\/]/.test(real))
+        data = readFileSync(real).toString("base64");
+    }
+    icons.set(path, data);
+    return data;
+  };
   return svg.replace(/((?:xlink:)?href)="([^"]+\.png)"/g, (match, attr: string, path: string) => {
-    if (!isAbsolute(path) || !/[\\/]resources[\\/]/.test(path) || !existsSync(path)) return match;
-    return `${attr}="data:image/png;base64,${readFileSync(path).toString("base64")}"`;
+    const data = icon(path);
+    return data ? `${attr}="data:image/png;base64,${data}"` : match;
   });
 }
 
@@ -109,8 +145,8 @@ function readSpecFile(raw: string, pcfg: ProviderConfig): { file: string; spec: 
   const file = checkPath(raw, pcfg.scope.allowedRoots, "architecture");
   if (!file.endsWith(SPEC_SUFFIX)) throw new ToolError(`file must end in ${SPEC_SUFFIX}`);
   if (!existsSync(file)) throw new ToolError(`${file} does not exist`);
+  if (statSync(file).size > MAX_SPEC_BYTES) throw new ToolError(`${file} is too large`);
   const text = readFileSync(file, "utf8");
-  if (text.length > MAX_SPEC_BYTES) throw new ToolError(`${file} is too large`);
   try {
     return { file, spec: JSON.parse(text) };
   } catch {
@@ -140,7 +176,7 @@ const tools = [
       return {
         uv,
         graphviz: dot,
-        diagrams: DIAGRAMS_VERSION,
+        diagrams: /^diagrams==(\S+)/m.exec(readFileSync(REQUIREMENTS, "utf8"))?.[1] ?? null,
         ready: Boolean(uv && dot),
         ...(uv && dot ? {} : { install: "ops setup ops-architecture" }),
       };
@@ -166,11 +202,15 @@ const tools = [
       ["provider"],
     ),
     run: async (a) => {
-      let catalog = iconCache.get(a.provider);
-      if (!catalog) {
-        catalog = JSON.parse(await runRenderer(["icons", a.provider])) as Record<string, string[]>;
-        iconCache.set(a.provider, catalog);
+      let pending = iconCache.get(a.provider);
+      if (!pending) {
+        pending = runRenderer(["icons", a.provider]).then(
+          (out) => JSON.parse(out) as Record<string, string[]>,
+        );
+        iconCache.set(a.provider, pending);
+        pending.catch(() => iconCache.delete(a.provider));
       }
+      const catalog = await pending;
       const q = a.query?.trim().toLowerCase();
       const icons: Record<string, string[]> = {};
       let count = 0;

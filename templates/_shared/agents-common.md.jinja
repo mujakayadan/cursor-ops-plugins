@@ -2,7 +2,7 @@
 
 - Run the full verification sequence above before declaring work done. Fix failures you caused; report pre-existing or environment failures separately.
 - Add or update tests with every behavior change.
-- `ARCHITECTURE.md` is the system design and `TODO.md` the delivery plan, when the project has them (the `architecture-blueprint` skill writes both after scaffolding, with ADRs in `docs/adr/` and `docs/runbook.md`). Before a task, read its `TODO.md` entry and the sections and ADRs it traces. A change to the design updates `ARCHITECTURE.md` in the same pull request, and a new or changed decision updates its ADR. The pull request that completes a task ticks its checkbox and closes its issue.
+- `ARCHITECTURE.md` is the system design and `TODO.md` the delivery plan, when the project has them (the `architecture-blueprint` skill writes both after scaffolding, with ADRs in `docs/adr/` and `docs/runbook.md`). Before a task, read its `TODO.md` entry and the sections and ADRs it traces. A change to the design updates `ARCHITECTURE.md` in the same pull request, and a new or changed decision updates its ADR. The pull request that completes a task checks its acceptance criteria and references its issue (`Closes #n`), which closes when the change reaches `main`.
 - Keep imports at the top of the module.
 - Never commit `.env` files, credentials, tokens or generated secrets.
 - This project was generated from a Copier template. Do not edit `.copier-answers.yml`; pull template improvements with `uvx copier update --trust` on a clean working tree.
