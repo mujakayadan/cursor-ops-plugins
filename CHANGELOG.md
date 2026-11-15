@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.10.0](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.9.1...v1.10.0) (2026-11-15)
+
+
+### Features
+
+* **google:** add ops-google for Gmail, Calendar, Meet and Drive ([#66](https://github.com/mujakayadan/cursor-ops-plugins/issues/66)) ([db49bb1](https://github.com/mujakayadan/cursor-ops-plugins/commit/db49bb10faa3902f96f37e9a9bbbb40687295706))
+* **google:** auto-pick stored account when several are authorized ([#68](https://github.com/mujakayadan/cursor-ops-plugins/issues/68)) ([8caa799](https://github.com/mujakayadan/cursor-ops-plugins/commit/8caa799c4dfcc875e95cbeeefa4dbcbed7a3fcb0))
+
+
+### Bug Fixes
+
+* **google:** include people service for whoami profile scope ([#67](https://github.com/mujakayadan/cursor-ops-plugins/issues/67)) ([e3a6913](https://github.com/mujakayadan/cursor-ops-plugins/commit/e3a6913e2850a576b611ef8905e4bffe112edf44))
+
 ## [1.9.1](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.9.0...v1.9.1) (2026-11-15)
 
 

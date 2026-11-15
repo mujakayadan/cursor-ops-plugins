@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Operations plugin suite: core guardrails, GitHub, DigitalOcean, Vercel, AWS, Microsoft 365 and Google (Gmail, Calendar, Meet, Drive) with tiered read/write MCP servers, automatic security, performance, clean-code and docs-freshness review of agent changes, Copier-based project scaffolders, architecture and delivery plans, open-source vetting, a knowledge graph memory with a user profile, per-task model routing from the Cursor plan, and Mermaid and LaTeX/TikZ diagram authoring.",
-    "version": "1.9.1"
+    "version": "1.10.0"
   },
   "plugins": [
     {
