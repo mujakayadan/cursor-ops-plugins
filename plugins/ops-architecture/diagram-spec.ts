@@ -29,24 +29,26 @@ const ID = /^[a-z][a-z0-9_]{0,40}$/;
 const ICON = new RegExp(`^(?:${ICON_PROVIDERS.join("|")})\\.[a-z0-9_]+\\.[A-Z][A-Za-z0-9]*$`);
 const COLOR = /^(?:#[0-9A-Fa-f]{6}|[a-z]{3,20})$/;
 const MAX_LABEL = 80;
+/** Graphviz reads `<...>` as an HTML label, which can reference local files. */
+const LABEL_FORBIDDEN = /[<>\p{Cc}]/u;
 const MAX_NODES = 80;
 const MAX_EDGES = 200;
 const MAX_CLUSTER_DEPTH = 5;
 
-export interface DiagramNode {
+interface DiagramNode {
   id: string;
   icon: string;
   label?: string;
 }
 
-export interface DiagramCluster {
+interface DiagramCluster {
   label: string;
   direction?: (typeof DIRECTIONS)[number];
   nodes?: string[];
   clusters?: DiagramCluster[];
 }
 
-export interface DiagramEdge {
+interface DiagramEdge {
   from: string;
   to: string;
   label?: string;
@@ -80,6 +82,8 @@ export function parseSpec(value: unknown): DiagramSpec {
     if (v === undefined && !required) return;
     if (typeof v !== "string" || !v.trim() || v.length > MAX_LABEL) {
       at(path, `must be a non-empty string of at most ${MAX_LABEL} characters`);
+    } else if (LABEL_FORBIDDEN.test(v)) {
+      at(path, "must not contain < > or control characters");
     }
   };
   const member = (path: string, v: unknown, options: readonly string[]) => {
@@ -103,7 +107,7 @@ export function parseSpec(value: unknown): DiagramSpec {
     }
     allowed(path, n, ["id", "icon", "label"]);
     if (typeof n.id !== "string" || !ID.test(n.id))
-      at(`${path}.id`, "must match ^[a-z][a-z0-9_]*$");
+      at(`${path}.id`, "must match ^[a-z][a-z0-9_]{0,40}$");
     else if (ids.has(n.id)) at(`${path}.id`, `duplicate id "${n.id}"`);
     else ids.add(n.id);
     if (typeof n.icon !== "string" || !ICON.test(n.icon)) {

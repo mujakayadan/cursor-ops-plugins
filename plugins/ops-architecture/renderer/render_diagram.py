@@ -22,10 +22,18 @@ PROVIDERS = {
 }
 SEGMENT = re.compile(r"^[a-z0-9_]+$")
 CLASS_NAME = re.compile(r"^[A-Z][A-Za-z0-9]*$")
+# Graphviz reads <...> as an HTML label, which can reference local files.
+LABEL_FORBIDDEN = re.compile(r"[<>\x00-\x1f\x7f]")
 
 
 class SpecError(Exception):
     pass
+
+
+def label(value: str) -> str:
+    if LABEL_FORBIDDEN.search(value):
+        raise SpecError(f"label {value!r} must not contain < > or control characters")
+    return value
 
 
 def icon_class(icon: str) -> type:
@@ -61,11 +69,11 @@ def render(out_dir: str, fmt: str) -> None:
 
     def draw(ids: list) -> None:
         for node_id in ids:
-            nodes[node_id] = classes[node_id](specs[node_id].get("label", ""))
+            nodes[node_id] = classes[node_id](label(specs[node_id].get("label", "")))
 
     def draw_cluster(cluster: dict) -> None:
         direction = cluster.get("direction", spec.get("direction", "LR"))
-        with Cluster(cluster["label"], direction=direction):
+        with Cluster(label(cluster["label"]), direction=direction):
             draw(cluster.get("nodes", []))
             for child in cluster.get("clusters", []):
                 draw_cluster(child)
@@ -76,7 +84,7 @@ def render(out_dir: str, fmt: str) -> None:
     if fmt == "png":
         graph_attr["dpi"] = "150"
     with Diagram(
-        spec["title"],
+        label(spec["title"]),
         filename=str(Path(out_dir) / "diagram"),
         outformat=fmt,
         show=False,
@@ -91,7 +99,7 @@ def render(out_dir: str, fmt: str) -> None:
             edge = Edge(
                 forward=way in ("forward", "both"),
                 reverse=way in ("back", "both"),
-                label=e.get("label", ""),
+                label=label(e.get("label", "")),
                 color=e.get("color", ""),
                 style=e.get("style", ""),
             )

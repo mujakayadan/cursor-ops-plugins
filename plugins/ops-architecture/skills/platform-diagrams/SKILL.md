@@ -50,9 +50,9 @@ A platform diagram is a JSON spec in `docs/architecture/<name>.diagram.json`, re
 |---|---|
 | `title` | Required. Name the environment and region. |
 | `direction` | `LR` (default), `TB`, `RL`, `BT`; clusters may set their own. |
-| `nodes` | 1 to 80. `id` is lowercase (`api_gateway`); `icon` is `provider.category.Class`; `label` up to 80 characters, `\n` for a line break. |
+| `nodes` | 1 to 80. `id` is a lowercase letter followed by up to 40 lowercase letters, digits or underscores (`api_gateway`); `icon` is `provider.category.Class`; `label` up to 80 characters without `<`, `>` or control characters, `\n` for a line break. Cluster and edge labels and the title follow the same label rules. |
 | `clusters` | Nested up to 5 deep. Each node sits in at most one cluster; nodes in none are drawn at the top level. |
-| `edges` | Up to 200. `style`: `solid`, `dashed` (asynchronous), `dotted` (optional or management), `bold` (critical path); `direction`: `forward` (default), `back`, `both`, `none`; `color`: `#rrggbb`. |
+| `edges` | Up to 200. `style`: `solid`, `dashed` (asynchronous), `dotted` (optional or management), `bold` (critical path); `direction`: `forward` (default), `back`, `both`, `none`; `color`: `#rrggbb` or a Graphviz color name (`firebrick`). |
 
 Icon providers: `aws`, `azure`, `gcp`, `k8s`, `digitalocean`, `oci`, `ibm`, `alibabacloud`, `openstack`, `outscale`, `elastic`, `firebase`, `onprem` (also clients, databases, CI and observability tools), `saas` (identity, CDN, chat, payments), `programming` (languages and frameworks), `generic`, `gis`, `c4`. Platforms without an icon set, such as Vercel, use the closest `saas` or `generic` icon with a precise label.
 

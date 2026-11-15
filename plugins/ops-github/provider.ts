@@ -19,13 +19,16 @@ const limit = (def = 20, max = 100) =>
   int("Maximum results.", { minimum: 1, maximum: max, default: def });
 const body = str("Markdown body.", { minLength: 1, maxLength: 20000 });
 
-function ownerScope(args: { repo?: string }, pcfg: ProviderConfig): string | undefined {
+function checkOwner(owner: string, pcfg: ProviderConfig): string | undefined {
   const owners = pcfg.scope.owners ?? [];
-  if (!owners.length || !args.repo) return undefined;
-  const owner = (args.repo.split("/")[0] ?? "").toLowerCase();
-  return owners.map((o) => o.toLowerCase()).includes(owner)
+  if (!owners.length) return undefined;
+  return owners.map((o) => o.toLowerCase()).includes(owner.toLowerCase())
     ? undefined
     : `owner "${owner}" is not in providers.github.scope.owners`;
+}
+
+function ownerScope(args: { repo?: string }, pcfg: ProviderConfig): string | undefined {
+  return args.repo ? checkOwner(args.repo.split("/")[0] ?? "", pcfg) : undefined;
 }
 
 const SECRET_API_PATHS =
@@ -174,51 +177,68 @@ export function resolveKeys(
 
 const lines = (text: string): string[] => text.split(/\r?\n/).filter((l) => l.trim());
 
-async function importIssues(a: PlanImport, cli: Cli) {
-  const keys = a.issues.map((i) => i.key);
-  const duplicate = keys.find((k, i) => keys.indexOf(k) !== i);
-  if (duplicate) throw new ToolError(`key ${duplicate} appears twice`);
-  const post = <T>(path: string, payload: JsonObject, method = "POST") =>
-    cli<T>(["api", "-X", method, `repos/${a.repo}/${path}`, "--input", "-"], {
-      input: JSON.stringify(payload),
-      parse: "json",
-    });
-  const fetchLines = (path: string, jq: string) =>
-    cli(["api", `repos/${a.repo}/${path}`, "--paginate", "--jq", jq], { parse: "text" }).then(
-      lines,
-    );
+/**
+ * Every imported issue carries this label, and only labelled issues count as existing plan issues:
+ * applying a label needs triage access, so an outsider can't claim a key with an issue title.
+ */
+const PLAN_LABEL = "plan";
 
+function repoApi(repo: string, cli: Cli) {
+  return {
+    post: <T>(path: string, payload: JsonObject, method = "POST") =>
+      cli<T>(["api", "-X", method, `repos/${repo}/${path}`, "--input", "-"], {
+        input: JSON.stringify(payload),
+        parse: "json",
+      }),
+    lines: (path: string, jq: string) =>
+      cli(["api", `repos/${repo}/${path}`, "--paginate", "--jq", jq], { parse: "text" }).then(
+        lines,
+      ),
+  };
+}
+type RepoApi = ReturnType<typeof repoApi>;
+
+async function existingPlanIssues(api: RepoApi): Promise<Map<string, IssueRef>> {
   const refs = new Map<string, IssueRef>();
-  const issueJq = ".[] | select(.pull_request == null) | {number, title, url: .html_url} | @json";
-  for (const line of await fetchLines("issues?state=all&per_page=100", issueJq)) {
+  const jq = ".[] | select(.pull_request == null) | {number, title, url: .html_url} | @json";
+  for (const line of await api.lines(`issues?state=all&labels=${PLAN_LABEL}&per_page=100`, jq)) {
     const issue = JSON.parse(line) as { number: number; title: string; url: string };
     const key = planKeyOf(issue.title);
     if (key && !refs.has(key)) refs.set(key, { key, number: issue.number, url: issue.url });
   }
+  return refs;
+}
 
+async function ensureLabels(api: RepoApi, wanted: Iterable<string>): Promise<void> {
   const labels = new Set(
-    (await fetchLines("labels?per_page=100", ".[].name")).map((l) => l.toLowerCase()),
+    (await api.lines("labels?per_page=100", ".[].name")).map((l) => l.toLowerCase()),
   );
-  for (const label of new Set(a.issues.flatMap((i) => i.labels ?? []))) {
+  for (const label of wanted) {
     if (labels.has(label.toLowerCase())) continue;
-    await post("labels", { name: label });
+    await api.post("labels", { name: label });
     labels.add(label.toLowerCase());
   }
+}
 
+/** Resolves milestone titles to numbers, creating the missing ones from the declared list. */
+async function milestoneResolver(
+  api: RepoApi,
+  declaredList: NonNullable<PlanImport["milestones"]>,
+): Promise<(title: string) => Promise<number>> {
   const milestones = new Map<string, number>();
-  for (const line of await fetchLines(
+  for (const line of await api.lines(
     "milestones?state=all&per_page=100",
     ".[] | {number, title} | @json",
   )) {
     const m = JSON.parse(line) as { number: number; title: string };
     milestones.set(m.title, m.number);
   }
-  const declared = new Map((a.milestones ?? []).map((m) => [m.title, m]));
-  const milestoneNumber = async (title: string): Promise<number> => {
+  const declared = new Map(declaredList.map((m) => [m.title, m]));
+  return async (title) => {
     const known = milestones.get(title);
     if (known) return known;
     const m = declared.get(title);
-    const created = await post<{ number: number }>("milestones", {
+    const created = await api.post<{ number: number }>("milestones", {
       title,
       ...(m?.description ? { description: m.description } : {}),
       ...(m?.dueOn ? { due_on: `${m.dueOn}T23:59:59Z` } : {}),
@@ -226,6 +246,16 @@ async function importIssues(a: PlanImport, cli: Cli) {
     milestones.set(title, created.number);
     return created.number;
   };
+}
+
+async function importIssues(a: PlanImport, cli: Cli) {
+  const keys = a.issues.map((i) => i.key);
+  const duplicate = keys.find((k, i) => keys.indexOf(k) !== i);
+  if (duplicate) throw new ToolError(`key ${duplicate} appears twice`);
+  const api = repoApi(a.repo, cli);
+  const refs = await existingPlanIssues(api);
+  await ensureLabels(api, new Set([PLAN_LABEL, ...a.issues.flatMap((i) => i.labels ?? [])]));
+  const milestoneNumber = await milestoneResolver(api, a.milestones ?? []);
   for (const m of a.milestones ?? []) await milestoneNumber(m.title);
 
   const created: IssueRef[] = [];
@@ -238,10 +268,10 @@ async function importIssues(a: PlanImport, cli: Cli) {
       continue;
     }
     const { text, unresolved } = resolveKeys(issue.body, refs);
-    const res = await post<{ number: number; html_url: string }>("issues", {
+    const res = await api.post<{ number: number; html_url: string }>("issues", {
       title: `${issue.key} ${issue.title}`,
       body: text,
-      ...(issue.labels?.length ? { labels: issue.labels } : {}),
+      labels: [...new Set([PLAN_LABEL, ...(issue.labels ?? [])])],
       ...(issue.milestone ? { milestone: await milestoneNumber(issue.milestone) } : {}),
     });
     const ref = { key: issue.key, number: res.number, url: res.html_url };
@@ -269,7 +299,7 @@ async function importIssues(a: PlanImport, cli: Cli) {
     const resolved = resolveKeys(p.body, refs);
     unresolved.push(...resolved.unresolved.map((k) => `${p.ref.key} → ${k}`));
     if (resolved.text !== p.text)
-      await post(`issues/${p.ref.number}`, { body: resolved.text }, "PATCH");
+      await api.post(`issues/${p.ref.number}`, { body: resolved.text }, "PATCH");
   }
   return {
     created,
@@ -620,7 +650,7 @@ const tools = [
     title: "Import plan as issues",
     tier: "write",
     description:
-      "Create a plan's epics and tasks as issues in one approved call. Each issue title starts with its key (T-012 Build the order API); keys that already have an issue are skipped, so a re-run only creates what is missing. Missing labels and milestones are created. `{{KEY}}` in a body becomes that key's issue reference (#45) once it exists, so an epic can list its tasks. Optionally adds each new issue to a Project board (needs the `project` token scope). Up to 50 issues per call; import larger plans epic by epic.",
+      "Create a plan's epics and tasks as issues in one approved call. Each issue title starts with its key (T-012 Build the order API) and every issue gets the `plan` label; keys that already have a `plan` issue are skipped, so a re-run only creates what is missing and never edits existing issues. Missing labels and milestones are created. `{{KEY}}` in a body becomes that key's issue reference (#45) once it exists, so an epic can list its tasks. Optionally adds each new issue to a Project board (needs the `project` token scope). Up to 50 issues per call; import larger plans epic by epic.",
     input: obj(
       {
         repo,
@@ -657,7 +687,8 @@ const tools = [
       },
       ["repo", "issues"],
     ),
-    scope: ownerScope,
+    scope: (a, pcfg) =>
+      ownerScope(a, pcfg) ?? (a.project ? checkOwner(a.project.owner, pcfg) : undefined),
     summarize: (a) =>
       `${a.repo}: create missing issues for ${a.issues.map((i) => i.key).join(", ")}${
         a.project ? ` and add them to project ${a.project.owner}#${a.project.number}` : ""
@@ -714,6 +745,8 @@ const tools = [
       },
       ["owner", "project", "url"],
     ),
+    scope: (a, pcfg) =>
+      checkOwner(a.owner, pcfg) ?? checkOwner(new URL(a.url).pathname.split("/")[1] ?? "", pcfg),
     summarize: (a) => `${a.url} → project ${a.owner}#${a.project}`,
     run: (a, { cli }) =>
       cli(["project", "item-add", String(a.project), "--owner", a.owner, "--url", a.url], {

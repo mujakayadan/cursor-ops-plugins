@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Diagram routing
 
-Decide by how complicated the figure is, not by its topic.
+A cloud or infrastructure view whose services should appear as their official icons is a platform diagram. Everything else goes to Mermaid or LaTeX/TikZ, decided by how complicated the figure is, not by its topic.
 
 - **Mermaid** (`mermaid-diagrams` skill, ops-mermaid): diagrams whose automatic layout is good enough, meaning standard flowcharts, sequence, state, class and ER diagrams, Gantt charts, git graphs, mind maps and timelines, and simple system overviews. Prefer a ```mermaid block in Markdown, which GitHub renders natively.
 - **LaTeX/TikZ** (`latex-diagrams` skill, ops-latex): complicated diagrams. Use it when a figure needs any of the following:

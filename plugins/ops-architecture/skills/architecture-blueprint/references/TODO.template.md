@@ -12,7 +12,7 @@ walking skeleton deployed to every environment), M2 Core features, M3 Hardening 
 load tests, DR drill, accessibility), M4 Launch (runbook rehearsed, go-live checklist). Each has
 exit criteria a reviewer can verify. -->
 
-| ID | Milestone | Exit criteria | Target date |
+| ID | Milestone | Exit criteria | Target date (YYYY-MM-DD) |
 |---|---|---|---|
 | M1 | Foundation | | |
 
@@ -34,7 +34,7 @@ Every task is done when all of these hold, in addition to its own acceptance cri
 - [ ] Metrics, logs and traces for the new behavior exist, and any new alert has a runbook entry.
 - [ ] `ARCHITECTURE.md`, the runbook and the API contract match the change; a new decision has an ADR.
 - [ ] Security review findings are fixed; no secrets, personal data or debug code are committed.
-- [ ] The task's checkbox here is ticked and the pull request closes its issue.
+- [ ] The task's acceptance criteria here are checked and the pull request references its issue (`Closes #n`).
 
 ## E-01 Platform foundation
 

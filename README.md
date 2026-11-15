@@ -234,7 +234,7 @@ Use-case, C4, sequence, ER, state and Gantt diagrams are Mermaid blocks that Git
 - every platform diagram is rendered and newer than its spec;
 - relative links resolve, and no placeholder or template guide comment is left.
 
-Once you approve the plan, `github_issues_import` (ops-github) creates the milestones, then the task and epic issues, each title starting with its key (`T-012 …`). Epic bodies link their tasks' issues, and new issues can go onto a Project board. Keys that already have an issue are skipped, so a later run adds only new tasks. The agent writes each issue number back into `TODO.md`. The generated project's `AGENTS.md` keeps both documents current: a design change updates `ARCHITECTURE.md` and its ADR, and the pull request that completes a task ticks its box and closes its issue.
+Once you approve the plan, `github_issues_import` (ops-github) creates the milestones, then the task and epic issues, each title starting with its key (`T-012 …`) and labelled `plan`. Epic bodies link their tasks' issues, and new issues can go onto a Project board. Keys that already have a `plan` issue are skipped, so a later run adds only new tasks; existing issues, such as an epic that gains a task, are never edited. The agent writes each issue number back into `TODO.md`. The generated project's `AGENTS.md` keeps both documents current: a design change updates `ARCHITECTURE.md` and its ADR, and the pull request that completes a task checks its acceptance criteria and references its issue, which closes when the change is promoted to `main`.
 
 **Safety.** A spec is data: the renderer is a fixed script that resolves icons by name inside the `diagrams` package, so previews run no workspace code and are auto-allowed. `diagrams` is pinned, and uv runs it in an isolated environment without touching the project. Renders and issue imports need approval, and `providers.architecture.scope.allowedRoots` limits which folders the tools read and write.
 
@@ -313,7 +313,7 @@ Then **quit and reopen Cursor once**, so it picks up `OPS_MCP_TOKEN`. After that
 | `ops agent [args...]` | The Cursor CLI agent (`agent`) with every enabled suite plugin passed as `--plugin-dir` |
 | `ops install [--no-user-env]` / `ops uninstall` | Registers or removes the loader hook, the read server token, the `ops` launcher and its PATH entry (see above) |
 
-The MCP servers look for CLIs in `~/.ops/tools` first, then PATH, then (Windows) the PATH stored in the registry, so tools installed while Cursor is running are found on the next call without a restart.
+The MCP servers look for CLIs in `~/.ops/tools` first, then PATH, then on Windows the PATH stored in the registry and known install folders under Program Files (Graphviz), so tools installed while Cursor is running are found on the next call without a restart.
 
 ### How the MCP servers run
 

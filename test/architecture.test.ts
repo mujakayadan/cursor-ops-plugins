@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, it } from "vitest";
@@ -8,9 +8,9 @@ import {
   checkBlueprint,
   RUNBOOK_SECTIONS,
 } from "../plugins/ops-architecture/blueprint.ts";
-import { parseSpec } from "../plugins/ops-architecture/diagram-spec.ts";
+import { ICON_PROVIDERS, parseSpec } from "../plugins/ops-architecture/diagram-spec.ts";
 import { inlineIcons } from "../plugins/ops-architecture/provider.ts";
-import { planKeyOf, resolveKeys } from "../plugins/ops-github/provider.ts";
+import { PLUGINS_DIR } from "../scripts/lib.ts";
 
 const SECTION_BODY: Record<string, string> = {
   Requirements:
@@ -97,6 +97,14 @@ Wiki pages; pull request descriptions.
 Decisions are reviewed with the code.
 `;
 
+/** Applies each replacement and fails when a fixture no longer contains the text to replace. */
+const edit = (text: string, ...pairs: [string | RegExp, string][]) =>
+  pairs.reduce((current, [from, to]) => {
+    const next = current.replace(from, to);
+    assert.notEqual(next, current, `fixture has no ${String(from)}`);
+    return next;
+  }, text);
+
 const RUNBOOK = `# Orders runbook\n\n${RUNBOOK_SECTIONS.map((s) => `## ${s}\n\nSteps.\n`).join("\n")}`;
 
 describe("architecture blueprint check", () => {
@@ -137,9 +145,10 @@ describe("architecture blueprint check", () => {
   it("requires every requirement to be traced and every reference to exist", () => {
     write(
       "TODO.md",
-      TODO.replace("- **Traces:** FR-01", "- **Traces:** FR-09").replace(
-        "T-001\n- **Traces",
-        "T-003\n- **Traces",
+      edit(
+        TODO,
+        ["- **Traces:** FR-01", "- **Traces:** FR-09"],
+        ["- **Depends on:** T-001", "- **Depends on:** T-003"],
       ),
     );
     assert.ok(messages().includes("no task traces FR-01"));
@@ -152,9 +161,12 @@ describe("architecture blueprint check", () => {
   it("finds dependency cycles, missing fields and criteria", () => {
     write(
       "TODO.md",
-      TODO.replace("- **Depends on:** none", "- **Depends on:** T-002")
-        .replace("- **Estimate:** 6h\n", "")
-        .replace("- [ ] POST /orders returns 201\n", ""),
+      edit(
+        TODO,
+        ["- **Depends on:** none", "- **Depends on:** T-002"],
+        ["- **Estimate:** 6h\n", ""],
+        ["- [ ] POST /orders returns 201\n", ""],
+      ),
     );
     assert.ok(messages().includes("dependency cycle: T-001 → T-002 → T-001"));
     assert.ok(messages().includes('T-002 has no "- **Estimate:**" line'));
@@ -164,9 +176,12 @@ describe("architecture blueprint check", () => {
   it("rejects template guidance, missing sections and diagrams", () => {
     write(
       "ARCHITECTURE.md",
-      ARCHITECTURE.replace("## 18. Glossary", "## 18. Terms")
-        .replace("sequenceDiagram", "flowchart LR")
-        .replace("Decided.", "<!-- guide: fill this -->"),
+      edit(
+        ARCHITECTURE,
+        ["## 18. Glossary", "## 18. Terms"],
+        ["sequenceDiagram", "flowchart LR"],
+        ["Decided.", "<!-- guide: fill this -->"],
+      ),
     );
     assert.ok(messages().includes('missing section "## Glossary"'));
     assert.ok(messages().includes('"Runtime flows" needs a mermaid sequenceDiagram diagram'));
@@ -178,7 +193,7 @@ describe("architecture blueprint check", () => {
     utimesSync(join(root, "docs/architecture/production.png"), new Date(0), new Date(0));
     write(
       "docs/adr/0002-use-postgres.md",
-      ADR.replace("# 0001.", "# 0002.").replace("Accepted", "Proposed"),
+      edit(ADR, ["# 0001.", "# 0002."], ["Accepted", "Proposed"]),
     );
     assert.ok(messages().includes("changed after its image was rendered; render it again"));
     assert.ok(messages().includes('"Decisions" does not link docs/adr/0002-use-postgres.md'));
@@ -187,9 +202,28 @@ describe("architecture blueprint check", () => {
 
   it("reports broken links and warns about tasks without issues", () => {
     write("docs/runbook.md", `${RUNBOOK}\nSee [deploy](deploy.md).\n`);
-    write("TODO.md", TODO.replaceAll(/- \*\*Issue:\*\* #\d+\n/g, ""));
+    write("TODO.md", edit(TODO, [/- \*\*Issue:\*\* #\d+\n/g, ""]));
     assert.ok(messages().includes("link target deploy.md does not exist"));
     assert.ok(checkBlueprint(root).warnings.some((w) => w.message.startsWith("2 task(s) have no")));
+  });
+
+  it("does not probe paths outside the project", () => {
+    write(
+      "docs/runbook.md",
+      `${RUNBOOK}\nSee [a](../../../../etc/passwd), [b](/etc/hosts) and [c](%E0%A4%A).\n`,
+    );
+    const { errors, warnings } = checkBlueprint(root);
+    assert.deepEqual(
+      warnings.map((w) => w.message),
+      [
+        "link target ../../../../etc/passwd leaves the project",
+        "link target /etc/hosts leaves the project",
+      ],
+    );
+    assert.deepEqual(
+      errors.map((e) => e.message),
+      ["link target %E0%A4%A is not a valid URI"],
+    );
   });
 });
 
@@ -238,13 +272,41 @@ describe("platform diagram specs", () => {
     );
   });
 
+  it("rejects labels Graphviz would read as HTML", () => {
+    assert.throws(
+      () =>
+        parseSpec({
+          ...valid,
+          title: "<<IMG SRC='/etc/passwd'/>>",
+          edges: [{ from: "api", to: "db", label: "a\u0000b" }],
+        }),
+      (err: Error) =>
+        ["title: must not contain", "edges[0].label: must not contain"].every((part) =>
+          err.message.includes(part),
+        ),
+    );
+  });
+
+  it("lists the same icon providers as the renderer", () => {
+    const python = readFileSync(
+      join(PLUGINS_DIR, "ops-architecture", "renderer", "render_diagram.py"),
+      "utf8",
+    );
+    const set = /PROVIDERS = \{([^}]*)\}/.exec(python)?.[1] ?? "";
+    assert.deepEqual(
+      [...set.matchAll(/"([a-z0-9]+)"/g)].map((m) => m[1]).sort(),
+      [...ICON_PROVIDERS].sort(),
+    );
+  });
+
   it("embeds icon images from the diagrams resources folder only", () => {
     const dir = mkdtempSync(join(tmpdir(), "ops-icons-"));
     try {
-      const icon = join(dir, "resources", "aws", "compute", "lambda.png");
+      const icon = join(dir, "site-packages", "resources", "aws", "compute", "lambda.png");
       mkdirSync(dirname(icon), { recursive: true });
       writeFileSync(icon, "PNG");
-      const outside = join(dir, "secret.png");
+      const outside = join(dir, "resources", "secret.png");
+      mkdirSync(dirname(outside), { recursive: true });
       writeFileSync(outside, "nope");
       const svg = inlineIcons(`<image xlink:href="${icon}"/><image xlink:href="${outside}"/>`);
       assert.ok(
@@ -257,20 +319,10 @@ describe("platform diagram specs", () => {
   });
 });
 
-describe("github plan import", () => {
-  it("reads plan keys from issue titles", () => {
-    assert.equal(planKeyOf("T-012 Build the order API"), "T-012");
-    assert.equal(planKeyOf("E-3 Ordering"), "E-3");
-    assert.equal(planKeyOf("Fix T-012 later"), undefined);
-  });
-
-  it("links the keys that have issues and reports the rest", () => {
-    const refs = new Map([
-      ["T-001", { key: "T-001", number: 45, url: "https://github.com/acme/app/issues/45" }],
-    ]);
-    assert.deepEqual(resolveKeys("- [ ] {{T-001}}\n- [ ] {{T-002}}", refs), {
-      text: "- [ ] #45\n- [ ] {{T-002}}",
-      unresolved: ["T-002"],
-    });
+describe("diagram routing rule", () => {
+  it("is the same in ops-mermaid and ops-latex", () => {
+    const rule = (plugin: string) =>
+      readFileSync(join(PLUGINS_DIR, plugin, "rules", "diagram-routing.mdc"), "utf8");
+    assert.equal(rule("ops-mermaid"), rule("ops-latex"));
   });
 });

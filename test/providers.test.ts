@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { describe, it } from "vitest";
+import type { ProviderConfig, ToolContext } from "../packages/core/types.ts";
 import architecture from "../plugins/ops-architecture/provider.ts";
 import aws, { hideEnvValues } from "../plugins/ops-aws/provider.ts";
 import control from "../plugins/ops-control/provider.ts";
@@ -9,6 +10,8 @@ import digitalocean from "../plugins/ops-digitalocean/provider.ts";
 import github, {
   assertChecksGreen,
   mergeMethodFor,
+  planKeyOf,
+  resolveKeys,
   rulesetFor,
 } from "../plugins/ops-github/provider.ts";
 import latex from "../plugins/ops-latex/provider.ts";
@@ -117,6 +120,46 @@ describe("github gitops merge rules", () => {
     assert.equal(methods("main"), '["merge"]');
     assert.equal(methods("dev"), '["squash","merge"]');
     assert.match(JSON.stringify(rulesetFor("dev", ["pr-policy", "ci"])), /"context":"ci"/);
+  });
+});
+
+describe("github plan import", () => {
+  it("reads plan keys from issue titles", () => {
+    assert.equal(planKeyOf("T-012 Build the order API"), "T-012");
+    assert.equal(planKeyOf("E-3 Ordering"), "E-3");
+    assert.equal(planKeyOf("Fix T-012 later"), undefined);
+  });
+  it("links the keys that have issues and reports the rest", () => {
+    const refs = new Map([
+      ["T-001", { key: "T-001", number: 45, url: "https://github.com/acme/app/issues/45" }],
+    ]);
+    assert.deepEqual(resolveKeys("- [ ] {{T-001}}\n- [ ] {{T-002}}", refs), {
+      text: "- [ ] #45\n- [ ] {{T-002}}",
+      unresolved: ["T-002"],
+    });
+  });
+  it("keeps the project board inside the owner scope", async () => {
+    const scoped = { scope: { owners: ["acme"] } } as unknown as ProviderConfig;
+    const scope = async (name: string, args: Record<string, unknown>) =>
+      (await github.tools
+        .find((t) => t.name === name)
+        ?.scope?.(args as never, scoped, {} as ToolContext)) ?? "";
+    const issues = [{ key: "T-001", title: "x", body: "y" }];
+    assert.equal(await scope("github_issues_import", { repo: "acme/app", issues }), "");
+    assert.match(
+      await scope("github_issues_import", {
+        repo: "acme/app",
+        issues,
+        project: { owner: "other", number: 1 },
+      }),
+      /"other" is not in/,
+    );
+    const url = "https://github.com/acme/app/issues/1";
+    assert.equal(await scope("github_project_item_add", { owner: "acme", project: 1, url }), "");
+    assert.match(
+      await scope("github_project_item_add", { owner: "other", project: 1, url }),
+      /"other" is not in/,
+    );
   });
 });
 

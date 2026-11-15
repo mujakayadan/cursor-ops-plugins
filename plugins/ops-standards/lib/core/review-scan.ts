@@ -186,7 +186,7 @@ const STANDARDS_RULES: LineRule[] = [
   },
   {
     id: "standards/todo",
-    re: /\b(?:TODO|FIXME|XXX|HACK)\b/,
+    re: /\b(?:TODO|FIXME|XXX|HACK)\b(?!\.[A-Za-z])/,
     message: "unfinished-work marker; finish the work now or track it in an issue",
   },
   {

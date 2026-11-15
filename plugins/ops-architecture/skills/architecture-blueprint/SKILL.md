@@ -34,7 +34,7 @@ Read, in this order:
 - the conversation;
 - the repository: `AGENTS.md`, `.copier-answers.yml` (language, profile, license), `README.md`, `openapi.json` and the source tree;
 - the suite's standards in `AGENTS.md` (GitOps, clean code, security, performance), which the architecture follows rather than restates;
-- the platform state through the read tools when the user names an existing account (`aws_whoami`, `github_whoami`, `vercel_whoami`, `digitalocean_whoami`).
+- the platform state through the read tools when the user names an existing account (`aws_whoami`, `github_whoami`, `vercel_whoami`, `digitalocean_account_get`).
 
 List each decision the documents need and mark it known, inferable with high confidence, or open.
 
@@ -61,7 +61,7 @@ Copy each template, fill every section, and delete every `<!-- guide: ... -->` c
 
 **Consistency.** Every container in section 5 appears on the platform diagram and in the service table of section 6. Every external system in section 4 appears in a sequence diagram or interface. Every alert in section 11 has a runbook entry, and every threat mitigation in section 10 is a control or a task.
 
-**Decisions.** Write an ADR for each choice a reasonable engineer could have made differently: cloud and region strategy, compute model, each data store, identity, tenancy, messaging, infrastructure-as-code tool, observability stack. ADR 0001 records that architecture decisions live in `docs/adr/`. Section 16 links every ADR. New ADRs start as Proposed and become Accepted when the user approves.
+**Decisions.** Write an ADR for each choice a reasonable engineer could have made differently: cloud and region strategy, compute model, each data store, identity, tenancy, messaging, infrastructure-as-code tool, observability stack. ADR 0001 (`docs/adr/0001-record-architecture-decisions.md`) records that architecture decisions live in `docs/adr/`. Section 16 links every ADR. New ADRs start as Proposed and become Accepted when the user approves.
 
 **Stack.** Use the scaffolded stack: language, framework, toolchain, CI, GitOps branches, release-please and the `openapi.json` contract. Name exact managed services, versions, sizes and limits.
 
@@ -94,16 +94,18 @@ Commit on a feature branch from `dev`, following the GitOps rules in `AGENTS.md`
 ## 6. Sync the plan to GitHub issues
 
 When the repository exists on GitHub, sync after the user approves the plan:
-1. Ask whether to add the issues to a GitHub Project board, and its number if so.
+1. Ask whether to add the issues to a GitHub Project board. If so, get its owner and number, and have the user run `gh auth refresh -s project` in Cursor's terminal when the token lacks the `project` scope.
 2. Call `github_issues_import` (ops-github, one approval per call) with:
    - `milestones`: each `M` row as a milestone titled like `M1 Foundation`, with its target date as `dueOn`.
    - `issues`: every task first, then every epic. Up to 50 per call; split by epic when more.
-   - A task issue has key `T-012` and its title. Its body is the task's fields, notes and acceptance criteria, plus a link to `TODO.md`. It has the labels `task` and `epic:E-03` and its milestone.
+   - A task issue has key `T-012` and its title. Its body is the task's fields, notes and acceptance criteria, plus an absolute link to `TODO.md` on the default branch (`https://github.com/<owner>/<repo>/blob/main/TODO.md`), since relative links don't resolve in issues. It has the labels `task` and `epic:E-03`, and its milestone is the full milestone title (`M1 Foundation`), not the `M1` key.
    - An epic issue has key `E-03`. Its body has the goal and one `- [ ] {{T-012}}` line per task, which the tool turns into issue references. It has the label `epic`.
-   - `project` when the user chose a board.
+   - `project` with the owner and number when the user chose a board.
 3. Write each returned number into `TODO.md` as `- **Issue:** #45`, run `architecture_check` again, and commit the change on the same branch.
 
-The import skips keys that already have an issue, so running it again after adding tasks creates only the new ones. A pull request that completes a task ticks its checkbox in `TODO.md` and closes its issue (`Closes #45`).
+Every imported issue carries the `plan` label, and the import skips keys that already have a `plan` issue, so running it again after adding tasks creates only the new ones. It never edits existing issues: when a new task joins an existing epic, add its reference to the epic issue by hand.
+
+A pull request that completes a task checks the task's acceptance criteria in `TODO.md` and references its issue (`Closes #45`). GitHub closes the issue when the change reaches the default branch, that is, on the promotion from `dev` to `main`.
 
 ## 7. Report
 
