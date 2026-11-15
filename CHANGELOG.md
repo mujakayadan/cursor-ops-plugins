@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.7.0...v1.7.1) (2026-11-15)
+
+
+### Bug Fixes
+
+* **architecture:** harden renderer and plan import after review ([#46](https://github.com/mujakayadan/cursor-ops-plugins/issues/46)) ([2905adf](https://github.com/mujakayadan/cursor-ops-plugins/commit/2905adfe7530707e769398c1ccf1cab1780b9505))
+
 ## [1.7.0](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.6.2...v1.7.0) (2026-11-15)
 
 
