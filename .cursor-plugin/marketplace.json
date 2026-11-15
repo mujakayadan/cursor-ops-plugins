@@ -4,7 +4,7 @@
     "name": "Muja Kayadan"
   },
   "metadata": {
-    "description": "Operations plugin suite: core guardrails, GitHub, DigitalOcean, Vercel, AWS and Microsoft 365 with tiered read/write MCP servers, automatic security, performance, clean-code and docs-freshness review of agent changes, Copier-based project scaffolders, architecture and delivery plans, open-source vetting, a knowledge graph memory with a user profile, and Mermaid and LaTeX/TikZ diagram authoring.",
+    "description": "Operations plugin suite: core guardrails, GitHub, DigitalOcean, Vercel, AWS and Microsoft 365 with tiered read/write MCP servers, automatic security, performance, clean-code and docs-freshness review of agent changes, Copier-based project scaffolders, architecture and delivery plans, open-source vetting, a knowledge graph memory with a user profile, per-task model routing from the Cursor plan, and Mermaid and LaTeX/TikZ diagram authoring.",
     "version": "1.8.0"
   },
   "plugins": [
@@ -75,6 +75,10 @@
     {
       "name": "ops-oss",
       "source": "./plugins/ops-oss"
+    },
+    {
+      "name": "ops-models",
+      "source": "./plugins/ops-models"
     }
   ]
 }

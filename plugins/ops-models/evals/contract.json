@@ -1,0 +1,9 @@
+[
+  {
+    "name": "route rejects an unknown task",
+    "server": "read",
+    "tool": "models_route",
+    "arguments": { "task": "yolo" },
+    "expectError": "must be one of"
+  }
+]
