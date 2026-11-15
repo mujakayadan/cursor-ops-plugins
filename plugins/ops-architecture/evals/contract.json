@@ -1,0 +1,9 @@
+[
+  { "name": "preview needs spec or file", "server": "read", "tool": "architecture_preview", "arguments": {}, "expectError": "exactly one of spec or file" },
+  { "name": "preview reports every spec problem", "server": "read", "tool": "architecture_preview", "arguments": { "spec": { "title": "x", "nodes": [{ "id": "API", "icon": "aws.compute" }], "edges": [{ "from": "api", "to": "db" }] } }, "expectError": "must be provider.category.Class" },
+  { "name": "preview rejects unknown spec fields", "server": "read", "tool": "architecture_preview", "arguments": { "spec": { "title": "x", "nodes": [{ "id": "a", "icon": "aws.compute.Lambda" }], "script": "import os" } }, "expectError": "unknown field \"script\"" },
+  { "name": "preview rejects files that are not specs", "server": "read", "tool": "architecture_preview", "arguments": { "file": "${REPO_ROOT}/package.json" }, "expectError": "must end in .diagram.json" },
+  { "name": "icons rejects unknown providers", "server": "read", "tool": "architecture_icons", "arguments": { "provider": "vercel" }, "expectError": "must be one of" },
+  { "name": "check rejects relative paths", "server": "read", "tool": "architecture_check", "arguments": { "project": "app" }, "expectError": "invalid format" },
+  { "name": "render rejects parent traversal", "server": "write", "tool": "architecture_render", "arguments": { "file": "/tmp/../etc/x.diagram.json" }, "expectError": "must not contain '..'" }
+]
