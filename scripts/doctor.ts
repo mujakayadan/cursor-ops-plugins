@@ -22,6 +22,7 @@ import {
 } from "../packages/core/suite.ts";
 import type { Config, Provider, ServerTier } from "../packages/core/types.ts";
 import { PLUGINS_DIR, providerPlugins, REPO_ROOT } from "./lib.ts";
+import { ensureServer } from "./serve-client.ts";
 
 const USAGE = `Usage: ops doctor [--json]
 
@@ -106,6 +107,8 @@ row(
     ? "ops install"
     : "quit and reopen Cursor so it inherits the variable (terminals: open a new one)",
 );
+// Refresh when HEAD moved so a stale server is not reported as a manual fix.
+await ensureServer();
 const health = await serveHealth();
 const head = gitHead(REPO_ROOT).head;
 row(
@@ -113,7 +116,9 @@ row(
   `read server ${SERVE_ORIGIN}`,
   health ? health.head === head || null : null,
   health ? `pid ${health.pid}${health.head === head ? "" : ", older commit"}` : "down",
-  health ? "ops serve --restart" : "ops serve --background (opening a workspace also starts it)",
+  health
+    ? "ops serve --restart"
+    : "ops serve --background (ops status, ops doctor and opening a workspace also start it)",
 );
 
 let cfg: Config | undefined;

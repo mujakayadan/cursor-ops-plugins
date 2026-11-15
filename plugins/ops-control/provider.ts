@@ -114,11 +114,16 @@ const tools = [
               pid: health.pid,
               current: health.head === suite.head,
               providers: health.providers,
+              ...(health.head === suite.head
+                ? {}
+                : {
+                    fix: "Run `ops status` or `ops serve --restart` to load this checkout's HEAD.",
+                  }),
             }
           : {
               url: SERVE_ORIGIN,
               running: false,
-              fix: "Opening a workspace starts it; or run `ops serve --background`.",
+              fix: "Run `ops status` or `ops serve --background`, or open a workspace.",
             },
         loader: {
           hooksFile: userHooksPath(),

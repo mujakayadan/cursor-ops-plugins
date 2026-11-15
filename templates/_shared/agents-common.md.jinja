@@ -36,9 +36,9 @@ These are the standards of the [ops plugin suite](https://github.com/mujakayadan
 ## Branches and releases (GitOps)
 
 - `main` is production and `dev` is integration{% if github_ci %}; both change only through pull requests, and `pr-policy` CI enforces the rules below{% endif %}. Never commit or push to `main`, `dev`, `qa` or `staging` directly; the git hooks refuse it.
-- Work on `<github-user>/<type>/<kebab-name>` branches cut from `dev`, with type one of `feat`, `fix`, `chore`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `style`, `revert`, `hotfix`. Example: `octocat/feat/health-check`.
-- Feature PRs target `dev` and are squash-merged. `main` accepts PRs only from `dev` (or `qa`/`staging`), Dependabot and release-please, merged with a merge commit.
-- PR titles and commit messages follow Conventional Commits (`feat(api): add health check`); release-please turns them into the changelog, the version bump and the GitHub release.
+- Work on `<github-user>/<type>/<kebab-name>` branches cut from `dev`, with type one of `feat`, `fix`, `chore`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `style`, `revert`, `hotfix`. Example: `octocat/feat/health-check`. Concurrent agents use separate checkouts (linked git worktrees) so they do not share a working tree.
+- Feature PRs target `dev` and are squash-merged. `main` accepts PRs only from `dev` (or `qa`/`staging`), Dependabot and release-please, merged with a merge commit. One concern per PR; leave unrelated dirty files out of the commit.
+- PR titles and commit messages follow Conventional Commits (`feat(api): add health check`); release-please turns them into the changelog, the version bump and the GitHub release. Local push hooks run lint and tests; never `--no-verify`.
 - Link issues in the PR body (`Closes #12`).
 {%- if api_spec %}
 

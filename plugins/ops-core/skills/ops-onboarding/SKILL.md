@@ -10,7 +10,7 @@ A machine without the suite starts with the bootstrap in the repository's `AGENT
 ## Setup loop
 
 1. Run `ops doctor --json`. Every row that isn't `OK` has a `fix`.
-2. Apply fixes yourself: `ops setup <plugin> --yes` for missing CLIs (`--optional` for feature-only tools), `ops serve --restart` for the read server, `ops install` for the loader or token.
+2. Apply fixes yourself: `ops setup <plugin> --yes` for missing CLIs (`--optional` for feature-only tools), `ops status` or `ops serve --restart` for the read server (both refresh when HEAD moved), `ops install` for the loader or token.
 3. Hand sign-ins to the user. Their fix reads `in your terminal: <command>`, because they open a browser, show a device code or prompt for a pasted token. Ask the user to run it in Cursor's terminal (`` Ctrl+` ``). Never take a token in chat or run a sign-in that would pass one through your tools.
 4. Run the doctor again until no `FAIL` remains for the providers the user wants. Skipped providers can stay failing; say which.
 5. Verify from chat: call `control_status` and, for each signed-in provider, its `onboarding.whoami` read tool (for example `github_whoami`).
