@@ -181,6 +181,14 @@ describe("review scanner", () => {
     assert.deepEqual(rules("Run `pnpm serve` to start the server.", "docs/cli.md"), []);
   });
 
+  it("flags unfinished-work markers but not the TODO.md plan file", () => {
+    const rules = (text: string, path = "src/x.ts") =>
+      scanEdit("standards", path, [{ new_string: text }]).map((h) => h.rule);
+    assert.deepEqual(rules("// TODO handle retries"), ["standards/todo"]);
+    assert.deepEqual(rules("Track it as a TODO."), ["standards/todo"]);
+    assert.deepEqual(rules("Read the task in `TODO.md` first.", "docs/x.md"), []);
+  });
+
   it("flags personal and machine-specific paths but not placeholders", () => {
     const rules = (text: string, path = "docs/setup.md") =>
       scanEdit("standards", path, [{ new_string: text }]).map((h) => h.rule);
