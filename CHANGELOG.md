@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.6.2...v1.7.0) (2026-11-15)
+
+
+### Features
+
+* **architecture:** enterprise architecture and delivery plans for new projects ([#42](https://github.com/mujakayadan/cursor-ops-plugins/issues/42)) ([40a2ce7](https://github.com/mujakayadan/cursor-ops-plugins/commit/40a2ce7a42472084218d091c73b02c5f023fe99b))
+
 ## [1.6.2](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.6.1...v1.6.2) (2026-11-15)
 
 
