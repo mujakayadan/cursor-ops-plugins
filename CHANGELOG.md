@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.8.0](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.7.1...v1.8.0) (2026-11-15)
+
+
+### Features
+
+* user profile, knowledge graph memory and open-source vetting ([#51](https://github.com/mujakayadan/cursor-ops-plugins/issues/51)) ([18cd019](https://github.com/mujakayadan/cursor-ops-plugins/commit/18cd019fb075d3b08468a660cf71f2fd17918b42))
+
+
+### Bug Fixes
+
+* **msgraph:** accept personal accounts in msgraph_whoami ([#50](https://github.com/mujakayadan/cursor-ops-plugins/issues/50)) ([4d2334c](https://github.com/mujakayadan/cursor-ops-plugins/commit/4d2334c4cfe1977b7763955704b39881e1a33306))
+
 ## [1.7.1](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.7.0...v1.7.1) (2026-11-15)
 
 
