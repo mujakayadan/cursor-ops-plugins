@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Operations plugin suite: core guardrails, GitHub, DigitalOcean, Vercel, AWS and Microsoft 365 with tiered read/write MCP servers, automatic security and performance review of agent changes, and Copier-based project scaffolders.",
-    "version": "1.4.0"
+    "version": "1.5.0"
   },
   "plugins": [
     {
