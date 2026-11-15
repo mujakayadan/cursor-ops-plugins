@@ -23,4 +23,4 @@ Use the ops-google read tools first (`google_whoami`, then mail/calendar/drive/m
 3. Prefer trash over permanent delete; this plugin's trash tool is recoverable.
 
 ## Accounts
-`google_auth_list` shows stored accounts. Default selection is gog's; pass `account` on a tool when the user names a different mailbox.
+`google_auth_list` shows stored accounts. Tools auto-pick one (`providers.google.account` or first by email); pass `account` when the user names a different mailbox.

@@ -27,13 +27,14 @@ Changing an existing repo to public is `github_repo_set_visibility` (privileged,
 3. One concern per PR. Commit only the files for this change; leave unrelated dirty files unstaged. Conventional commit messages.
 4. `git push -u origin <branch>`. Local hooks run lint and tests (suite: biome and tsc on commit, vitest on push); never `--no-verify`. Fix hook failures before opening the PR.
 5. `github_pr_create` with `base: "dev"` and a conventional title; the body says `Closes #N` and sticks to this change.
-6. Keep checks green (`github-ci-triage`), then `github_pr_merge` (method `auto` squashes into dev). It needs the user's approval.
+6. Keep checks green (`github-ci-triage`). **Squash-merge the work PR into `dev` yourself** (`github_pr_merge` method `auto`, or `gh pr merge --squash`). Do not wait for the user to merge work→`dev`. Own every file you touched: commit, push, resolve conflicts (rebase onto `origin/dev`), and leave the suite checkout clean (no leftover uncommitted copies of the PR).
 7. After a **suite** change lands and you keep this Cursor window, run `ops status` (or `ops serve --restart`) so the shared read server matches the new HEAD. Opening a workspace does the same.
+8. When the change should ship to production, open the promote PR (`dev` → `main`, title `chore: release`) yourself. **Do not merge promote or release-please PRs** — the user merges those.
 
 ## Promote and release
-1. Promote: `github_pr_create` with `head: "dev"`, `base: "main"` and title `chore: release`. Merge it with `github_pr_merge` (`auto` uses a merge commit).
-2. release-please opens or updates its `chore(main): release X.Y.Z` PR on `main`. Review the changelog with the user, then merge it the same way. That tags `vX.Y.Z`, publishes the GitHub release and, for Docker projects, pushes `ghcr.io/<owner>/<repo>:X.Y.Z` and `:latest` with provenance. Pushes to `dev` publish `:dev` and `:sha-<short>`.
-3. Merge the follow-up `chore: sync main into dev` PR.
+1. Promote: `github_pr_create` with `head: "dev"`, `base: "main"` and title `chore: release`. Tell the user the URL; they merge it (merge commit).
+2. release-please opens or updates its `chore(main): release X.Y.Z` PR on `main`. Review the changelog with the user; they merge it. That tags `vX.Y.Z`, publishes the GitHub release and, for Docker projects, pushes `ghcr.io/<owner>/<repo>:X.Y.Z` and `:latest` with provenance. Pushes to `dev` publish `:dev` and `:sha-<short>`.
+3. After sync opens `chore: sync main into dev`, merge it into `dev` yourself with a **merge commit** when checks are green (or ask the user if anything looks wrong).
 4. Check with `github_release_list`.
 
 ## Hotfix

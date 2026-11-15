@@ -36,13 +36,14 @@ The user runs this in their own terminal (it opens a browser):
 gog auth add you@gmail.com --services gmail,calendar,drive,contacts,people,meet
 ```
 
-Then call `google_whoami` to confirm. Optional: `gog auth manage` to set the default account when several are stored.
+Then call `google_whoami` to confirm. Add another mailbox the same way (`gog auth add other@gmail.com --services …`). Tools auto-pick an account when several are stored; pass `account` on a tool or set `providers.google.account` to prefer one.
 
 ## 4. Settings (`~/.ops/config.json`)
 ```json
-{ "providers": { "google": { "timeZone": "America/New_York", "scope": { "allowedRecipientDomains": ["example.com"] } } } }
+{ "providers": { "google": { "timeZone": "America/New_York", "account": "you@gmail.com", "scope": { "allowedRecipientDomains": ["example.com"] } } } }
 ```
 - `timeZone`: default zone for calendar create when the tool call omits one.
+- `account`: preferred Google account when several are authorized (optional; otherwise first by email).
 - `scope.allowedRecipientDomains`: mail, forwards, invitations and Drive shares may only reach these domains (and their subdomains).
 
 ## Troubleshooting
