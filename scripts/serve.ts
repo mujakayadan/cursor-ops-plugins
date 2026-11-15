@@ -72,9 +72,16 @@ export function createServeServer(options: ServeOptions): Server {
     headers: Record<string, string> = {},
   ) => {
     const auth = req.headers.authorization;
-    const authState = !auth ? "none" : auth.includes("${") ? "uninterpolated" : "mismatch";
+    const authState = !auth
+      ? "none"
+      : authorized(req)
+        ? "ok"
+        : auth.includes("${")
+          ? "uninterpolated"
+          : "mismatch";
+    const field = (value: string | undefined) => JSON.stringify((value ?? "").slice(0, 200));
     process.stderr.write(
-      `[ops-serve] ${new Date().toISOString()} ${status} ${req.method} ${req.url} ${reason} host=${req.headers.host ?? ""} origin=${req.headers.origin ?? ""} auth=${authState}\n`,
+      `[ops-serve] ${new Date().toISOString()} ${status} ${req.method} ${field(req.url)} ${reason} host=${field(req.headers.host)} origin=${field(req.headers.origin)} auth=${authState}\n`,
     );
     send(res, status, { error: reason }, headers);
   };

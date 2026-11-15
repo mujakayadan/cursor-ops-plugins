@@ -102,7 +102,7 @@ const provider: Provider = {
   setup: [{ bin: "${bin}", docs: "https://example.com/install-${bin}" }],
   onboarding: {
     whoami: "${id}_whoami",
-    signIn: { command: "${bin} login", note: "replace with the real sign-in" },
+    signIn: { command: "${bin} login" },
   },
   baseEnv: { NO_COLOR: "1" },
   instructions: {
@@ -158,5 +158,5 @@ release.packages["."]["extra-files"].push(pluginVersionFile(name));
 writeFileSync(releasePath, `${JSON.stringify(release, null, 2)}\n`);
 
 console.log(
-  `Created plugins/${name}. Next: edit provider.ts (tools, setup recipes with pnpm/winget/brew, onboarding sign-in), add skills/, then run \`pnpm run sync && pnpm run ci\` (sync also writes mcp.json).`,
+  `Created plugins/${name}. Next: edit provider.ts (tools, setup recipes with pnpm/winget/brew, onboarding sign-in), add it to the providers list in test/providers.test.ts, add skills/, then run \`pnpm run sync && pnpm run ci\` (sync also writes mcp.json).`,
 );

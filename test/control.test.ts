@@ -56,6 +56,16 @@ afterEach(() => {
   loadConfig({ reload: true });
 });
 
+describe("config errors", () => {
+  it("don't quote the config source, which can hold credentials", () => {
+    writeFileSync(join(dir, "config.json"), '{ "env": { "GH_TOKEN": ghp_secret } }');
+    assert.throws(
+      () => loadConfig({ reload: true }),
+      (err: Error) => err.message.endsWith(": not valid JSON") && !err.message.includes("ghp_"),
+    );
+  });
+});
+
 describe("suite loader", () => {
   it("install-local registers one loader entry and keeps other workspaceOpen hooks", () => {
     mkdirSync(join(dir, "cursor"), { recursive: true });

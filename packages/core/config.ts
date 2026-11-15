@@ -84,7 +84,9 @@ export function loadConfig({ reload = false }: { reload?: boolean } = {}): Confi
     try {
       user = JSON.parse(readFileSync(path, "utf8"));
     } catch (err) {
-      throw new Error(`Invalid ops config at ${path}: ${(err as Error).message}`);
+      // V8 quotes the surrounding source, which can hold credential env values.
+      const reason = (err as Error).message.replace(/, .* is not valid JSON$/s, ": not valid JSON");
+      throw new Error(`Invalid ops config at ${path}: ${reason}`);
     }
   }
   cached = deepMerge(DEFAULTS, user);

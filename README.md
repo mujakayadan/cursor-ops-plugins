@@ -89,7 +89,7 @@ templates/
   _shared/                        # include-only fragments (license, MCP, rules, skills)
     standards/                    # engineering standards: AGENTS.md sections and the review plugins' rules
 evals/run.ts                      # eval harness
-scripts/                          # sync, validate, install, doctor, smoke, scaffold, test-templates
+scripts/                          # ops command (install, setup, doctor, serve), sync, validate, smoke, scaffold, test-templates
 ```
 
 Plugins are self-contained (core is vendored), so they install from a marketplace without the monorepo. CI fails if `lib/core` drifts from `packages/core`.
@@ -267,7 +267,7 @@ Then **quit and reopen Cursor once**, so it picks up `OPS_MCP_TOKEN`. After that
 | `ops doctor [--json]` | Runtime, loader, token, read server, config, plugins, and per provider its CLIs, toolchain and sign-in per credential tier. Every failure comes with a fix; sign-in fixes come from the provider's `onboarding` in `provider.ts`. `--json` is for agents |
 | `ops serve [--background\|--stop\|--restart]` | The shared read server; foreground by default, logs to `~/.ops/serve.log` |
 | `ops agent [args...]` | The Cursor CLI agent (`agent`) with every enabled suite plugin passed as `--plugin-dir` |
-| `ops install` / `ops uninstall` | Same as `install-local` / `uninstall-local` |
+| `ops install [--no-user-env]` / `ops uninstall` | Registers or removes the loader hook, the read server token, the `ops` launcher and its PATH entry (see above) |
 
 The MCP servers look for CLIs in `~/.ops/tools` first, then PATH, then (Windows) the PATH stored in the registry, so tools installed while Cursor is running are found on the next call without a restart.
 
@@ -302,7 +302,7 @@ pnpm run templates:render   # scaffold structure checks (fast)
 pnpm run templates:test     # render every scaffold profile and run its toolchain (needs uv, pnpm, a JDK)
 ```
 
-To add a tool, add a `tool({...})` entry to the provider's `tools` array with a `tier`, an `input` schema built from the `schema-helpers` (`str`, `int`, `oneOf`, `obj`, ...) and a `run` function. The argument types of `run`, `summarize`, `confirm` and `scope` are inferred from `input`. Mutating tools need `summarize`; privileged tools need `confirm`/`confirmHint`. Then add policy and contract cases. The contract suite enforces naming, tier placement and confirmation automatically. Each provider also declares `setup` (how `ops setup` installs its CLIs) and `onboarding` (the read tool that proves sign-in or toolchain readiness, the sign-in command, and its setup skill); `test/providers.test.ts` requires a recipe for every binary and checks that the onboarding tools and skill exist.
+To add a tool, add a `tool({...})` entry to the provider's `tools` array with a `tier`, an `input` schema built from the `schema-helpers` (`str`, `int`, `oneOf`, `obj`, ...) and a `run` function. The argument types of `run`, `summarize`, `confirm` and `scope` are inferred from `input`. Mutating tools need `summarize`; privileged tools need `confirm`/`confirmHint`. Then add policy and contract cases. The contract suite enforces naming, tier placement and confirmation automatically. Each provider also declares `setup` (how `ops setup` installs its CLIs) and, where it needs a sign-in or a local toolchain, `onboarding` (the read tool that proves readiness, the sign-in command, and its setup skill). `test/providers.test.ts` covers every provider plugin: it requires a recipe for every binary and checks that the onboarding tools and skill exist.
 
 ## Configuration reference
 
