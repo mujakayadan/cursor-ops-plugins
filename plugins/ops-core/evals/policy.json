@@ -14,7 +14,7 @@
   {"name":"missing server name denied","event":"beforeMCPExecution","input":{"tool_name":"list_things","tool_input":"{}"},"expect":{"permission":"deny"}},
   {"name":"secret in MCP arguments denied","event":"beforeMCPExecution","input":{"mcp_server_name":"user-github","tool_name":"create_or_update_file","tool_input":"{\"content\":\"AWS_KEY=AKIAIOSFODNN7EXAMPLE\"}"},"expect":{"permission":"deny"}},
   {"name":"denies git reset --hard HEAD~3","event":"beforeShellExecution","input":{"command":"git reset --hard HEAD~3"},"expect":{"permission":"deny"}},
-  {"name":"denies git -C D:/Codes/app reset --hard origin/main","event":"beforeShellExecution","input":{"command":"git -C D:/Codes/app reset --hard origin/main"},"expect":{"permission":"deny"}},
+  {"name":"denies git -C ~/code/app reset --hard origin/main","event":"beforeShellExecution","input":{"command":"git -C ~/code/app reset --hard origin/main"},"expect":{"permission":"deny"}},
   {"name":"allows git reset --soft HEAD~1","event":"beforeShellExecution","input":{"command":"git reset --soft HEAD~1"},"expect":{"permission":"allow"}},
   {"name":"allows git reset HEAD src/app.ts","event":"beforeShellExecution","input":{"command":"git reset HEAD src/app.ts"},"expect":{"permission":"allow"}},
   {"name":"denies git clean -fdx","event":"beforeShellExecution","input":{"command":"git clean -fdx"},"expect":{"permission":"deny"}},

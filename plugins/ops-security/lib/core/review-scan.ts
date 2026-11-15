@@ -148,6 +148,9 @@ const PERFORMANCE_RULES: LineRule[] = [
 const HISTORY =
   /\b(?:previously|formerly|used to (?:be|use|return|call|have)|no longer|anymore|(?:was|were|got|has been) (?:renamed|replaced|removed|moved|changed|rewritten)|renamed (?:from|to)|(?:old|legacy|previous) (?:behaviou?r|implementation|version|approach|code|api|format|name)|backwards?[- ]compat\w*|for (?:backward |legacy )?compatibility|kept for compat\w*|deprecated|this (?:PR|change|commit|refactor) |we (?:changed|switched|moved|now)|now (?:uses|supports|returns|handles|lives)|correction:|as of v?\d)/i;
 const COMMENT = /(?:\/\/|\/\*|^\s*\*|#|<!--|^\s*--\s)/;
+/** A named user's home (placeholders like `<you>`, `$USER` or `%USERNAME%` pass) or a data-drive folder. */
+const PERSONAL_PATH =
+  /\b[A-Za-z]:[\\/]+Users[\\/]+(?![<{$%]|(?:Public|Default|you|me|user|username|name)\b)[\w.-]+|(?:^|[\s"'`(=])\/(?:Users|home)\/(?![<{$]|(?:you|me|user|username|name)\b)[\w.-]+|\b[D-Z]:[\\/]+[A-Za-z]\w*/;
 
 const STANDARDS_RULES: LineRule[] = [
   {
@@ -187,6 +190,12 @@ const STANDARDS_RULES: LineRule[] = [
     re: /@ts-(?:ignore|nocheck)\b|eslint-disable(?![^\n]*--\s*\S)|#\s*type:\s*ignore\s*$|#\s*noqa\s*$|biome-ignore\s+\S+\s*$/,
     message: "lint or type suppression without a reason; fix the cause or state why it is needed",
     files: CODE,
+  },
+  {
+    id: "standards/personal-path",
+    re: PERSONAL_PATH,
+    message:
+      "user- or machine-specific path; derive it at runtime (home dir, env, config) or use a placeholder such as ~/code/app",
   },
   {
     id: "standards/debug-leftover",

@@ -75,7 +75,7 @@ const localTime = (description: string) =>
     pattern: LOCAL_TIME,
   });
 const timeZone = str(
-  "IANA or Windows time zone (e.g. Europe/Istanbul). Defaults to providers.msgraph.timeZone, else this machine's zone.",
+  "IANA or Windows time zone (e.g. America/New_York). Defaults to providers.msgraph.timeZone, else this machine's zone.",
   { pattern: "^[A-Za-z0-9_+/ ().-]{1,64}$" },
 );
 const bodyType = oneOf(["text", "html"], "Body format.", "text");

@@ -16,7 +16,7 @@ Ask only what the request leaves open. Use one AskQuestion form where available:
 | Decision | Ask when | Default |
 |---|---|---|
 | Language + profile | not stated or ambiguous ("an API" could be Python backend or Java backend) | none, always confirm |
-| Project name and destination | missing | parent folder: the user's code root (e.g. `D:\Codes`), dir = slug |
+| Project name and destination | missing | parent folder: the user's code root (e.g. `~/code`), dir = slug |
 | Agent clients | never ask unless the user mentions it | `cursor`, `claude` |
 | MCP servers | user mentions docs or GitHub automation | `context7` |
 | License | always, unless the user already said | none; offer `MIT`, `Apache-2.0`, or `none` (proprietary, no LICENSE file) |
@@ -40,7 +40,7 @@ If `missingTools` lists something needed, tell the user first. Either they insta
 Call `scaffold_create` (write tier, needs approval) with an **absolute** `destination` that does not exist yet. Example:
 
 ```json
-{ "destination": "D:\\Codes\\billing-api", "language": "python", "profile": "backend", "project_name": "Billing API", "description": "Billing service.", "license": "MIT", "author_name": "Acme Inc." }
+{ "destination": "C:\\code\\billing-api", "language": "python", "profile": "backend", "project_name": "Billing API", "description": "Billing service.", "license": "MIT", "author_name": "Acme Inc." }
 ```
 
 The tool refuses non-empty directories. Never delete or empty a directory to make room; pick a new name instead.
