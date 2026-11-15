@@ -1,20 +1,29 @@
 #!/usr/bin/env node
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { SERVE_ORIGIN, SERVE_TOKEN_ENV } from "../packages/core/suite.ts";
+import type { Provider } from "../packages/core/types.ts";
 import { CORE_DIR, listPlugins, PLUGINS_DIR, providerPlugins } from "./lib.ts";
 
-/** Read tier on the shared loopback server; write tier on stdio so only Cursor, behind its hooks, reaches it. */
-function mcpJson(id: string): string {
+/**
+ * Read tier on the shared loopback server; write tier on stdio so only Cursor, behind its hooks,
+ * reaches it. Providers without write tools get no write server.
+ */
+function mcpJson(id: string, writes: boolean): string {
   const servers = {
     [`ops-${id}-read`]: {
       url: `${SERVE_ORIGIN}/mcp/${id}`,
       headers: { Authorization: `Bearer \${env:${SERVE_TOKEN_ENV}}` },
     },
-    [`ops-${id}-write`]: {
-      command: "node",
-      args: ["${CURSOR_PLUGIN_ROOT}/lib/core/run-mcp.ts", "--tier", "write"],
-    },
+    ...(writes
+      ? {
+          [`ops-${id}-write`]: {
+            command: "node",
+            args: ["${CURSOR_PLUGIN_ROOT}/lib/core/run-mcp.ts", "--tier", "write"],
+          },
+        }
+      : {}),
   };
   return `${JSON.stringify({ mcpServers: servers }, null, 2)}\n`;
 }
@@ -22,6 +31,7 @@ function mcpJson(id: string): string {
 const PROVIDER_ONLY = new Set(["run-mcp.ts", "run-guard.ts"]);
 const REVIEW_ONLY = new Set(["review.ts", "review-scan.ts", "review-docs.ts"]);
 const CONTROL_ONLY = new Set(["suite.ts"]);
+const PROFILE_PLUGINS = new Set(["ops-core", "ops-control"]);
 const check = process.argv.includes("--check");
 const sources = readdirSync(CORE_DIR).filter((f) => f.endsWith(".ts"));
 const header = (file: string) =>
@@ -36,7 +46,8 @@ for (const plugin of listPlugins()) {
     (f) =>
       (isProvider || !PROVIDER_ONLY.has(f)) &&
       (isReviewer || !REVIEW_ONLY.has(f)) &&
-      (plugin === "ops-control" || !CONTROL_ONLY.has(f)),
+      (plugin === "ops-control" || !CONTROL_ONLY.has(f)) &&
+      (PROFILE_PLUGINS.has(plugin) || f !== "profile.ts"),
   );
   if (!check) mkdirSync(dest, { recursive: true });
 
@@ -60,7 +71,13 @@ for (const plugin of listPlugins()) {
 
 for (const plugin of providerPlugins()) {
   const target = join(PLUGINS_DIR, plugin, "mcp.json");
-  const expected = mcpJson(plugin.replace(/^ops-/, ""));
+  const { default: provider } = (await import(
+    pathToFileURL(join(PLUGINS_DIR, plugin, "provider.ts")).href
+  )) as { default: Provider };
+  const expected = mcpJson(
+    provider.id,
+    provider.tools.some((t) => t.tier !== "read"),
+  );
   const actual = existsSync(target) ? readFileSync(target, "utf8") : null;
   if (actual === expected) continue;
   drift++;

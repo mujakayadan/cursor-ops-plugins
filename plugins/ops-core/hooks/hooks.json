@@ -1,6 +1,7 @@
 {
   "version": 1,
   "hooks": {
+    "sessionStart": [{ "command": "node ./hooks/session.ts sessionStart", "timeout": 10 }],
     "beforeSubmitPrompt": [
       { "command": "node ./hooks/core-guard.ts beforeSubmitPrompt", "timeout": 10 }
     ],

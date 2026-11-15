@@ -1,0 +1,32 @@
+[
+  {
+    "name": "search is a read",
+    "event": "beforeMCPExecution",
+    "input": {
+      "mcp_server_name": "ops-memory-read",
+      "tool_name": "memory_search",
+      "tool_input": "{\"query\":\"orders\"}"
+    },
+    "expect": { "permission": "allow" }
+  },
+  {
+    "name": "remember asks",
+    "event": "beforeMCPExecution",
+    "input": {
+      "mcp_server_name": "ops-memory-write",
+      "tool_name": "memory_remember",
+      "tool_input": "{\"entities\":[{\"name\":\"orders-api\",\"type\":\"component\"}]}"
+    },
+    "expect": { "permission": "ask" }
+  },
+  {
+    "name": "forget asks",
+    "event": "beforeMCPExecution",
+    "input": {
+      "mcp_server_name": "ops-memory-write",
+      "tool_name": "memory_forget",
+      "tool_input": "{\"entities\":[\"orders-api\"]}"
+    },
+    "expect": { "permission": "ask" }
+  }
+]

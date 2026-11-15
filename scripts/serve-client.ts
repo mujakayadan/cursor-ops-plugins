@@ -50,6 +50,7 @@ export async function ensureServer(timeoutMs = 6000): Promise<ServeHealth | unde
   if (existsSync(log) && statSync(log).size > MAX_LOG) truncateSync(log);
   const fd = openSync(log, "a");
   spawn(process.execPath, [join(REPO_ROOT, "scripts", "serve.ts")], {
+    cwd: opsHome(),
     detached: true,
     windowsHide: true,
     stdio: ["ignore", fd, fd],

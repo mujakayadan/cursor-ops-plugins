@@ -3,7 +3,16 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { auditDir } from "./lib/core/audit.ts";
 import { configPath, loadConfig, privilegedEnabled, reviewDir } from "./lib/core/config.ts";
-import { bool, int, obj, oneOf, str, ToolError, tool } from "./lib/core/schema-helpers.ts";
+import {
+  EXPERTISE,
+  loadProfile,
+  MAX_NOTE,
+  MAX_NOTES,
+  type Profile,
+  profilePath,
+  saveProfile,
+} from "./lib/core/profile.ts";
+import { bool, int, list, obj, oneOf, str, ToolError, tool } from "./lib/core/schema-helpers.ts";
 import {
   ALWAYS_ON,
   gitHead,
@@ -252,6 +261,47 @@ const tools = [
     },
   }),
   tool({
+    name: "control_profile_get",
+    title: "User profile",
+    tier: "read",
+    description:
+      "The user's profile (expertise level, role, standing preferences) that every new conversation receives as context, or null when the user hasn't set one.",
+    run: () => ({ path: profilePath(), profile: loadProfile() ?? null }),
+  }),
+  tool({
+    name: "control_profile_set",
+    title: "Set user profile",
+    tier: "write",
+    description:
+      "Save the user's expertise level, role and standing preferences. Every new conversation starts with matching communication guidance. `notes` replaces the stored list; pass the full list when adding one.",
+    input: obj(
+      {
+        expertise: oneOf(EXPERTISE, "How technical the user is."),
+        role: str("Role, such as 'staff backend engineer'.", { minLength: 1, maxLength: MAX_NOTE }),
+        notes: list(
+          str("One standing preference.", { minLength: 1, maxLength: MAX_NOTE }),
+          "Standing preferences the user stated.",
+          { maxItems: MAX_NOTES },
+        ),
+      },
+      ["expertise"],
+    ),
+    summarize: (a) =>
+      `profile: ${a.expertise}${a.role ? `, ${a.role}` : ""}${a.notes ? `, ${a.notes.length} note(s)` : ""}`,
+    run: (a) => {
+      const current = loadProfile();
+      const role = a.role ?? current?.role;
+      const notes = a.notes ?? current?.notes;
+      const profile: Profile = {
+        expertise: a.expertise,
+        ...(role ? { role } : {}),
+        ...(notes?.length ? { notes } : {}),
+      };
+      saveProfile(profile);
+      return { path: profilePath(), profile, next: "New conversations start with this profile." };
+    },
+  }),
+  tool({
     name: "control_plugin_set",
     title: "Enable or disable a plugin",
     tier: "write",
@@ -291,9 +341,9 @@ const provider: Provider = {
   version: "0.1.0",
   bin: "node",
   instructions: {
-    read: "Inspect the ops plugin suite: install and plugin status, the audit log, and review activity.",
+    read: "Inspect the ops plugin suite: install and plugin status, the audit log, review activity and the user profile.",
     write:
-      "Change review settings and which suite plugins load; every call requires approval. Guardrails, privileged tools, credentials and third-party MCP policy stay with the user and are not editable here.",
+      "Change review settings, which suite plugins load and the user profile; every call requires approval. Guardrails, privileged tools, credentials and third-party MCP policy stay with the user and are not editable here.",
   },
   tools,
 };

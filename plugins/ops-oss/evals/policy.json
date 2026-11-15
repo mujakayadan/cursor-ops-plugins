@@ -1,0 +1,22 @@
+[
+  {
+    "name": "package vetting is a read",
+    "event": "beforeMCPExecution",
+    "input": {
+      "mcp_server_name": "ops-oss-read",
+      "tool_name": "oss_package",
+      "tool_input": "{\"system\":\"npm\",\"name\":\"react\"}"
+    },
+    "expect": { "permission": "allow" }
+  },
+  {
+    "name": "repository vetting is a read",
+    "event": "beforeMCPExecution",
+    "input": {
+      "mcp_server_name": "ops-oss-read",
+      "tool_name": "oss_project",
+      "tool_input": "{\"project\":\"github.com/facebook/react\"}"
+    },
+    "expect": { "permission": "allow" }
+  }
+]

@@ -1,6 +1,13 @@
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
-import { ToolError } from "./lib/core/schema-helpers.ts";
+import {
+  type Doc,
+  headingTitle,
+  mermaidTypes,
+  readDoc,
+  type Section,
+  sections,
+} from "./markdown.ts";
 
 const ARCHITECTURE_FILE = "ARCHITECTURE.md";
 const TODO_FILE = "TODO.md";
@@ -26,6 +33,7 @@ export const ARCHITECTURE_SECTIONS = [
   "Resilience and disaster recovery",
   "Environments and delivery",
   "Cost",
+  "Open source and dependencies",
   "Decisions",
   "Risks",
   "Glossary",
@@ -76,8 +84,8 @@ const ISSUE = /^(?:#\d+|https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/issues\/\d+)$/;
 const PLACEHOLDER =
   /\bTBD\b|\bTBC\b|\bFIXME\b|\bTODO:|lorem ipsum|\?\?\?|<!--\s*guide:|<System name>|<(?:fill|placeholder|insert|describe|todo)\b[^>]*>/i;
 const LINK = /!?\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
+const VERDICT = /\|\s*(?:Adopt|Trial|Reject)\s*\|/;
 const MAX_FINDINGS = 100;
-const MAX_DOC_BYTES = 2000000;
 
 interface Finding {
   file: string;
@@ -92,84 +100,11 @@ interface CheckResult {
   stats: Record<string, number>;
 }
 
-interface Section {
-  title: string;
-  line: number;
-  lines: string[];
-}
-
-interface Doc {
-  file: string;
-  lines: string[];
-  /** Line numbers (1-based) that sit inside fenced code blocks. */
-  fenced: Set<number>;
-}
-
 interface Task {
   id: string;
   line: number;
   fields: Partial<Record<"Milestone" | "Depends on" | "Traces" | "Estimate" | "Issue", string>>;
   criteria: number;
-}
-
-function readDoc(root: string, file: string): Doc | undefined {
-  const path = join(root, file);
-  if (!existsSync(path)) return undefined;
-  if (statSync(path).size > MAX_DOC_BYTES)
-    throw new ToolError(`${file} is larger than ${MAX_DOC_BYTES / 1000000} MB`);
-  const lines = readFileSync(path, "utf8").split(/\r?\n/);
-  const fenced = new Set<number>();
-  let fence: string | undefined;
-  lines.forEach((line, i) => {
-    const marker = /^\s*(`{3,}|~{3,})/.exec(line)?.[1];
-    if (marker && (!fence || marker.startsWith(fence))) {
-      fence = fence ? undefined : marker;
-      fenced.add(i + 1);
-    } else if (fence) fenced.add(i + 1);
-  });
-  return { file, lines, fenced };
-}
-
-const headingTitle = (text: string) => text.replace(/^\d+(?:\.\d+)*\.?\s+/, "").trim();
-
-/** H2 sections outside code fences. */
-function sections(doc: Doc): Section[] {
-  const out: Section[] = [];
-  doc.lines.forEach((line, i) => {
-    const m = /^## (.+)$/.exec(line);
-    if (m?.[1] && !doc.fenced.has(i + 1))
-      out.push({ title: headingTitle(m[1]), line: i + 1, lines: [] });
-    else out.at(-1)?.lines.push(line);
-  });
-  return out;
-}
-
-/** The first word of each mermaid block, such as `flowchart` or `sequenceDiagram`. */
-function mermaidTypes(lines: string[]): string[] {
-  const types: string[] = [];
-  let inMermaid = false;
-  let frontMatter = false;
-  let typed = false;
-  for (const line of lines) {
-    if (/^\s*(`{3,}|~{3,})\s*mermaid\b/.test(line)) {
-      inMermaid = true;
-      typed = false;
-      continue;
-    }
-    if (!inMermaid) continue;
-    if (/^\s*(`{3,}|~{3,})\s*$/.test(line)) {
-      inMermaid = false;
-      continue;
-    }
-    if (typed) continue;
-    const text = line.trim();
-    if (text === "---") frontMatter = !frontMatter;
-    else if (!frontMatter && text && !text.startsWith("%%")) {
-      types.push(text.split(/\s/)[0] ?? "");
-      typed = true;
-    }
-  }
-  return types;
 }
 
 class Report {
@@ -273,6 +208,22 @@ function checkArchitecture(root: string, doc: Doc, adrs: string[], report: Repor
         doc.file,
         `"Deployment" needs a platform diagram image rendered from a ${DIAGRAM_DIR}/<name>${SPEC_SUFFIX} spec`,
         deployment.line,
+      );
+    }
+  }
+
+  const oss = section("Open source and dependencies");
+  if (oss) {
+    const rows = oss.lines.filter((l) => /^\|/.test(l) && !/^\|[\s|:-]+\|$/.test(l));
+    const header = rows.find((l) => /\bLicense\b/i.test(l) && /\bVerdict\b/i.test(l));
+    const components = header
+      ? rows.slice(rows.indexOf(header) + 1).filter((l) => VERDICT.test(l))
+      : [];
+    if (!components.length) {
+      report.error(
+        doc.file,
+        '"Open source and dependencies" needs a component table with License and Verdict columns and at least one vetted component',
+        oss.line,
       );
     }
   }

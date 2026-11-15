@@ -1,4 +1,6 @@
 [
+  {"name":"session starts with the user's profile","event":"sessionStart","input":{"session_id":"eval","is_background_agent":false},"env":{"OPS_HOME":"../../evals/fixtures/profile"},"expect":{},"match":{"additional_context":"senior software engineer[\\s\\S]*Role: platform engineer[\\s\\S]*- Prefers pnpm"}},
+  {"name":"session without a profile asks for one","event":"sessionStart","input":{"session_id":"eval","is_background_agent":false},"env":{"OPS_HOME":"../../evals/fixtures/no-profile"},"expect":{},"match":{"additional_context":"User profile: unknown[\\s\\S]*control_profile_set"}},
   {"name":"prompt with AWS access key is blocked","event":"beforeSubmitPrompt","input":{"prompt":"use key AKIAIOSFODNN7EXAMPLE to deploy"},"expect":{"continue":false}},
   {"name":"prompt with private key is blocked","event":"beforeSubmitPrompt","input":{"prompt":"-----BEGIN RSA PRIVATE KEY-----\nMIIEow\n-----END RSA PRIVATE KEY-----"},"expect":{"continue":false}},
   {"name":"benign prompt passes","event":"beforeSubmitPrompt","input":{"prompt":"why did the last deployment fail?"},"expect":{"continue":true}},

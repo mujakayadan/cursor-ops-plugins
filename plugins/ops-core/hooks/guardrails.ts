@@ -144,10 +144,28 @@ export const GIT_RULES: ShellRule[] = [
   },
 ];
 
+/** Env vars that pin git to another repository; with an explicit cwd they must not win. */
+const GIT_REPO_ENV = [
+  "GIT_DIR",
+  "GIT_WORK_TREE",
+  "GIT_COMMON_DIR",
+  "GIT_OBJECT_DIRECTORY",
+  "GIT_INDEX_FILE",
+  "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+] as const;
+
 /** Branch checked out where the command runs; undefined outside a repo, on an unborn or detached HEAD. */
 export function currentBranch(cwd: string | undefined): string | undefined {
+  const env = cwd
+    ? Object.fromEntries(
+        Object.entries(process.env).filter(
+          ([k]) => !(GIT_REPO_ENV as readonly string[]).includes(k),
+        ),
+      )
+    : undefined;
   const r = spawnSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
     cwd: cwd || undefined,
+    env,
     encoding: "utf8",
     timeout: 3000,
     windowsHide: true,
