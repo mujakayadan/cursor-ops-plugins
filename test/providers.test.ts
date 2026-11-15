@@ -15,7 +15,10 @@ import github, {
   rulesetFor,
   updatedBody,
 } from "../plugins/ops-github/provider.ts";
-import google, { outsideDomains as googleOutsideDomains } from "../plugins/ops-google/provider.ts";
+import google, {
+  outsideDomains as googleOutsideDomains,
+  pickGoogleAccount,
+} from "../plugins/ops-google/provider.ts";
 import latex from "../plugins/ops-latex/provider.ts";
 import memory from "../plugins/ops-memory/provider.ts";
 import mermaid from "../plugins/ops-mermaid/provider.ts";
@@ -264,6 +267,19 @@ describe("google recipient scope", () => {
       ["x@evilexample.com"],
     );
     assert.deepEqual(googleOutsideDomains(["x@anything.io"], { ...pcfg, scope: {} }), []);
+  });
+});
+
+describe("google pickGoogleAccount", () => {
+  it("prefers a configured account, else first by email, and skips invalid", () => {
+    const accounts = [
+      { email: "zeta@example.com", valid: true },
+      { email: "alpha@example.com", valid: true },
+      { email: "bad@example.com", valid: false },
+    ];
+    assert.equal(pickGoogleAccount(accounts, "zeta@example.com"), "zeta@example.com");
+    assert.equal(pickGoogleAccount(accounts), "alpha@example.com");
+    assert.equal(pickGoogleAccount([{ email: "only@example.com", valid: false }]), undefined);
   });
 });
 

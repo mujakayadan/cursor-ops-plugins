@@ -31,6 +31,8 @@ export interface ProviderConfig {
   scope: ProviderScope;
   defaultRegion?: string | null;
   timeZone?: string | null;
+  /** Preferred Google account email when several are stored in gog. */
+  account?: string | null;
   /** Chrome/Chromium/Edge executable for mermaid-cli. */
   browserPath?: string | null;
   /** TeX engine used when a LaTeX tool call doesn't pick one. */
