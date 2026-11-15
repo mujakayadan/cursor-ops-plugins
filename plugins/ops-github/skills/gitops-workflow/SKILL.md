@@ -8,7 +8,7 @@ description: Apply and follow the team's GitOps flow on GitHub - main is product
 ## The rules
 - **Environment branches:** `main` (production) and `dev` (integration) in every repo; `qa` and `staging` only when the user asks. They change only through pull requests. Never commit or push to them; the ops-core guardrails and the repo's git hooks refuse it.
 - **Work branches:** `<github-user>/<type>/<kebab-name>`, cut from `dev`. Type is one of `feat fix chore docs refactor perf test build ci style revert hotfix`. Get the login from `github_whoami`. Example: `git switch -c octocat/fix/login-timeout origin/dev`.
-- **Targets:** work PRs go to `dev` and are squash-merged. `main` accepts PRs only from `dev`, `qa`, `staging`, Dependabot and release-please, merged with a merge commit. After anything lands on `main`, the `sync-main-to-dev` workflow opens a `main → dev` PR; merge it with a merge commit.
+- **Targets:** work PRs go to `dev` (agent squash-merges when green). `main` accepts PRs only from `dev`, `qa`, `staging`, Dependabot and release-please (merge commit; the user merges promote and release-please). After anything lands on `main`, the `sync-main-to-dev` workflow opens a `main → dev` PR; the agent merges that with a merge commit.
 - **Titles:** Conventional Commits (`feat(api): add health check`, `fix!: drop v1 endpoint`). The squash commit takes the PR title, and release-please reads it.
 - **Checks:** the `pr-policy` workflow enforces targets, branch names and titles. `github_pr_merge` also refuses to merge until every check is green. On GitHub Free, private repos have no rulesets, so these checks plus the local hooks are the enforcement.
 - **API contract:** backend repos commit `openapi.json`, and the `api-compat` job diffs it against the base branch with oasdiff. Error-level breaking changes fail the PR unless declared with `!` in the title and a line starting `BREAKING CHANGE: <migration>` in the body; that also makes release-please bump the major version (minor before 1.0). Promotions and bot PRs only report. Suggest a compatible alternative before declaring a break.
@@ -38,4 +38,4 @@ Changing an existing repo to public is `github_repo_set_visibility` (privileged,
 4. Check with `github_release_list`.
 
 ## Hotfix
-Branch `<user>/hotfix/<name>` from `dev`, PR to `dev`, then promote `dev → main` right away. Don't open PRs from work branches to `main`; `pr-policy` rejects them.
+Branch `<user>/hotfix/<name>` from `dev`, PR to `dev`, squash-merge into `dev`, then open the promote PR (`dev` → `main`) right away for the user to merge. Don't open PRs from work branches to `main`; `pr-policy` rejects them.
