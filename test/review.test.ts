@@ -11,6 +11,7 @@ import {
   recordPrompt,
   requestReview,
 } from "../packages/core/review.ts";
+import { referenceHints, removedIdentifiers, staleMentions } from "../packages/core/review-docs.ts";
 import { scanEdit } from "../packages/core/review-scan.ts";
 import type { Config, HookPayload } from "../packages/core/types.ts";
 
@@ -161,6 +162,67 @@ describe("review scanner", () => {
       "performance/await-in-loop",
     ]);
     assert.deepEqual(rules("await Promise.all(users.map((u) => notify(u)));"), []);
+  });
+
+  it("flags history narration, dead code and shims but not present-tense code", () => {
+    const rules = (text: string, path = "src/x.ts") =>
+      scanEdit("standards", path, [{ new_string: text }]).map((h) => h.rule);
+    assert.deepEqual(rules("// The parser no longer accepts YAML."), ["standards/history-comment"]);
+    assert.deepEqual(rules("# previously returned None\nreturn []", "src/x.py"), [
+      "standards/history-comment",
+    ]);
+    assert.deepEqual(rules("// const old = load(path);"), ["standards/commented-out-code"]);
+    assert.deepEqual(rules("export const fetchUserV1 = fetchUser;"), ["standards/compat-shim"]);
+    assert.deepEqual(rules("// @ts-ignore\nrun();"), ["standards/suppression"]);
+    assert.deepEqual(rules("The `serve` command was renamed from `start`.", "docs/cli.md"), [
+      "standards/history-doc",
+    ]);
+    assert.deepEqual(rules("// Parses JSON config; YAML is not supported.\nparse(text);"), []);
+    assert.deepEqual(rules("Run `pnpm serve` to start the server.", "docs/cli.md"), []);
+  });
+
+  it("finds docs that mention identifiers an edit removed", () => {
+    writeFileSync(join(root, "README.md"), "# App\n\nCall `loadOrderTotals()` first.\n");
+    mkdirSync(join(root, "node_modules", "dep"), { recursive: true });
+    writeFileSync(join(root, "node_modules", "dep", "README.md"), "loadOrderTotals");
+    writeFileSync(join(root, "CHANGELOG.md"), "- added loadOrderTotals");
+    const removed = removedIdentifiers(
+      [
+        {
+          old_string: "export function loadOrderTotals() {",
+          new_string: "export function orderTotals() {",
+        },
+      ],
+      "export function orderTotals() {}\n",
+    );
+    assert.deepEqual(removed, ["loadOrderTotals"]);
+    assert.deepEqual(
+      staleMentions(root, removed).map((h) => h.message),
+      [
+        "`README.md:3` mentions `loadOrderTotals`, which this edit removed; update or delete that text if nothing defines it",
+      ],
+    );
+  });
+
+  it("checks links and repository paths in added doc lines", () => {
+    writeFileSync(join(root, "src", "a.ts"), "");
+    const doc = join(root, "docs", "guide.md");
+    const hints = referenceHints(
+      doc,
+      root,
+      [
+        "See [a](../src/a.ts), [gone](../src/gone.ts), [web](https://x.dev) and [top](#top).",
+        "Paths: `src/a.ts`, `src/b.ts`, `hooks/hooks.json`, `~/.ops/config.json`, `plugins/*/x`.",
+      ],
+      10,
+    );
+    assert.deepEqual(
+      hints.map((h) => [h.rule, h.line, h.message]),
+      [
+        ["docs/broken-link", 10, "link target `../src/gone.ts` does not exist"],
+        ["docs/missing-path", 11, "`src/b.ts` does not exist"],
+      ],
+    );
   });
 
   it("shows workspace-relative paths with forward slashes", () => {

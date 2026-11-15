@@ -56,7 +56,7 @@ export interface Config {
   review: ReviewConfig;
 }
 
-export type ReviewLensId = "security" | "performance";
+export type ReviewLensId = "security" | "performance" | "standards" | "docs";
 
 export interface ReviewConfig {
   enabled: boolean;

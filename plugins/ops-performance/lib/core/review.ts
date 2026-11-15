@@ -8,10 +8,11 @@ import {
   rmSync,
   statSync,
 } from "node:fs";
-import { isAbsolute, join, relative } from "node:path";
+import { dirname, isAbsolute, join, relative } from "node:path";
 import { loadConfig, opsHome } from "./config.ts";
 import type { HookHandler } from "./hook-runtime.ts";
-import { type ReviewHint, scanEdit } from "./review-scan.ts";
+import { referenceHints, removedIdentifiers, staleMentions } from "./review-docs.ts";
+import { DOC, HISTORY_FILE, lineOf, type ReviewHint, scanEdit } from "./review-scan.ts";
 import type { Config, HookPayload, HookResponse, ReviewLensId } from "./types.ts";
 
 /** Prefix of every automatic review request; prompts starting with it are not user turns. */
@@ -57,7 +58,73 @@ export const LENSES: Record<ReviewLensId, ReviewLens> = {
       "injection (SQL, shell, template, path), authentication and authorization checks, secrets and sensitive data exposure, input validation and output encoding, SSRF and unsafe redirects, crypto and randomness, dependency and CI/CD supply chain, insecure defaults",
     relevant: (path) => CODE.test(path) || INFRA.test(path),
   },
+  standards: {
+    id: "standards",
+    title: "Standards",
+    plugin: "ops-standards",
+    skill: "standards-review",
+    agent: "standards-reviewer",
+    focus:
+      "code and docs that describe only the current state: no history or change narration in comments, docs or notes (git history is the record), no backward-compatibility shims, legacy, dead or commented-out code, no leftover TODOs, debug code or unexplained suppressions; clear names, small focused units, no duplication, idioms consistent with the surrounding code",
+    relevant: (path) =>
+      (CODE.test(path) || INFRA.test(path) || DOC.test(path)) && !HISTORY_FILE.test(path),
+  },
+  docs: {
+    id: "docs",
+    title: "Docs",
+    plugin: "ops-docs",
+    skill: "docs-review",
+    agent: "docs-reviewer",
+    focus:
+      "documentation that describes the changed code (READMEs, guides, skills, rules, config references, examples, API and CLI docs, code comments) must match it exactly as it is now: update stale names, options, paths, defaults, counts and examples, delete docs for removed behavior, and document new user-facing behavior",
+    relevant: (path) =>
+      (CODE.test(path) || INFRA.test(path) || DOC.test(path)) &&
+      !TEST.test(path) &&
+      !HISTORY_FILE.test(path),
+  },
 };
+
+/** Workspace root that contains `file`, or the file's directory when it is outside every root. */
+function rootOf(file: string, roots: string[] = []): string {
+  return (
+    roots.find((r) => {
+      const rel = relative(r, file);
+      return !rel.startsWith("..") && !isAbsolute(rel);
+    }) ?? dirname(file)
+  );
+}
+
+function hintsFor(
+  lens: ReviewLensId,
+  file: string,
+  payload: HookPayload,
+  text: string | undefined,
+): ReviewHint[] {
+  const edits = payload.edits ?? [];
+  switch (lens) {
+    case "security":
+    case "performance":
+    case "standards":
+      return scanEdit(lens, file, edits, text);
+    case "docs": {
+      const abs = payload.file_path ?? "";
+      const root = rootOf(abs, payload.workspace_roots);
+      if (DOC.test(file)) {
+        return edits.flatMap((e) => {
+          const added = e.new_string ?? "";
+          return added.trim()
+            ? referenceHints(abs, root, added.split(/\r?\n/), lineOf(text, added))
+            : [];
+        });
+      }
+      return staleMentions(root, removedIdentifiers(edits, text));
+    }
+    default: {
+      const unhandled: never = lens;
+      return unhandled;
+    }
+  }
+}
 
 interface EditEvent {
   t: "edit";
@@ -190,7 +257,7 @@ export function recordEdit(payload: HookPayload, lens: ReviewLensId, cfg: Config
     lens,
     file,
     lines: changedLines(payload.edits),
-    hints: scanEdit(lens, file, payload.edits ?? [], text),
+    hints: hintsFor(lens, file, payload, text),
   });
 }
 

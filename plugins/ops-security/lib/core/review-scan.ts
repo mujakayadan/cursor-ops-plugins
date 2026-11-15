@@ -26,6 +26,9 @@ interface LoopRule {
 const CODE =
   /\.(c|cc|cpp|cs|go|java|js|jsx|kt|kts|mjs|cjs|php|py|rb|rs|scala|swift|ts|tsx|vue|svelte)$/i;
 const WORKFLOW = /(^|\/)\.github\/workflows\/[^/]+\.ya?ml$/i;
+export const DOC = /\.(md|mdx|markdown|mdc|rst|adoc)$/i;
+/** Generated or intentional history files, where past tense is the content. */
+export const HISTORY_FILE = /(^|\/)(CHANGELOG|HISTORY|RELEASES?|RELEASE_NOTES)(\.\w+)?$/i;
 const LOOP_HEADER =
   /^\s*(?:for\s*\(|for\s+(?:await\s+)?\(?\s*(?:const|let|var)?\s*[\w\s,[\]{}]+\s+(?:of|in)\b|for\s+[\w\s,()]+\s+in\s+.+:\s*$|while\s*\(|\w[\w.]*\.forEach\()/;
 const LOOP_WINDOW = 4;
@@ -141,6 +144,67 @@ const PERFORMANCE_RULES: LineRule[] = [
   },
 ];
 
+/** Narration of how code or docs used to be; the current state is documented, git keeps the past. */
+const HISTORY =
+  /\b(?:previously|formerly|used to (?:be|use|return|call|have)|no longer|anymore|(?:was|were|got|has been) (?:renamed|replaced|removed|moved|changed|rewritten)|renamed (?:from|to)|(?:old|legacy|previous) (?:behaviou?r|implementation|version|approach|code|api|format|name)|backwards?[- ]compat\w*|for (?:backward |legacy )?compatibility|kept for compat\w*|deprecated|this (?:PR|change|commit|refactor) |we (?:changed|switched|moved|now)|now (?:uses|supports|returns|handles|lives)|correction:|as of v?\d)/i;
+const COMMENT = /(?:\/\/|\/\*|^\s*\*|#|<!--|^\s*--\s)/;
+
+const STANDARDS_RULES: LineRule[] = [
+  {
+    id: "standards/history-comment",
+    re: new RegExp(`${COMMENT.source}.*${HISTORY.source}`, "i"),
+    message:
+      "comment narrates history; describe the code as it is now (git history records the past)",
+    files: CODE,
+  },
+  {
+    id: "standards/history-doc",
+    re: HISTORY,
+    message:
+      "doc narrates history or compatibility; document only the current state (git history records the past)",
+    files: DOC,
+  },
+  {
+    id: "standards/commented-out-code",
+    re: /^\s*(?:\/\/|#)\s*(?:const|let|var|function|return|import|export|await|def|class|if\s*\(|for\s*\(|while\s*\(|print\(|console\.)\S*[^\n]*[;{}()=]\s*$/,
+    message: "commented-out code; delete it (git history keeps it)",
+    files: CODE,
+  },
+  {
+    id: "standards/todo",
+    re: /\b(?:TODO|FIXME|XXX|HACK)\b/,
+    message: "unfinished-work marker; finish the work now or track it in an issue",
+  },
+  {
+    id: "standards/compat-shim",
+    re: /@deprecated\b|\b(?:legacy|Legacy|LEGACY)\w*\s*[:=(]|\b\w+(?:Old|_old|V1|_v1)\s*[:=(]/,
+    message:
+      "deprecated, legacy or versioned duplicate; switch every caller to the current code and delete the old path",
+    files: CODE,
+  },
+  {
+    id: "standards/suppression",
+    re: /@ts-(?:ignore|nocheck)\b|eslint-disable(?![^\n]*--\s*\S)|#\s*type:\s*ignore\s*$|#\s*noqa\s*$|biome-ignore\s+\S+\s*$/,
+    message: "lint or type suppression without a reason; fix the cause or state why it is needed",
+    files: CODE,
+  },
+  {
+    id: "standards/debug-leftover",
+    re: /\bdebugger\s*;|\bconsole\.debug\s*\(|\bbreakpoint\(\)|\bpdb\.set_trace\(/,
+    message: "debugging leftover; remove it",
+    files: CODE,
+  },
+];
+
+/** Lenses whose hints come from per-line rules; the docs lens checks references instead. */
+export type ScanLensId = Exclude<ReviewLensId, "docs">;
+
+const LINE_RULES: Record<ScanLensId, LineRule[]> = {
+  security: SECURITY_RULES,
+  performance: PERFORMANCE_RULES,
+  standards: STANDARDS_RULES,
+};
+
 const PERFORMANCE_LOOP_RULES: LoopRule[] = [
   {
     id: "performance/query-in-loop",
@@ -156,22 +220,21 @@ const PERFORMANCE_LOOP_RULES: LoopRule[] = [
 ];
 
 /** Starting line (1-based) of `snippet` inside `text`, when it can be located. */
-function lineOf(text: string | undefined, snippet: string): number | undefined {
+export function lineOf(text: string | undefined, snippet: string): number | undefined {
   if (!text || !snippet) return undefined;
   const at = text.indexOf(snippet);
   return at < 0 ? undefined : text.slice(0, at).split("\n").length;
 }
 
 function scanLines(
-  lens: ReviewLensId,
+  lens: ScanLensId,
   path: string,
   lines: string[],
   base: number | undefined,
 ): ReviewHint[] {
   const hints: ReviewHint[] = [];
   const at = (i: number) => (base === undefined ? undefined : base + i);
-  const rules = lens === "security" ? SECURITY_RULES : PERFORMANCE_RULES;
-  const applicable = rules.filter((r) => !r.files || r.files.test(path));
+  const applicable = LINE_RULES[lens].filter((r) => !r.files || r.files.test(path));
 
   lines.forEach((text, i) => {
     for (const rule of applicable) {
@@ -210,7 +273,7 @@ function scanLines(
  * problems; the agent confirms or dismisses each one.
  */
 export function scanEdit(
-  lens: ReviewLensId,
+  lens: ScanLensId,
   path: string,
   edits: { new_string?: string }[],
   fileText?: string,

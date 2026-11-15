@@ -32,7 +32,7 @@ const DEFAULTS: Config = {
   prompts: { blockSecrets: true },
   review: {
     enabled: true,
-    lenses: { security: true, performance: true },
+    lenses: { security: true, performance: true, standards: true, docs: true },
     maxRounds: 1,
     minChangedLines: 3,
     maxFiles: 30,
