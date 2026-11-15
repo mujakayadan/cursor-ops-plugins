@@ -9,7 +9,7 @@ The output is what a team lead hands a developer: with these documents and nothi
 
 | File | Contents | Template |
 |---|---|---|
-| `ARCHITECTURE.md` | 18 sections from context to glossary, with the diagrams below | [ARCHITECTURE.template.md](references/ARCHITECTURE.template.md) |
+| `ARCHITECTURE.md` | 19 sections from context to glossary, with the diagrams below and the vetted open-source components | [ARCHITECTURE.template.md](references/ARCHITECTURE.template.md) |
 | `docs/adr/NNNN-<decision>.md` | One per significant decision, with the alternatives | [adr.template.md](references/adr.template.md) |
 | `docs/runbook.md` | Deploy, rollback, secrets, alerts, incidents, backup, DR, routine operations | [runbook.template.md](references/runbook.template.md) |
 | `docs/architecture/<view>.diagram.json` and `.png` | Platform diagrams with official service icons | `platform-diagrams` skill |
@@ -34,6 +34,7 @@ Read, in this order:
 - the conversation;
 - the repository: `AGENTS.md`, `.copier-answers.yml` (language, profile, license), `README.md`, `openapi.json` and the source tree;
 - the suite's standards in `AGENTS.md` (GitOps, clean code, security, performance), which the architecture follows rather than restates;
+- what the knowledge graph already holds: `memory_search` (ops-memory) for the project's scope, the user's preferences and earlier open-source verdicts;
 - the platform state through the read tools when the user names an existing account (`aws_whoami`, `github_whoami`, `vercel_whoami`, `digitalocean_account_get`).
 
 List each decision the documents need and mark it known, inferable with high confidence, or open.
@@ -53,7 +54,11 @@ Ask about everything that is open before writing anything. Use AskQuestion forms
 
 Then summarize the decisions in a short list and get the user's confirmation. Each confirmed choice becomes a requirement row, an ADR or a section statement.
 
-## 3. Write the documents
+## 3. Research open source
+
+Follow the `oss-research` skill (ops-oss) with the confirmed requirements: find exemplar systems in the same domain and the components to reuse for each capability, vet every candidate, and bring the decisions that are the user's (a restrictive license, managed versus self-hosted, build versus buy) into one AskQuestion round. Its verdicts fill section 16 and the alternatives of each ADR.
+
+## 4. Write the documents
 
 Copy each template, fill every section, and delete every `<!-- guide: ... -->` comment.
 
@@ -61,7 +66,7 @@ Copy each template, fill every section, and delete every `<!-- guide: ... -->` c
 
 **Consistency.** Every container in section 5 appears on the platform diagram and in the service table of section 6. Every external system in section 4 appears in a sequence diagram or interface. Every alert in section 11 has a runbook entry, and every threat mitigation in section 10 is a control or a task.
 
-**Decisions.** Write an ADR for each choice a reasonable engineer could have made differently: cloud and region strategy, compute model, each data store, identity, tenancy, messaging, infrastructure-as-code tool, observability stack. ADR 0001 (`docs/adr/0001-record-architecture-decisions.md`) records that architecture decisions live in `docs/adr/`. Section 16 links every ADR. New ADRs start as Proposed and become Accepted when the user approves.
+**Decisions.** Write an ADR for each choice a reasonable engineer could have made differently: cloud and region strategy, compute model, each data store, identity, tenancy, messaging, infrastructure-as-code tool, observability stack. ADR 0001 (`docs/adr/0001-record-architecture-decisions.md`) records that architecture decisions live in `docs/adr/`. Section 17 links every ADR. New ADRs start as Proposed and become Accepted when the user approves.
 
 **Stack.** Use the scaffolded stack: language, framework, toolchain, CI, GitOps branches, release-please and the `openapi.json` contract. Name exact managed services, versions, sizes and limits.
 
@@ -78,20 +83,22 @@ The plan covers every requirement and includes:
 - the hardening work: threat mitigations, load tests against the NFR targets, a backup restore test, a DR drill, an accessibility audit;
 - the launch work: runbook rehearsal and a go-live checklist.
 
-## 4. Draw and verify
+## 5. Draw and verify
 
 1. Draw the platform diagrams with the `platform-diagrams` skill: preview, read the PNG, then render.
 2. Run `mermaid_preview` with `file` on `ARCHITECTURE.md` and on `TODO.md`. Read every PNG and fix parse errors and unreadable layouts.
 3. Run `architecture_check` with the project root. Fix every error. Resolve each warning or say why it stays, for example missing issue links before the sync.
 4. Reread the set as the developer who receives it. Fill any task that still needs a question answered, and any ambiguous component, number or interface.
 
-## 5. Review with the user and commit
+## 6. Review with the user and commit
 
-Present a summary: the key decisions, the platform diagram image, the milestones with dates, the task count per epic, and the risks. Apply the user's corrections, run step 4 again, and set the approved ADRs to Accepted.
+Present a summary: the key decisions, the platform diagram image, the milestones with dates, the task count per epic, and the risks. Apply the user's corrections, run step 5 again, and set the approved ADRs to Accepted.
 
 Commit on a feature branch from `dev`, following the GitOps rules in `AGENTS.md`. Use a branch such as `<github-user>/docs/architecture`, a `docs: add architecture, ADRs, runbook and delivery plan` commit, and a pull request to `dev`.
 
-## 6. Sync the plan to GitHub issues
+Record what later work on this project needs to recall in one `memory_remember` call (ops-memory, `project:<owner>/<repo>` scope): the project with its platform and stack, the accepted decisions, and the adopted components linked to their `oss-project` entities.
+
+## 7. Sync the plan to GitHub issues
 
 When the repository exists on GitHub, sync after the user approves the plan:
 1. Ask whether to add the issues to a GitHub Project board. If so, get its owner and number, and have the user run `gh auth refresh -s project` in Cursor's terminal when the token lacks the `project` scope.
@@ -103,10 +110,10 @@ When the repository exists on GitHub, sync after the user approves the plan:
    - `project` with the owner and number when the user chose a board.
 3. Write each returned number into `TODO.md` as `- **Issue:** #45`, run `architecture_check` again, and commit the change on the same branch.
 
-Every imported issue carries the `plan` label, and the import skips keys that already have a `plan` issue, so running it again after adding tasks creates only the new ones. It never edits existing issues: when a new task joins an existing epic, add its reference to the epic issue by hand.
+Every imported issue carries the `plan` label, and the import skips keys that already have a `plan` issue, so running it again after adding tasks creates only the new ones. When a new task joins an existing epic, include the epic in the import with its full task list: the import appends the lines naming new tasks to the epic issue and leaves the rest of it as it is.
 
 A pull request that completes a task checks the task's acceptance criteria in `TODO.md` and references its issue (`Closes #45`). GitHub closes the issue when the change reaches the default branch, that is, on the promotion from `dev` to `main`.
 
-## 7. Report
+## 8. Report
 
 Report the files written, the counts from `architecture_check` (requirements, epics, tasks, ADRs, platform diagrams), the pull request, the issue sync result, and the decisions the user deferred, if any.

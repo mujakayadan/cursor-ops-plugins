@@ -13,14 +13,17 @@ import github, {
   planKeyOf,
   resolveKeys,
   rulesetFor,
+  updatedBody,
 } from "../plugins/ops-github/provider.ts";
 import latex from "../plugins/ops-latex/provider.ts";
+import memory from "../plugins/ops-memory/provider.ts";
 import mermaid from "../plugins/ops-mermaid/provider.ts";
 import msgraph, {
   outsideDomains,
   requestArgs,
   stripHtml,
 } from "../plugins/ops-msgraph/provider.ts";
+import oss from "../plugins/ops-oss/provider.ts";
 import scaffold from "../plugins/ops-scaffold/provider.ts";
 import vercel from "../plugins/ops-vercel/provider.ts";
 import { PLUGINS_DIR, providerPlugins } from "../scripts/lib.ts";
@@ -36,6 +39,8 @@ const providers = [
   latex,
   architecture,
   control,
+  memory,
+  oss,
 ];
 
 describe("provider list", () => {
@@ -73,9 +78,8 @@ describe("provider catalogs", () => {
         assert.ok(existsSync(join(PLUGINS_DIR, `ops-${p.id}`, "skills", skill, "SKILL.md")), skill);
       }
     });
-    it(`${p.id}: has at least one read and one write tool`, () => {
+    it(`${p.id}: has at least one read tool`, () => {
       assert.ok(p.tools.some((t) => t.tier === "read"));
-      assert.ok(p.tools.some((t) => t.tier === "write"));
     });
     it(`${p.id}: shell rules are well-formed`, () => {
       for (const r of p.shellRules ?? []) {
@@ -137,6 +141,22 @@ describe("github plan import", () => {
       text: "- [ ] #45\n- [ ] {{T-002}}",
       unresolved: ["T-002"],
     });
+  });
+  it("appends lines naming new tasks to an existing epic and keeps its edits", () => {
+    const ref = (key: string, number: number) =>
+      [key, { key, number, url: `https://github.com/acme/app/issues/${number}` }] as const;
+    const refs = new Map([ref("T-001", 45), ref("T-002", 46), ref("T-003", 47)]);
+    const plan = "Tasks:\n- [ ] {{T-001}}\n- [ ] {{T-002}}\n- [ ] {{T-003}}";
+    const current = "Tasks:\n- [x] #45 done early\n- [ ] {{T-002}}";
+    assert.equal(
+      updatedBody(current, plan, refs, new Set(["T-002", "T-003"])),
+      "Tasks:\n- [x] #45 done early\n- [ ] #46\n- [ ] #47",
+    );
+    assert.equal(updatedBody("- [ ] #46\n- [ ] #47", plan, refs, new Set(["T-003"])), undefined);
+    assert.equal(
+      updatedBody("- [ ] #470", "- [ ] {{T-003}}", refs, new Set(["T-003"])),
+      "- [ ] #470\n- [ ] #47",
+    );
   });
   it("keeps the project board inside the owner scope", async () => {
     const scoped = { scope: { owners: ["acme"] } } as unknown as ProviderConfig;

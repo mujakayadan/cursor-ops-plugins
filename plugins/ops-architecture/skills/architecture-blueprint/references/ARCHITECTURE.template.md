@@ -217,7 +217,21 @@ drivers, budgets and alerts, and the levers that reduce cost at scale. -->
 | Service | Environment | Assumption | Monthly estimate |
 |---|---|---|---|
 
-## 16. Decisions
+## 16. Open source and dependencies
+
+<!-- guide: The result of the oss-research skill. Every significant third-party component (framework,
+library, service image, SDK) with the exact version to pin, its license and license class, the
+OpenSSF Scorecard, the verdict (Adopt, Trial or Reject) and why; rejected candidates stay listed so
+the choice isn't re-litigated. Then the exemplar projects studied and what this design takes from
+each. License obligations (attribution, NOTICE files, source offers) are stated here. -->
+
+| Component | Purpose | Version | License | Scorecard | Verdict | Rationale |
+|---|---|---|---|---|---|---|
+
+| Exemplar | What this design takes from it | License |
+|---|---|---|
+
+## 17. Decisions
 
 <!-- guide: One line per architecture decision record, linked. -->
 
@@ -225,7 +239,7 @@ drivers, budgets and alerts, and the levers that reduce cost at scale. -->
 |---|---|---|
 | [0001](docs/adr/0001-record-architecture-decisions.md) | Record architecture decisions | Accepted |
 
-## 17. Risks
+## 18. Risks
 
 <!-- guide: Technical and delivery risks with likelihood, impact, mitigation and owner. Open
 questions are not risks: resolve them with the user before the document is accepted. -->
@@ -233,7 +247,7 @@ questions are not risks: resolve them with the user before the document is accep
 | Risk | Likelihood | Impact | Mitigation | Owner |
 |---|---|---|---|---|
 
-## 18. Glossary
+## 19. Glossary
 
 | Term | Meaning |
 |---|---|

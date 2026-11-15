@@ -1,0 +1,5 @@
+[
+  { "name": "package rejects unknown systems", "server": "read", "tool": "oss_package", "arguments": { "system": "conda", "name": "numpy" }, "expectError": "must be one of" },
+  { "name": "package rejects shell metacharacters", "server": "read", "tool": "oss_package", "arguments": { "system": "npm", "name": "react;rm -rf" }, "expectError": "invalid format" },
+  { "name": "project needs a host path", "server": "read", "tool": "oss_project", "arguments": { "project": "facebook/react" }, "expectError": "invalid format" }
+]

@@ -20,7 +20,9 @@ Cursor plugin suite for operating **GitHub, DigitalOcean, Vercel, AWS and Micros
 
 `ops-security`, `ops-performance`, `ops-standards` and `ops-docs` review the agent's own work. Once installed, every turn that changes code or docs ends with a review of exactly those changes for security, performance, clean code (current state only, no legacy or dead code) and documentation freshness (see [Automatic code review](#automatic-code-review)).
 
-`ops-control` is the suite's control plane (see [Suite control](#suite-control)): the agent can report what is installed and enabled, query the audit log and review activity, and, with your approval, change review settings and which plugins load.
+`ops-control` is the suite's control plane (see [Suite control](#suite-control)): the agent can report what is installed and enabled, query the audit log and review activity, and, with your approval, change review settings, which plugins load and your user profile.
+
+The agent knows who it works with (see [User profile and memory](#user-profile-and-memory)): your expertise level and lasting preferences set how it communicates and what it asks, and `ops-memory` keeps a knowledge graph of projects, decisions and vetted components across conversations. `ops-oss` vets open source from public data (license, OpenSSF Scorecard, advisories, vulnerable dependencies, provenance), and its `oss-research` skill finds exemplar systems and reusable components when a project starts (see [Open-source research](#open-source-research)).
 
 ## Get started
 
@@ -84,7 +86,9 @@ plugins/
   ops-standards/ ops-docs/        # review lenses for clean code and docs freshness (same layout)
   ops-mermaid/ ops-latex/         # diagram/document rendering, routing rule, authoring skills
   ops-architecture/               # architecture and delivery plans: document checker, platform diagram renderer, skills
-  ops-control/                    # suite status, audit and review queries, review and plugin toggles
+  ops-control/                    # suite status, audit and review queries, review and plugin toggles, user profile
+  ops-memory/                     # knowledge graph of entities, relations and observations
+  ops-oss/                        # open-source vetting from deps.dev, OSV and OpenSSF Scorecard, research skill
 AGENTS.md                         # agent guide: setting up a machine, changing the suite
 copier.yml                        # scaffold questions; selects templates/<language>
 templates/
@@ -179,8 +183,37 @@ All lenses share one log per conversation in `~/.ops/review/`, which is pruned a
 | `control_reviews` | read | Per conversation: files and hints each review lens recorded, review requests sent |
 | `control_review_set` | write | Reviews or one lens on/off, `maxRounds`, `minChangedLines`, `maxFiles` |
 | `control_plugin_set` | write | Whether a plugin loads (`suite.disabledPlugins`); applies after a window reload |
+| `control_profile_get` | read | The user profile and where it is stored |
+| `control_profile_set` | write | Expertise level, role and lasting preferences (see [User profile and memory](#user-profile-and-memory)) |
 
-It writes only the `review` and `suite` sections of `~/.ops/config.json`. Guardrail overrides, privileged tools, credentials, scope, third-party MCP policy and the loader itself stay in your hands, and the shell guard still denies the agent from editing those files.
+It writes only the `review` and `suite` sections of `~/.ops/config.json` and the profile in `~/.ops/profile.json`. Guardrail overrides, privileged tools, credentials, scope, third-party MCP policy and the loader itself stay in your hands, and the shell guard still denies the agent from editing those files.
+
+## User profile and memory
+
+`~/.ops/profile.json` holds your expertise level (`senior-engineer`, `engineer`, `technical` or `non-technical`), an optional role and up to 20 short preferences. The `ops-core` `sessionStart` hook turns it into context at the start of every conversation, so the agent adapts without being told: for a senior engineer it talks peer to peer, resolves what it can, asks only the calls that are yours as trade-offs with a recommended option, and finishes work instead of listing what remains. Without a profile, the agent asks once which level describes you and saves the answer with `control_profile_set`. The profile belongs to the OS user, so each person on a shared machine or team gets their own.
+
+`ops-memory` is a knowledge graph in `~/.ops/memory/graph.json` (`OPS_MEMORY_FILE` overrides the path), using the data model of the reference MCP memory server: named, typed entities with dated observations, and typed relations between them. Every entity has a scope (`global`, `user` or `project:<owner>/<repo>`) so searches stay within a project.
+
+| Tool | Tier | What it does |
+|---|---|---|
+| `memory_status` | read | Path, entity and relation counts per scope and type |
+| `memory_search` | read | Entities ranked by query matches in name, type and observations, with their relations |
+| `memory_open` | read | Entities by name with their relations |
+| `memory_remember` | write | Create or update entities, add observations and relations |
+| `memory_forget` | write | Delete entities, observations or relations |
+
+Writes need approval, so content from a web page or an issue can't plant facts without you seeing them, and both the `ops-core` hook and the tool reject credentials. Concurrent writers are serialized with a lock file and every write replaces the file atomically. The `memory` skill covers what to recall at the start of a task and what is worth recording.
+
+## Open-source research
+
+`ops-oss` answers whether a package or repository is safe to depend on, using public data without credentials: [deps.dev](https://deps.dev) for versions, licenses, provenance attestations and dependency graphs, [OSV](https://osv.dev) for advisories on the version and every transitive dependency, and [OpenSSF Scorecard](https://scorecard.dev) for security practices.
+
+| Tool | Tier | What it does |
+|---|---|---|
+| `oss_package` | read | One package version (npm, PyPI, Maven, Cargo, Go, NuGet, RubyGems): license class, deprecation, release age, advisories with CVSS, vulnerable dependencies, source repository, Scorecard and flags |
+| `oss_project` | read | One GitHub, GitLab or Bitbucket repository: stars, license, Scorecard checks, the packages it publishes and flags |
+
+The `oss-research` skill runs when a project starts (the architecture blueprint calls it after the interview) or before a significant dependency is added. It frames the capability areas, discovers candidates on GitHub, registries and curated lists, vets each against license compatibility, maintenance, Scorecard, advisories, supply chain and fit, and studies one to three exemplar systems read-only. Each candidate gets Adopt, Trial or Reject; the verdicts fill section 16 of `ARCHITECTURE.md`, which `architecture_check` requires, and the knowledge graph, so a later project reuses recent verdicts.
 
 ## Authoring (Mermaid and LaTeX)
 
@@ -210,7 +243,7 @@ Unknown numbers become proposals you confirm, never guesses. The output is writt
 
 | File | Contents |
 |---|---|
-| `ARCHITECTURE.md` | 18 sections: context and scope, requirements (`FR-01`, `NFR-01` with measurable targets), use cases, C4 system context and containers, platform deployment, runtime flows, data, interfaces, security with a STRIDE threat model, observability and SLOs, scalability, resilience and DR, environments and delivery, cost, decisions, risks, glossary |
+| `ARCHITECTURE.md` | 19 sections: context and scope, requirements (`FR-01`, `NFR-01` with measurable targets), use cases, C4 system context and containers, platform deployment, runtime flows, data, interfaces, security with a STRIDE threat model, observability and SLOs, scalability, resilience and DR, environments and delivery, cost, open source and dependencies (each component vetted with its license, Scorecard and verdict, plus the exemplars studied), decisions, risks, glossary |
 | `docs/adr/NNNN-*.md` | One record per significant decision with the alternatives considered; it states the decision in force and is rewritten when the decision changes |
 | `docs/runbook.md` | Deploy, rollback, configuration and secrets, monitoring and alerts, incident response, backup and restore, disaster recovery, routine operations |
 | `docs/architecture/<view>.diagram.json` + `.png`/`.svg` | Platform diagrams with official service icons |
@@ -234,7 +267,7 @@ Use-case, C4, sequence, ER, state and Gantt diagrams are Mermaid blocks that Git
 - every platform diagram is rendered and newer than its spec;
 - relative links resolve, and no placeholder or template guide comment is left.
 
-Once you approve the plan, `github_issues_import` (ops-github) creates the milestones, then the task and epic issues, each title starting with its key (`T-012 …`) and labelled `plan`. Epic bodies link their tasks' issues, and new issues can go onto a Project board. Keys that already have a `plan` issue are skipped, so a later run adds only new tasks; existing issues, such as an epic that gains a task, are never edited. The agent writes each issue number back into `TODO.md`. The generated project's `AGENTS.md` keeps both documents current: a design change updates `ARCHITECTURE.md` and its ADR, and the pull request that completes a task checks its acceptance criteria and references its issue, which closes when the change is promoted to `main`.
+Once you approve the plan, `github_issues_import` (ops-github) creates the milestones, then the task and epic issues, each title starting with its key (`T-012 …`) and labelled `plan`. Epic bodies link their tasks' issues, and new issues can go onto a Project board. Keys that already have a `plan` issue are skipped, so a later run adds only new tasks. An existing epic that gains a task gets the line naming that task appended to its body; nothing else in an existing issue changes. The agent writes each issue number back into `TODO.md`. The generated project's `AGENTS.md` keeps both documents current: a design change updates `ARCHITECTURE.md` and its ADR, and the pull request that completes a task checks its acceptance criteria and references its issue, which closes when the change is promoted to `main`.
 
 **Safety.** A spec is data: the renderer is a fixed script that resolves icons by name inside the `diagrams` package, so previews run no workspace code and are auto-allowed. `diagrams` is pinned, and uv runs it in an isolated environment without touching the project. Renders and issue imports need approval, and `providers.architecture.scope.allowedRoots` limits which folders the tools read and write.
 

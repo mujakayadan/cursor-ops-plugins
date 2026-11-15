@@ -14,6 +14,7 @@ A machine without the suite starts with the bootstrap in the repository's `AGENT
 3. Hand sign-ins to the user. Their fix reads `in your terminal: <command>`, because they open a browser, show a device code or prompt for a pasted token. Ask the user to run it in Cursor's terminal (`` Ctrl+` ``). Never take a token in chat or run a sign-in that would pass one through your tools.
 4. Run the doctor again until no `FAIL` remains for the providers the user wants. Skipped providers can stay failing; say which.
 5. Verify from chat: call `control_status` and, for each signed-in provider, its `onboarding.whoami` read tool (for example `github_whoami`).
+6. Set the user profile if `control_profile_get` returns none: ask with AskQuestion which expertise level describes the user (senior software engineer, software engineer, technical, not technical) and their role, then save it with `control_profile_set`. Every later conversation starts with it.
 
 Each provider declares its install recipes in `provider.ts` (`setup`) and, where it needs a sign-in or a local toolchain, its readiness tool and sign-in command (`onboarding`). That is where the doctor's fixes come from. Microsoft 365 also needs an Entra app: follow `msgraph-setup`.
 

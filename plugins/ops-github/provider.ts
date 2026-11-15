@@ -175,6 +175,32 @@ export function resolveKeys(
   return { text, unresolved };
 }
 
+/**
+ * The body of an existing issue updated for keys created in this run: its leftover `{{KEY}}`
+ * tokens resolved, and each plan-body line that references a new key appended when the issue
+ * doesn't mention that issue yet. Undefined when nothing changes.
+ */
+export function updatedBody(
+  current: string,
+  planBody: string,
+  refs: Map<string, IssueRef>,
+  createdKeys: Set<string>,
+): string | undefined {
+  const { text } = resolveKeys(current, refs);
+  const mentions = (n: number) => new RegExp(`#${n}(?!\\d)`).test(text);
+  const additions = planBody
+    .split(/\r?\n/)
+    .filter((line) =>
+      [...line.matchAll(KEY_TOKEN)].some(([, key = ""]) => {
+        const ref = createdKeys.has(key) ? refs.get(key) : undefined;
+        return ref !== undefined && !mentions(ref.number);
+      }),
+    )
+    .map((line) => resolveKeys(line, refs).text);
+  const next = additions.length ? `${text.trimEnd()}\n${additions.join("\n")}` : text;
+  return next === current ? undefined : next;
+}
+
 const lines = (text: string): string[] => text.split(/\r?\n/).filter((l) => l.trim());
 
 /**
@@ -190,6 +216,8 @@ function repoApi(repo: string, cli: Cli) {
         input: JSON.stringify(payload),
         parse: "json",
       }),
+    text: (path: string, jq: string) =>
+      cli(["api", `repos/${repo}/${path}`, "--jq", jq], { parse: "text" }),
     lines: (path: string, jq: string) =>
       cli(["api", `repos/${repo}/${path}`, "--paginate", "--jq", jq], { parse: "text" }).then(
         lines,
@@ -261,10 +289,13 @@ async function importIssues(a: PlanImport, cli: Cli) {
   const created: IssueRef[] = [];
   const skipped: IssueRef[] = [];
   const pending: { ref: IssueRef; body: string; text: string }[] = [];
+  const existingWithRefs: { ref: IssueRef; body: string }[] = [];
   for (const issue of a.issues) {
     const existing = refs.get(issue.key);
     if (existing) {
       skipped.push(existing);
+      if (issue.body.search(KEY_TOKEN) >= 0)
+        existingWithRefs.push({ ref: existing, body: issue.body });
       continue;
     }
     const { text, unresolved } = resolveKeys(issue.body, refs);
@@ -301,9 +332,20 @@ async function importIssues(a: PlanImport, cli: Cli) {
     if (resolved.text !== p.text)
       await api.post(`issues/${p.ref.number}`, { body: resolved.text }, "PATCH");
   }
+
+  const createdKeys = new Set(created.map((r) => r.key));
+  const updated: IssueRef[] = [];
+  for (const e of createdKeys.size ? existingWithRefs : []) {
+    const current = await api.text(`issues/${e.ref.number}`, '.body // ""');
+    const body = updatedBody(current.replace(/\n$/, ""), e.body, refs, createdKeys);
+    if (body === undefined) continue;
+    await api.post(`issues/${e.ref.number}`, { body }, "PATCH");
+    updated.push(e.ref);
+  }
   return {
     created,
     skipped,
+    ...(updated.length ? { updated } : {}),
     ...(unresolved.length ? { unresolved } : {}),
     next: "Write each key's issue number into TODO.md (- **Issue:** #n).",
   };
@@ -650,7 +692,7 @@ const tools = [
     title: "Import plan as issues",
     tier: "write",
     description:
-      "Create a plan's epics and tasks as issues in one approved call. Each issue title starts with its key (T-012 Build the order API) and every issue gets the `plan` label; keys that already have a `plan` issue are skipped, so a re-run only creates what is missing and never edits existing issues. Missing labels and milestones are created. `{{KEY}}` in a body becomes that key's issue reference (#45) once it exists, so an epic can list its tasks. Optionally adds each new issue to a Project board (needs the `project` token scope). Up to 50 issues per call; import larger plans epic by epic.",
+      "Create a plan's epics and tasks as issues in one approved call. Each issue title starts with its key (T-012 Build the order API) and every issue gets the `plan` label; keys that already have a `plan` issue are skipped, so a re-run only creates what is missing. An existing issue is edited only to add references to issues this run created: lines of its plan body that name a new key are appended, so an epic's checklist gains its new tasks. Missing labels and milestones are created. `{{KEY}}` in a body becomes that key's issue reference (#45) once it exists, so an epic can list its tasks. Optionally adds each new issue to a Project board (needs the `project` token scope). Up to 50 issues per call; import larger plans epic by epic.",
     input: obj(
       {
         repo,

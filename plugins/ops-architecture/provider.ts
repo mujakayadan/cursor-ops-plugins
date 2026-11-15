@@ -19,7 +19,8 @@ import { absPath, checkPath, previewDir } from "./lib/core/paths.ts";
 import { bool, freeform, obj, oneOf, str, ToolError, tool } from "./lib/core/schema-helpers.ts";
 import type { Provider, ProviderConfig } from "./lib/core/types.ts";
 
-const PYTHON_VERSION = "3.13";
+/** Exact patch so every machine runs the same interpreter; uv checksums the Python it downloads. */
+const PYTHON_VERSION = "3.13.14";
 const RENDERER_DIR = fileURLToPath(new URL("./renderer/", import.meta.url));
 const RENDERER = join(RENDERER_DIR, "render_diagram.py");
 /**

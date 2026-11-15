@@ -34,5 +34,21 @@
       "tool_input": "{\"plugin\":\"ops-latex\",\"enabled\":false}"
     },
     "expect": { "permission": "ask" }
+  },
+  {
+    "name": "profile read is a read",
+    "event": "beforeMCPExecution",
+    "input": { "mcp_server_name": "ops-control-read", "tool_name": "control_profile_get", "tool_input": "{}" },
+    "expect": { "permission": "allow" }
+  },
+  {
+    "name": "profile change asks",
+    "event": "beforeMCPExecution",
+    "input": {
+      "mcp_server_name": "ops-control-write",
+      "tool_name": "control_profile_set",
+      "tool_input": "{\"expertise\":\"senior-engineer\"}"
+    },
+    "expect": { "permission": "ask" }
   }
 ]
