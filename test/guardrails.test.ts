@@ -82,14 +82,28 @@ describe("guardrail command handling", () => {
 });
 
 describe("gitops branch guardrails", () => {
-  const git = (cwd: string, ...args: string[]) =>
-    execFileSync("git", args, { cwd, stdio: "ignore", env: { ...process.env, ...IDENTITY } });
   const IDENTITY = {
     GIT_AUTHOR_NAME: "t",
     GIT_AUTHOR_EMAIL: "t@example.com",
     GIT_COMMITTER_NAME: "t",
     GIT_COMMITTER_EMAIL: "t@example.com",
   };
+  // Drop repo-pinning vars so a pre-push run in a worktree doesn't redirect these calls.
+  const gitEnv = (): NodeJS.ProcessEnv => {
+    const env: NodeJS.ProcessEnv = { ...process.env, ...IDENTITY };
+    for (const k of [
+      "GIT_DIR",
+      "GIT_WORK_TREE",
+      "GIT_COMMON_DIR",
+      "GIT_OBJECT_DIRECTORY",
+      "GIT_INDEX_FILE",
+      "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+    ])
+      delete env[k];
+    return env;
+  };
+  const git = (cwd: string, ...args: string[]) =>
+    execFileSync("git", args, { cwd, stdio: "ignore", env: gitEnv() });
   const decideIn = (cwd: string, command: string) =>
     evaluateShell(normalizeCommand(command), SHELL_RULES, { cwd }).permission;
 
@@ -109,6 +123,20 @@ describe("gitops branch guardrails", () => {
       assert.equal(decideIn(dir, 'git commit -am "feat: x"'), "allow");
       assert.equal(decideIn(dir, "git push -u origin t/feat/x"), "allow");
     } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+  it("honors cwd even when GIT_DIR points at another repo", () => {
+    const dir = mkdtempSync(join(tmpdir(), "ops-gitops-"));
+    const prev = process.env.GIT_DIR;
+    try {
+      git(dir, "init", "-q", "-b", "main");
+      git(dir, "commit", "-q", "--allow-empty", "-m", "init");
+      process.env.GIT_DIR = join(process.cwd(), ".git");
+      assert.equal(currentBranch(dir), "main");
+    } finally {
+      if (prev === undefined) delete process.env.GIT_DIR;
+      else process.env.GIT_DIR = prev;
       rmSync(dir, { recursive: true, force: true });
     }
   });
