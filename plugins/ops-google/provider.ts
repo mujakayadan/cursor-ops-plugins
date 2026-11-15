@@ -7,6 +7,10 @@ const EMAIL_PATTERN = '^[^@\\s"<>,;]+@[^@\\s"<>,;]+\\.[^@\\s"<>,;]+$';
 const email = (description: string) => str(description, { pattern: EMAIL_PATTERN, maxLength: 254 });
 const emails = (description: string, minItems = 0) =>
   list(email("Email address."), description, { minItems, maxItems: 50 });
+const accountOpt = email(
+  "Google account email (optional; auto-picked when omitted, or providers.google.account).",
+);
+const isEmail = (value: string) => new RegExp(EMAIL_PATTERN).test(value);
 const top = (def: number, max: number) =>
   int("Maximum results.", { minimum: 1, maximum: max, default: def });
 const ID_PATTERN = "^[A-Za-z0-9_.=+:@-]{1,1024}$";
@@ -67,11 +71,18 @@ export function pickGoogleAccount(
 let cachedAccount: string | undefined;
 
 async function listedAccounts(cli: Cli): Promise<GogAccount[]> {
-  const out = await gog(cli, ["auth", "list", "--check"], true);
+  // No --check: listing alone is enough to pick an account; token checks stay on google_auth_list.
+  const out = await gog(cli, ["auth", "list"], true);
   if (out && typeof out === "object" && !Array.isArray(out) && Array.isArray(out.accounts)) {
     return out.accounts as GogAccount[];
   }
   return [];
+}
+
+function preferredAccount(provider: ProviderConfig): string | null {
+  return typeof provider.account === "string" && isEmail(provider.account)
+    ? provider.account
+    : null;
 }
 
 async function resolveAccount(
@@ -80,10 +91,7 @@ async function resolveAccount(
   account?: string,
 ): Promise<string> {
   if (account) return account;
-  const preferred =
-    typeof provider.account === "string" && provider.account.includes("@")
-      ? provider.account
-      : null;
+  const preferred = preferredAccount(provider);
   if (cachedAccount && (!preferred || cachedAccount.toLowerCase() === preferred.toLowerCase())) {
     return cachedAccount;
   }
@@ -123,11 +131,7 @@ const tools = [
     run: async (_a, { cli, provider }) => {
       try {
         const accounts = await listedAccounts(cli);
-        const preferred =
-          typeof provider.account === "string" && provider.account.includes("@")
-            ? provider.account
-            : null;
-        const account = pickGoogleAccount(accounts, preferred);
+        const account = pickGoogleAccount(accounts, preferredAccount(provider));
         if (!account) {
           throw new ToolError(
             "gog is not authorized (no stored Google accounts). Ask the user to follow the google-setup skill (store OAuth client, then gog auth add).",
@@ -173,9 +177,7 @@ const tools = [
       {
         query: str("Gmail search query.", { minLength: 1, maxLength: 500 }),
         max: top(10, 50),
-        account: email(
-          "Google account email (optional; auto-picked when omitted, or providers.google.account).",
-        ),
+        account: accountOpt,
       },
       ["query"],
     ),
@@ -191,7 +193,7 @@ const tools = [
     input: obj(
       {
         id: googleId("Message"),
-        account: email("Google account email (optional)."),
+        account: accountOpt,
       },
       ["id"],
     ),
@@ -203,7 +205,7 @@ const tools = [
     title: "List Gmail labels",
     tier: "read",
     description: "System and user labels in the mailbox.",
-    input: obj({ account: email("Google account email (optional).") }),
+    input: obj({ account: accountOpt }),
     run: (a, ctx) => withAccount(a.account, ctx, ["gmail", "labels", "list"], true),
   }),
   tool({
@@ -219,7 +221,7 @@ const tools = [
         bcc: emails("Bcc recipients."),
         subject: str("Subject.", { minLength: 1, maxLength: 255 }),
         body: content("Plain-text body."),
-        account: email("Google account email (optional)."),
+        account: accountOpt,
       },
       ["to", "subject", "body"],
     ),
@@ -255,7 +257,7 @@ const tools = [
         cc: emails("Cc recipients."),
         subject: str("Subject.", { maxLength: 255 }),
         body: content("Plain-text body."),
-        account: email("Google account email (optional)."),
+        account: accountOpt,
       },
       ["body"],
     ),
@@ -287,7 +289,7 @@ const tools = [
         id: googleId("Message"),
         body: content("Reply text."),
         replyAll: bool("Reply to all recipients.", false),
-        account: email("Google account email (optional)."),
+        account: accountOpt,
       },
       ["id", "body"],
     ),
@@ -311,7 +313,7 @@ const tools = [
         id: googleId("Message"),
         to: emails("Forward recipients.", 1),
         body: str("Optional comment above the forwarded message.", { maxLength: 100_000 }),
-        account: email("Google account email (optional)."),
+        account: accountOpt,
       },
       ["id", "to"],
     ),
@@ -336,9 +338,7 @@ const tools = [
     title: "Trash a message",
     tier: "write",
     description: "Move a message to Trash (recoverable). Does not permanently delete.",
-    input: obj({ id: googleId("Message"), account: email("Google account email (optional).") }, [
-      "id",
-    ]),
+    input: obj({ id: googleId("Message"), account: accountOpt }, ["id"]),
     summarize: (a) => `trash message ${a.id.slice(0, 16)}`,
     run: (a, ctx) => withAccount(a.account, ctx, ["gmail", "trash", a.id]),
   }),
@@ -347,9 +347,7 @@ const tools = [
     title: "Archive a message",
     tier: "write",
     description: "Remove a message from the inbox (archive).",
-    input: obj({ id: googleId("Message"), account: email("Google account email (optional).") }, [
-      "id",
-    ]),
+    input: obj({ id: googleId("Message"), account: accountOpt }, ["id"]),
     summarize: (a) => `archive message ${a.id.slice(0, 16)}`,
     run: (a, ctx) => withAccount(a.account, ctx, ["gmail", "archive", a.id]),
   }),
@@ -362,7 +360,7 @@ const tools = [
       {
         id: googleId("Message"),
         read: bool("True to mark read; false to mark unread.", true),
-        account: email("Google account email (optional)."),
+        account: accountOpt,
       },
       ["id"],
     ),
@@ -381,7 +379,7 @@ const tools = [
       {
         query: str("Name or email fragment.", { minLength: 1, maxLength: 200 }),
         max: top(10, 50),
-        account: email("Google account email (optional)."),
+        account: accountOpt,
       },
       ["query"],
     ),
@@ -395,7 +393,7 @@ const tools = [
     title: "List calendars",
     tier: "read",
     description: "Calendars on the account (primary and secondary).",
-    input: obj({ account: email("Google account email (optional).") }),
+    input: obj({ account: accountOpt }),
     run: (a, ctx) => withAccount(a.account, ctx, ["calendar", "calendars"], true),
   }),
   tool({
@@ -412,7 +410,7 @@ const tools = [
       from: instant("Start instant (inclusive). Defaults to now."),
       to: instant("End instant (exclusive). Defaults to now + 7 days."),
       max: top(50, 250),
-      account: email("Google account email (optional)."),
+      account: accountOpt,
     }),
     run: async (a, { cli, provider }) => {
       const args = [
@@ -441,7 +439,7 @@ const tools = [
           pattern: ID_PATTERN,
           default: "primary",
         }),
-        account: email("Google account email (optional)."),
+        account: accountOpt,
       },
       ["id"],
     ),
@@ -470,7 +468,7 @@ const tools = [
         timeZone: str("IANA time zone for wall-clock interpretation.", {
           pattern: "^[A-Za-z0-9_+/ ().-]{1,64}$",
         }),
-        account: email("Google account email (optional)."),
+        account: accountOpt,
       },
       ["summary", "from", "to"],
     ),
@@ -519,7 +517,7 @@ const tools = [
         location: str("Location.", { maxLength: 500 }),
         attendees: emails("Replace required attendees."),
         withMeet: bool("Add a Google Meet conference if missing.", false),
-        account: email("Google account email (optional)."),
+        account: accountOpt,
       },
       ["id"],
     ),
@@ -557,7 +555,7 @@ const tools = [
           pattern: ID_PATTERN,
           default: "primary",
         }),
-        account: email("Google account email (optional)."),
+        account: accountOpt,
       },
       ["id", "response"],
     ),
@@ -584,7 +582,7 @@ const tools = [
           pattern: ID_PATTERN,
           default: "primary",
         }),
-        account: email("Google account email (optional)."),
+        account: accountOpt,
       },
       ["id"],
     ),
@@ -612,7 +610,7 @@ const tools = [
           "Calendar ids (default primary).",
           { maxItems: 20 },
         ),
-        account: email("Google account email (optional)."),
+        account: accountOpt,
       },
       ["from", "to"],
     ),
@@ -640,7 +638,7 @@ const tools = [
         "Space access (default trusted).",
         "trusted",
       ),
-      account: email("Google account email (optional)."),
+      account: accountOpt,
     }),
     summarize: (a) => `create Meet space (access ${a.access ?? "trusted"})`,
     run: async (a, { cli, provider }) => {
@@ -657,7 +655,7 @@ const tools = [
     input: obj(
       {
         code: str("Meeting code or spaces/… name.", { minLength: 3, maxLength: 200 }),
-        account: email("Google account email (optional)."),
+        account: accountOpt,
       },
       ["code"],
     ),
@@ -672,7 +670,7 @@ const tools = [
       {
         code: str("Meeting code or spaces/… name.", { minLength: 3, maxLength: 200 }),
         access: oneOf(["trusted", "open", "restricted"], "Space access."),
-        account: email("Google account email (optional)."),
+        account: accountOpt,
       },
       ["code", "access"],
     ),
@@ -687,7 +685,7 @@ const tools = [
     input: obj(
       {
         code: str("Meeting code or spaces/… name.", { minLength: 3, maxLength: 200 }),
-        account: email("Google account email (optional)."),
+        account: accountOpt,
       },
       ["code"],
     ),
@@ -702,7 +700,7 @@ const tools = [
     input: obj(
       {
         code: str("Meeting code or spaces/… name.", { minLength: 3, maxLength: 200 }),
-        account: email("Google account email (optional)."),
+        account: accountOpt,
       },
       ["code"],
     ),
@@ -716,7 +714,7 @@ const tools = [
     input: obj(
       {
         code: str("Meeting code or spaces/… name.", { minLength: 3, maxLength: 200 }),
-        account: email("Google account email (optional)."),
+        account: accountOpt,
       },
       ["code"],
     ),
@@ -732,7 +730,7 @@ const tools = [
     input: obj({
       parent: googleId("Parent folder (optional; default root)."),
       max: top(20, 100),
-      account: email("Google account email (optional)."),
+      account: accountOpt,
     }),
     run: async (a, { cli, provider }) => {
       const args = [
@@ -756,7 +754,7 @@ const tools = [
       {
         query: str("Search query.", { minLength: 1, maxLength: 500 }),
         max: top(20, 100),
-        account: email("Google account email (optional)."),
+        account: accountOpt,
       },
       ["query"],
     ),
@@ -768,9 +766,7 @@ const tools = [
     title: "Get Drive file metadata",
     tier: "read",
     description: "Metadata for a file or folder (name, mimeType, owners, webViewLink).",
-    input: obj({ id: googleId("File"), account: email("Google account email (optional).") }, [
-      "id",
-    ]),
+    input: obj({ id: googleId("File"), account: accountOpt }, ["id"]),
     run: (a, ctx) => withAccount(a.account, ctx, ["drive", "get", a.id], true),
   }),
   tool({
@@ -781,7 +777,7 @@ const tools = [
     input: obj({
       parent: googleId("Parent folder (optional; default root)."),
       depth: int("Depth.", { minimum: 1, maximum: 5, default: 2 }),
-      account: email("Google account email (optional)."),
+      account: accountOpt,
     }),
     run: async (a, { cli, provider }) => {
       const args = [
@@ -805,7 +801,7 @@ const tools = [
       {
         name: str("Folder name.", { minLength: 1, maxLength: 255 }),
         parent: googleId("Parent folder (optional)."),
-        account: email("Google account email (optional)."),
+        account: accountOpt,
       },
       ["name"],
     ),
@@ -833,7 +829,7 @@ const tools = [
         id: googleId("File"),
         email: email("Recipient Google account."),
         role: oneOf(["reader", "writer", "commenter"], "Permission role.", "reader"),
-        account: email("Google account email (optional)."),
+        account: accountOpt,
       },
       ["id", "email"],
     ),
@@ -855,9 +851,7 @@ const tools = [
     title: "Trash a Drive file",
     tier: "write",
     description: "Move a file or folder to Drive trash (recoverable).",
-    input: obj({ id: googleId("File"), account: email("Google account email (optional).") }, [
-      "id",
-    ]),
+    input: obj({ id: googleId("File"), account: accountOpt }, ["id"]),
     summarize: (a) => `trash Drive ${a.id.slice(0, 12)}`,
     run: (a, ctx) => withAccount(a.account, ctx, ["drive", "delete", a.id]),
   }),

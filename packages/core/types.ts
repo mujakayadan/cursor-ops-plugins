@@ -31,7 +31,7 @@ export interface ProviderConfig {
   scope: ProviderScope;
   defaultRegion?: string | null;
   timeZone?: string | null;
-  /** Preferred Google account email when several are stored in gog. */
+  /** Preferred account email when the provider has several stored identities. */
   account?: string | null;
   /** Chrome/Chromium/Edge executable for mermaid-cli. */
   browserPath?: string | null;
