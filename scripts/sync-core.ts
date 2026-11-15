@@ -1,7 +1,23 @@
 #!/usr/bin/env node
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { CORE_DIR, listPlugins, PLUGINS_DIR } from "./lib.ts";
+import { SERVE_ORIGIN, SERVE_TOKEN_ENV } from "../packages/core/suite.ts";
+import { CORE_DIR, listPlugins, PLUGINS_DIR, providerPlugins } from "./lib.ts";
+
+/** Read tier on the shared loopback server; write tier on stdio so only Cursor, behind its hooks, reaches it. */
+function mcpJson(id: string): string {
+  const servers = {
+    [`ops-${id}-read`]: {
+      url: `${SERVE_ORIGIN}/mcp/${id}`,
+      headers: { Authorization: `Bearer \${env:${SERVE_TOKEN_ENV}}` },
+    },
+    [`ops-${id}-write`]: {
+      command: "node",
+      args: ["${CURSOR_PLUGIN_ROOT}/lib/core/run-mcp.ts", "--tier", "write"],
+    },
+  };
+  return `${JSON.stringify({ mcpServers: servers }, null, 2)}\n`;
+}
 
 const PROVIDER_ONLY = new Set(["run-mcp.ts", "run-guard.ts"]);
 const REVIEW_ONLY = new Set(["review.ts", "review-scan.ts", "review-docs.ts"]);
@@ -42,8 +58,18 @@ for (const plugin of listPlugins()) {
   }
 }
 
+for (const plugin of providerPlugins()) {
+  const target = join(PLUGINS_DIR, plugin, "mcp.json");
+  const expected = mcpJson(plugin.replace(/^ops-/, ""));
+  const actual = existsSync(target) ? readFileSync(target, "utf8") : null;
+  if (actual === expected) continue;
+  drift++;
+  if (check) console.error(`drift: plugins/${plugin}/mcp.json`);
+  else writeFileSync(target, expected);
+}
+
 if (check && drift) {
-  console.error(`\n${drift} vendored core file(s) out of date. Run \`pnpm run sync\`.`);
+  console.error(`\n${drift} generated file(s) out of date. Run \`pnpm run sync\`.`);
   process.exit(1);
 }
 console.log(

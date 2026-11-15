@@ -1,12 +1,18 @@
 {
   "mcpServers": {
     "ops-scaffold-read": {
-      "command": "node",
-      "args": ["${CURSOR_PLUGIN_ROOT}/lib/core/run-mcp.ts", "--tier", "read"]
+      "url": "http://127.0.0.1:47821/mcp/scaffold",
+      "headers": {
+        "Authorization": "Bearer ${env:OPS_MCP_TOKEN}"
+      }
     },
     "ops-scaffold-write": {
       "command": "node",
-      "args": ["${CURSOR_PLUGIN_ROOT}/lib/core/run-mcp.ts", "--tier", "write"]
+      "args": [
+        "${CURSOR_PLUGIN_ROOT}/lib/core/run-mcp.ts",
+        "--tier",
+        "write"
+      ]
     }
   }
 }

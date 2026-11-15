@@ -1,11 +1,20 @@
 #!/usr/bin/env node
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { resolveBinary } from "../packages/core/cli.ts";
 import { configPath, loadConfig, privilegedEnabled } from "../packages/core/config.ts";
 import { makeContext } from "../packages/core/mcp-server.ts";
-import { loaderCommand, suitePlugins, userHooksPath } from "../packages/core/suite.ts";
+import {
+  gitHead,
+  loaderCommand,
+  SERVE_ORIGIN,
+  SERVE_TOKEN_ENV,
+  serveHealth,
+  serveTokenPath,
+  suitePlugins,
+  userHooksPath,
+} from "../packages/core/suite.ts";
 import type { Config, Provider, ServerTier } from "../packages/core/types.ts";
 import { PLUGINS_DIR, providerPlugins, REPO_ROOT } from "./lib.ts";
 
@@ -55,6 +64,30 @@ try {
 } catch (err) {
   row("install", userHooksPath(), false, message(err));
 }
+
+const fileToken = existsSync(serveTokenPath())
+  ? readFileSync(serveTokenPath(), "utf8").trim()
+  : undefined;
+row(
+  "install",
+  `${SERVE_TOKEN_ENV} in this environment`,
+  !fileToken ? false : process.env[SERVE_TOKEN_ENV] === fileToken || null,
+  !fileToken
+    ? "no token — run `ops install`"
+    : process.env[SERVE_TOKEN_ENV] === fileToken
+      ? "matches the token file"
+      : "missing or different — open a new terminal; quit and reopen Cursor",
+);
+const health = await serveHealth();
+const head = gitHead(REPO_ROOT).head;
+row(
+  "install",
+  `read server ${SERVE_ORIGIN}`,
+  health ? health.head === head || null : null,
+  health
+    ? `pid ${health.pid}${health.head === head ? "" : ", older commit (`ops serve --restart`)"}`
+    : "down — opening a workspace starts it, or `ops serve --background`",
+);
 
 let cfg: Config | undefined;
 try {

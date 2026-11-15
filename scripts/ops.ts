@@ -1,18 +1,24 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
+import { resolveBinary } from "../packages/core/cli.ts";
 import { loadConfig } from "../packages/core/config.ts";
 import { makeContext } from "../packages/core/mcp-server.ts";
+import { SUITE_LOADED_ENV, suitePlugins } from "../packages/core/suite.ts";
 import control from "../plugins/ops-control/provider.ts";
-import { REPO_ROOT } from "./lib.ts";
+import { PLUGINS_DIR, REPO_ROOT } from "./lib.ts";
+import { ensureServer, serveLogPath, stopServer } from "./serve-client.ts";
 
 const USAGE = `ops — the ops plugin suite from the terminal
 
-  ops status              loader, plugins, review settings
+  ops status              loader, read server, plugins, review settings
   ops setup [options]     install the CLIs the enabled plugins need (ops setup --help)
   ops doctor              check CLIs, loader, config and sign-in per tier
-  ops install             register the suite loader in Cursor and create ~/.ops/config.json
-  ops uninstall           remove the suite loader`;
+  ops serve [--background|--stop|--restart]
+                          the shared read-tier MCP server (foreground by default)
+  ops agent [args...]     the Cursor CLI agent with every enabled suite plugin
+  ops install             register the suite loader, the ops command and the read server token
+  ops uninstall           remove them`;
 
 const SCRIPTS = {
   setup: "setup.ts",
@@ -21,7 +27,8 @@ const SCRIPTS = {
   uninstall: "install-local.ts",
 } as const;
 
-type Command = keyof typeof SCRIPTS | "status";
+type Command = keyof typeof SCRIPTS | "status" | "serve" | "agent";
+const COMMANDS: readonly string[] = [...Object.keys(SCRIPTS), "status", "serve", "agent"];
 
 function script(file: string, args: string[]): number {
   const result = spawnSync(process.execPath, [join(REPO_ROOT, "scripts", file), ...args], {
@@ -33,17 +40,22 @@ function script(file: string, args: string[]): number {
 interface Status {
   suite: { root: string; branch: string | null; head: string | null };
   loader: { registered: boolean; command: string | null; fix?: string };
+  readServer: { url: string; running: boolean; pid?: number; current?: boolean; fix?: string };
   plugins: { name: string; version: string; enabled: boolean; privileged?: boolean }[];
   review: { enabled: boolean; lenses: Record<string, boolean> };
 }
 
-function status(): number {
+async function status(): Promise<number> {
   const tool = control.tools.find((t) => t.name === "control_status");
   if (!tool) return 1;
-  const s = tool.run({}, makeContext(control, tool, loadConfig())) as Status;
+  const s = (await tool.run({}, makeContext(control, tool, loadConfig()))) as Status;
+  const server = s.readServer;
   console.log(`suite   ${s.suite.root} (${s.suite.branch ?? "detached"} @ ${s.suite.head ?? "?"})`);
   console.log(
     `loader  ${s.loader.registered ? s.loader.command : `not registered. ${s.loader.fix}`}`,
+  );
+  console.log(
+    `server  ${server.running ? `${server.url} pid ${server.pid}${server.current ? "" : " (older commit; restarts on next workspace open)"}` : `down. ${server.fix}`}`,
   );
   const lenses = Object.entries(s.review.lenses)
     .map(([id, on]) => `${id}${on ? "" : " (off)"}`)
@@ -56,10 +68,58 @@ function status(): number {
   return 0;
 }
 
-function main(command: Command, args: string[]): number {
+async function serve(args: string[]): Promise<number> {
+  const [mode] = args;
+  switch (mode) {
+    case undefined:
+      return script("serve.ts", []);
+    case "--stop":
+      return (await stopServer()) ? 0 : 1;
+    case "--restart":
+    case "--background": {
+      if (mode === "--restart" && !(await stopServer())) return 1;
+      const health = await ensureServer();
+      console.log(
+        health ? `read server pid ${health.pid}` : `did not start; see ${serveLogPath()}`,
+      );
+      return health ? 0 : 1;
+    }
+    default:
+      console.error(USAGE);
+      return 64;
+  }
+}
+
+async function agent(args: string[]): Promise<number> {
+  let bin: ReturnType<typeof resolveBinary>;
+  try {
+    bin = resolveBinary("agent");
+  } catch {
+    console.error(
+      "The Cursor CLI (`agent`) is not installed. Windows: irm 'https://cursor.com/install?win32=true' | iex; macOS/Linux: curl https://cursor.com/install -fsS | bash",
+    );
+    return 1;
+  }
+  if (!(await ensureServer())) console.error(`read server did not start; see ${serveLogPath()}`);
+  const plugins = suitePlugins(PLUGINS_DIR, loadConfig().suite.disabledPlugins).filter(
+    (p) => p.enabled,
+  );
+  const result = spawnSync(
+    bin.command,
+    [...bin.prefixArgs, ...plugins.flatMap((p) => ["--plugin-dir", p.path]), ...args],
+    { stdio: "inherit", env: { ...process.env, [SUITE_LOADED_ENV]: "1" } },
+  );
+  return result.status ?? 1;
+}
+
+async function main(command: Command, args: string[]): Promise<number> {
   switch (command) {
     case "status":
       return status();
+    case "serve":
+      return serve(args);
+    case "agent":
+      return agent(args);
     case "uninstall":
       return script(SCRIPTS.uninstall, ["--uninstall", ...args]);
     case "setup":
@@ -74,8 +134,8 @@ function main(command: Command, args: string[]): number {
 }
 
 const [command, ...rest] = process.argv.slice(2);
-if (command === "status" || (command !== undefined && Object.hasOwn(SCRIPTS, command))) {
-  process.exitCode = main(command as Command, rest);
+if (command !== undefined && COMMANDS.includes(command)) {
+  process.exitCode = await main(command as Command, rest);
 } else {
   console.log(USAGE);
   process.exitCode = command === undefined || command === "help" || command === "--help" ? 0 : 64;

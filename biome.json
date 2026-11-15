@@ -40,7 +40,7 @@
       "formatter": { "enabled": false }
     },
     {
-      "includes": ["**/.cursor-plugin/*.json", "package.json"],
+      "includes": ["**/.cursor-plugin/*.json", "package.json", "plugins/*/mcp.json"],
       "json": { "formatter": { "expand": "always" } }
     },
     {

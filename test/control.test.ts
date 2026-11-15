@@ -6,11 +6,19 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, it } from "vitest";
 import { loadConfig } from "../packages/core/config.ts";
 import { makeContext } from "../packages/core/mcp-server.ts";
-import { LOADER_SCRIPT, loaderCommand } from "../packages/core/suite.ts";
+import { LOADER_SCRIPT, loaderCommand, SUITE_LOADED_ENV } from "../packages/core/suite.ts";
 import control from "../plugins/ops-control/provider.ts";
 import { PLUGINS_DIR, REPO_ROOT } from "../scripts/lib.ts";
+import { loaderPaths } from "../scripts/workspace-plugins.ts";
 
-const ENV = ["OPS_HOME", "OPS_CONFIG", "OPS_AUDIT_DIR", "OPS_REVIEW_DIR", "CURSOR_HOME"] as const;
+const ENV = [
+  "OPS_HOME",
+  "OPS_CONFIG",
+  "OPS_AUDIT_DIR",
+  "OPS_REVIEW_DIR",
+  "CURSOR_HOME",
+  "OPS_MCP_TOKEN",
+] as const;
 let dir: string;
 
 function call(name: string, args: Record<string, unknown> = {}): Record<string, unknown> {
@@ -34,6 +42,8 @@ beforeEach(() => {
   process.env.OPS_AUDIT_DIR = join(dir, "audit");
   process.env.OPS_REVIEW_DIR = join(dir, "review");
   process.env.CURSOR_HOME = join(dir, "cursor");
+  // A token no running server accepts, so uninstall can't stop a real read server.
+  process.env.OPS_MCP_TOKEN = "test-token";
   writeFileSync(
     join(dir, "config.json"),
     JSON.stringify({ providers: { github: { allowPrivileged: false } }, review: { maxRounds: 1 } }),
@@ -53,14 +63,16 @@ describe("suite loader", () => {
       join(dir, "cursor", "hooks.json"),
       JSON.stringify({ version: 1, hooks: { workspaceOpen: [{ command: "node other.js" }] } }),
     );
-    node("install-local.ts", "--no-path");
-    node("install-local.ts", "--no-path");
+    node("install-local.ts", "--no-user-env");
+    node("install-local.ts", "--no-user-env");
+    assert.ok(existsSync(join(dir, "serve.token")));
     const hooks = JSON.parse(readFileSync(join(dir, "cursor", "hooks.json"), "utf8"));
     assert.equal(hooks.hooks.workspaceOpen.length, 2);
     assert.ok(loaderCommand()?.includes(LOADER_SCRIPT));
     assert.ok(existsSync(join(dir, "bin", "ops.cmd")));
-    node("install-local.ts", "--uninstall", "--no-path");
+    node("install-local.ts", "--uninstall", "--no-user-env");
     assert.ok(!existsSync(join(dir, "bin", "ops.cmd")));
+    assert.ok(!existsSync(join(dir, "serve.token")));
     assert.equal(loaderCommand(), undefined);
     assert.equal(
       JSON.parse(readFileSync(join(dir, "cursor", "hooks.json"), "utf8")).hooks.workspaceOpen
@@ -74,7 +86,7 @@ describe("suite loader", () => {
       join(dir, "config.json"),
       JSON.stringify({ suite: { disabledPlugins: ["ops-latex", "ops-core"] } }),
     );
-    const { pluginPaths } = JSON.parse(node("workspace-plugins.ts")) as { pluginPaths: string[] };
+    const pluginPaths = loaderPaths();
     assert.ok(pluginPaths.includes(join(PLUGINS_DIR, "ops-core")));
     assert.ok(pluginPaths.includes(join(PLUGINS_DIR, "ops-control")));
     assert.ok(!pluginPaths.includes(join(PLUGINS_DIR, "ops-latex")));
@@ -82,14 +94,22 @@ describe("suite loader", () => {
 
   it("loads everything when the config is broken", () => {
     writeFileSync(join(dir, "config.json"), "{ not json");
-    const { pluginPaths } = JSON.parse(node("workspace-plugins.ts")) as { pluginPaths: string[] };
-    assert.ok(pluginPaths.includes(join(PLUGINS_DIR, "ops-latex")));
+    assert.ok(loaderPaths().includes(join(PLUGINS_DIR, "ops-latex")));
+  });
+
+  it("loads nothing when ops agent already passed the plugins", () => {
+    process.env[SUITE_LOADED_ENV] = "1";
+    try {
+      assert.deepEqual(loaderPaths(), []);
+    } finally {
+      delete process.env[SUITE_LOADED_ENV];
+    }
   });
 });
 
 describe("ops-control tools", () => {
-  it("status lists every plugin and the loader state", () => {
-    const status = call("control_status") as {
+  it("status lists every plugin and the loader state", async () => {
+    const status = (await call("control_status")) as {
       loader: { registered: boolean };
       plugins: { name: string; enabled: boolean; privileged?: boolean }[];
     };

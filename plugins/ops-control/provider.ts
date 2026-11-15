@@ -4,7 +4,15 @@ import { fileURLToPath } from "node:url";
 import { auditDir } from "./lib/core/audit.ts";
 import { configPath, loadConfig, privilegedEnabled, reviewDir } from "./lib/core/config.ts";
 import { bool, int, obj, oneOf, str, ToolError, tool } from "./lib/core/schema-helpers.ts";
-import { ALWAYS_ON, loaderCommand, suitePlugins, userHooksPath } from "./lib/core/suite.ts";
+import {
+  ALWAYS_ON,
+  gitHead,
+  loaderCommand,
+  SERVE_ORIGIN,
+  serveHealth,
+  suitePlugins,
+  userHooksPath,
+} from "./lib/core/suite.ts";
 import type { Config, Provider, ReviewLensId } from "./lib/core/types.ts";
 
 const PLUGINS_DIR = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -42,19 +50,6 @@ function clip(record: Record<string, unknown>): Record<string, unknown> {
   );
 }
 
-function gitState(): { branch: string | null; head: string | null } {
-  const headFile = join(REPO_ROOT, ".git", "HEAD");
-  if (!existsSync(headFile)) return { branch: null, head: null };
-  const head = readFileSync(headFile, "utf8").trim();
-  const ref = /^ref: (refs\/heads\/(.+))$/.exec(head);
-  if (!ref?.[1]) return { branch: null, head: head.slice(0, 12) };
-  const refFile = join(REPO_ROOT, ".git", ref[1]);
-  return {
-    branch: ref[2] ?? null,
-    head: existsSync(refFile) ? readFileSync(refFile, "utf8").trim().slice(0, 12) : null,
-  };
-}
-
 /** Read-modify-write of the user config file; only the keys passed in `apply` change. */
 function updateConfig(apply: (raw: Record<string, unknown>) => void): Config {
   const path = configPath();
@@ -89,9 +84,11 @@ const tools = [
     title: "Suite status",
     tier: "read",
     description:
-      "Report the ops plugin suite: checkout and branch, whether the workspaceOpen loader is registered, every plugin with its version and enabled state, review settings, and which providers have privileged tools enabled. Plugin changes take effect after a window reload.",
-    run: (_a, { cfg }) => {
+      "Report the ops plugin suite: checkout and branch, whether the workspaceOpen loader is registered, whether the shared read server is up, every plugin with its version and enabled state, review settings, and which providers have privileged tools enabled. Plugin changes take effect after a window reload.",
+    run: async (_a, { cfg }) => {
       const plugins = suitePlugins(PLUGINS_DIR, cfg.suite.disabledPlugins);
+      const suite = { root: REPO_ROOT, ...gitHead(REPO_ROOT) };
+      const health = await serveHealth();
       let loader: string | null = null;
       let loaderError: string | undefined;
       try {
@@ -100,7 +97,20 @@ const tools = [
         loaderError = (err as Error).message;
       }
       return {
-        suite: { root: REPO_ROOT, ...gitState() },
+        suite,
+        readServer: health
+          ? {
+              url: SERVE_ORIGIN,
+              running: true,
+              pid: health.pid,
+              current: health.head === suite.head,
+              providers: health.providers,
+            }
+          : {
+              url: SERVE_ORIGIN,
+              running: false,
+              fix: "Opening a workspace starts it; or run `ops serve --background`.",
+            },
         loader: {
           hooksFile: userHooksPath(),
           registered: loader !== null,

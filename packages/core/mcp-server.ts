@@ -21,7 +21,7 @@ export { ToolError };
 
 const SUPPORTED_PROTOCOLS = ["2025-06-18", "2025-03-26", "2024-11-05"];
 
-interface RpcMessage {
+export interface RpcMessage {
   jsonrpc?: string;
   id?: string | number | null;
   method?: string;
@@ -145,23 +145,30 @@ export async function callTool(
   return tool.run(args, ctx);
 }
 
-/** Start a newline-delimited JSON-RPC MCP server over stdio for one provider tier. */
-export function startServer(provider: Provider, tier: ServerTier): void {
-  const cfg = loadConfig();
-  const tools = toolsForTier(provider, tier, cfg);
+export type RpcReply = { jsonrpc: "2.0"; id: RpcMessage["id"] } & (
+  | { result: object }
+  | { error: { code: number; message: string } }
+);
+
+/** One provider tier's JSON-RPC handler; resolves to undefined for notifications. Transport-agnostic. */
+export function createHandler(
+  provider: Provider,
+  tier: ServerTier,
+): (msg: RpcMessage) => Promise<RpcReply | undefined> {
+  const tools = toolsForTier(provider, tier, loadConfig());
   const serverName = `ops-${provider.id}-${tier}`;
+  const reply = (id: RpcMessage["id"], result: object): RpcReply => ({
+    jsonrpc: "2.0",
+    id,
+    result,
+  });
 
-  const send = (msg: object) => process.stdout.write(`${JSON.stringify(msg)}\n`);
-  const reply = (id: RpcMessage["id"], result: object) => send({ jsonrpc: "2.0", id, result });
-  const fail = (id: RpcMessage["id"], code: number, message: string) =>
-    send({ jsonrpc: "2.0", id, error: { code, message } });
-
-  async function handle(msg: RpcMessage): Promise<void> {
+  async function handle(msg: RpcMessage): Promise<RpcReply | undefined> {
     const { id, method, params } = msg;
     switch (method) {
       case "initialize": {
         const requested = params?.protocolVersion;
-        reply(id, {
+        return reply(id, {
           protocolVersion:
             requested && SUPPORTED_PROTOCOLS.includes(requested)
               ? requested
@@ -170,15 +177,14 @@ export function startServer(provider: Provider, tier: ServerTier): void {
           serverInfo: { name: serverName, version: provider.version },
           instructions: provider.instructions?.[tier],
         });
-        return;
       }
       case "ping":
-        reply(id, {});
-        return;
+        return reply(id, {});
       case "tools/list":
-        reply(id, { tools: tools.map(describeTool) });
-        return;
+        return reply(id, { tools: tools.map(describeTool) });
       case "tools/call": {
+        // Long-running servers pick up config edits (credentials, scope) on the next call.
+        const cfg = loadConfig({ reload: true });
         const started = Date.now();
         const name = params?.name;
         const tool = tools.find((t) => t.name === name);
@@ -192,22 +198,35 @@ export function startServer(provider: Provider, tier: ServerTier): void {
         try {
           const result = await callTool(provider, tools, name, params?.arguments, cfg);
           audit({ ...base, ok: true, ms: Date.now() - started });
-          reply(id, {
+          return reply(id, {
             content: [{ type: "text", text: render(result, cfg.execution.maxOutputChars) }],
           });
         } catch (err) {
           const message =
             err instanceof ToolError ? err.message : `Unexpected error: ${(err as Error).message}`;
           audit({ ...base, ok: false, error: message, ms: Date.now() - started });
-          reply(id, { content: [{ type: "text", text: redact(message) }], isError: true });
+          return reply(id, { content: [{ type: "text", text: redact(message) }], isError: true });
         }
-        return;
       }
       default:
-        if (id !== undefined) fail(id, -32601, `Method not found: ${method}`);
+        return id === undefined
+          ? undefined
+          : { jsonrpc: "2.0", id, error: { code: -32601, message: `Method not found: ${method}` } };
     }
   }
 
+  return (msg) =>
+    handle(msg).catch((err: Error) =>
+      msg.id === undefined
+        ? undefined
+        : { jsonrpc: "2.0", id: msg.id, error: { code: -32603, message: redact(err.message) } },
+    );
+}
+
+/** Start a newline-delimited JSON-RPC MCP server over stdio for one provider tier. */
+export function startServer(provider: Provider, tier: ServerTier): void {
+  const handle = createHandler(provider, tier);
+  const send = (msg: object) => process.stdout.write(`${JSON.stringify(msg)}\n`);
   const rl = createInterface({ input: process.stdin });
   rl.on("line", (line) => {
     if (!line.trim()) return;
@@ -215,13 +234,11 @@ export function startServer(provider: Provider, tier: ServerTier): void {
     try {
       msg = JSON.parse(line) as RpcMessage;
     } catch {
-      fail(null, -32700, "Parse error");
+      send({ jsonrpc: "2.0", id: null, error: { code: -32700, message: "Parse error" } });
       return;
     }
-    handle(msg).catch((err: Error) => {
-      if (msg.id !== undefined) fail(msg.id, -32603, redact(err.message));
-    });
+    void handle(msg).then((out) => out && send(out));
   });
   rl.on("close", () => process.exit(0));
-  process.stderr.write(`[${serverName}] ready with ${tools.length} tools\n`);
+  process.stderr.write(`[ops-${provider.id}-${tier}] ready\n`);
 }
