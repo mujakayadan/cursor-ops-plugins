@@ -43,6 +43,7 @@ describe("user profile", () => {
     assert.match(context, /senior software engineer/);
     assert.match(context, /Role: platform engineer\./);
     assert.match(context, /- Prefers pnpm/);
+    assert.match(context, /models_route/);
   });
   it("ignores a profile with an unknown expertise level", () => {
     writeFileSync(join(dir, "profile.json"), '{"expertise":"wizard"}');

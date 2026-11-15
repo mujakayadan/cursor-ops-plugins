@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "ops-models-read": {
+      "url": "http://127.0.0.1:47821/mcp/models",
+      "headers": {
+        "Authorization": "Bearer ${env:OPS_MCP_TOKEN}"
+      }
+    }
+  }
+}

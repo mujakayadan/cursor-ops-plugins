@@ -8,14 +8,17 @@ import { SUITE_LOADED_ENV, suitePlugins } from "../packages/core/suite.ts";
 import control from "../plugins/ops-control/provider.ts";
 import { PLUGINS_DIR, REPO_ROOT } from "./lib.ts";
 import { ensureServer, serveLogPath, stopServer } from "./serve-client.ts";
+import { worktree } from "./worktree.ts";
 
 const USAGE = `ops — the ops plugin suite from the terminal
 
-  ops status              loader, read server, plugins, review settings
+  ops status              loader, read server, plugins, review settings (refreshes a stale read server)
   ops setup [options]     install the CLIs the enabled plugins need (ops setup --help)
   ops doctor [--json]     check CLIs, loader, config and sign-in per tier, with a fix for each failure
   ops serve [--background|--stop|--restart]
                           the shared read-tier MCP server (foreground by default)
+  ops worktree add|list|remove …
+                          linked checkouts for concurrent agents (ops worktree --help)
   ops agent [args...]     the Cursor CLI agent with every enabled suite plugin
   ops install             register the suite loader, the ops command and the read server token
   ops uninstall           remove them`;
@@ -27,8 +30,14 @@ const SCRIPTS = {
   uninstall: "install.ts",
 } as const;
 
-type Command = keyof typeof SCRIPTS | "status" | "serve" | "agent";
-const COMMANDS: readonly string[] = [...Object.keys(SCRIPTS), "status", "serve", "agent"];
+type Command = keyof typeof SCRIPTS | "status" | "serve" | "worktree" | "agent";
+const COMMANDS: readonly string[] = [
+  ...Object.keys(SCRIPTS),
+  "status",
+  "serve",
+  "worktree",
+  "agent",
+];
 
 function script(file: string, args: string[]): number {
   const result = spawnSync(process.execPath, [join(REPO_ROOT, "scripts", file), ...args], {
@@ -46,6 +55,8 @@ interface Status {
 }
 
 async function status(): Promise<number> {
+  // Refresh when HEAD moved (merge, pull) so read tools match this checkout without a window reload.
+  await ensureServer();
   const tool = control.tools.find((t) => t.name === "control_status");
   if (!tool) return 1;
   const s = (await tool.run({}, makeContext(control, tool, loadConfig()))) as Status;
@@ -55,7 +66,7 @@ async function status(): Promise<number> {
     `loader  ${s.loader.registered ? s.loader.command : `not registered. ${s.loader.fix}`}`,
   );
   console.log(
-    `server  ${server.running ? `${server.url} pid ${server.pid}${server.current ? "" : " (older commit; restarts on next workspace open)"}` : `down. ${server.fix}`}`,
+    `server  ${server.running ? `${server.url} pid ${server.pid}${server.current ? "" : " (older commit; run ops serve --restart)"}` : `down. ${server.fix}`}`,
   );
   const lenses = Object.entries(s.review.lenses)
     .map(([id, on]) => `${id}${on ? "" : " (off)"}`)
@@ -124,6 +135,8 @@ async function main(command: Command, args: string[]): Promise<number> {
       return status();
     case "serve":
       return serve(args);
+    case "worktree":
+      return worktree(args);
     case "agent":
       return agent(args);
     case "uninstall":

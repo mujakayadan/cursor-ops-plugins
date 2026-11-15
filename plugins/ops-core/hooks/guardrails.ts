@@ -145,27 +145,27 @@ export const GIT_RULES: ShellRule[] = [
 ];
 
 /** Env vars that pin git to another repository; with an explicit cwd they must not win. */
-const GIT_REPO_ENV = [
+const GIT_REPO_ENV = new Set([
   "GIT_DIR",
   "GIT_WORK_TREE",
   "GIT_COMMON_DIR",
   "GIT_OBJECT_DIRECTORY",
   "GIT_INDEX_FILE",
   "GIT_ALTERNATE_OBJECT_DIRECTORIES",
-] as const;
+]);
+
+/** Copy of `base` without repo-pinning GIT_* vars, so an explicit cwd selects the repository. */
+export function withoutGitRepoEnv(base: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = { ...base };
+  for (const k of GIT_REPO_ENV) delete env[k];
+  return env;
+}
 
 /** Branch checked out where the command runs; undefined outside a repo, on an unborn or detached HEAD. */
 export function currentBranch(cwd: string | undefined): string | undefined {
-  const env = cwd
-    ? Object.fromEntries(
-        Object.entries(process.env).filter(
-          ([k]) => !(GIT_REPO_ENV as readonly string[]).includes(k),
-        ),
-      )
-    : undefined;
   const r = spawnSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
     cwd: cwd || undefined,
-    env,
+    env: cwd ? withoutGitRepoEnv() : undefined,
     encoding: "utf8",
     timeout: 3000,
     windowsHide: true,
@@ -179,6 +179,19 @@ const onEnvBranch = (p: HookPayload): boolean => {
   const cwd = p.cwd || p.workspace_roots?.[0];
   return Boolean(cwd) && ENV_BRANCH_RE.test(currentBranch(cwd) ?? "");
 };
+
+/** `<github-user>/<type>/<kebab-name>` work branches (not environment branches). */
+export const WORK_BRANCH_RE = new RegExp(
+  `^[A-Za-z0-9][A-Za-z0-9-]*/(?:${BRANCH_TYPES.join("|")})/[a-z0-9][a-z0-9._-]*$`,
+);
+
+export function assertWorkBranch(branch: string): void {
+  if (!WORK_BRANCH_RE.test(branch)) {
+    throw new Error(
+      `Branch '${branch}' must be <github-user>/<type>/<kebab-name> with type one of: ${BRANCH_TYPES.join(", ")}.`,
+    );
+  }
+}
 
 const BRANCH_NAME = String.raw`(?:${ENV_BRANCHES}|[A-Za-z0-9][A-Za-z0-9-]*\/(?:${BRANCH_TYPES.join("|")})\/[a-z0-9][a-z0-9._-]*)${END}`;
 

@@ -23,9 +23,12 @@ Changing an existing repo to public is `github_repo_set_visibility` (privileged,
 
 ## Delivering a change
 1. Issue first when the work is non-trivial: `github_issue_create` with a `bug`/`enhancement` label, then `github_project_item_add` to put it on the board.
-2. Create the work branch from `origin/dev`, commit with conventional messages, then `git push -u origin <branch>`.
-3. `github_pr_create` with `base: "dev"` and a conventional title; the body says `Closes #N`.
-4. Keep checks green (`github-ci-triage`), then `github_pr_merge` (method `auto` squashes into dev). It needs the user's approval.
+2. **Checkout isolation.** If another agent already uses this folder (another work branch checked out, or dirty files that are not yours), create a linked worktree before editing. In the ops suite checkout: `ops worktree add <github-user>/<type>/<kebab-name>` (path `<repo>-wt/<user>/<type>/<kebab>`), then open that folder. In any other repo: `git worktree add -b <branch> <path> origin/dev`. Otherwise cut the branch in place: `git switch -c <github-user>/<type>/<kebab-name> origin/dev`.
+3. One concern per PR. Commit only the files for this change; leave unrelated dirty files unstaged. Conventional commit messages.
+4. `git push -u origin <branch>`. Local hooks run lint and tests (suite: biome and tsc on commit, vitest on push); never `--no-verify`. Fix hook failures before opening the PR.
+5. `github_pr_create` with `base: "dev"` and a conventional title; the body says `Closes #N` and sticks to this change.
+6. Keep checks green (`github-ci-triage`), then `github_pr_merge` (method `auto` squashes into dev). It needs the user's approval.
+7. After a **suite** change lands and you keep this Cursor window, run `ops status` (or `ops serve --restart`) so the shared read server matches the new HEAD. Opening a workspace does the same.
 
 ## Promote and release
 1. Promote: `github_pr_create` with `head: "dev"`, `base: "main"` and title `chore: release`. Merge it with `github_pr_merge` (`auto` uses a merge commit).

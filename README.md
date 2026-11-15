@@ -89,6 +89,7 @@ plugins/
   ops-control/                    # suite status, audit and review queries, review and plugin toggles, user profile
   ops-memory/                     # knowledge graph of entities, relations and observations
   ops-oss/                        # open-source vetting from deps.dev, OSV and OpenSSF Scorecard, research skill
+  ops-models/                     # per-task model and effort from the Cursor plan and included usage
 AGENTS.md                         # agent guide: setting up a machine, changing the suite
 copier.yml                        # scaffold questions; selects templates/<language>
 templates/
@@ -130,11 +131,11 @@ Every repository, this one included, follows one branch and release flow:
 | `dev` | integration | PRs from `<github-user>/<type>/<kebab-name>` branches; the automatic `main → dev` sync | squash (features), merge commit (sync) |
 | `qa`, `staging` | optional, only when asked | promotions | merge commit |
 
-Work branch types are `feat`, `fix`, `chore`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `style`, `revert` and `hotfix`. PR titles follow Conventional Commits.
+Work branch types are `feat`, `fix`, `chore`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `style`, `revert` and `hotfix`. PR titles follow Conventional Commits. Each PR covers one concern; leave unrelated dirty files out of the commit. Concurrent agents use linked git worktrees so they do not share a working tree. In this suite, that is `ops worktree add <user>/<type>/<name>` (creates `<repo>-wt/<user>/<type>/<kebab>` beside the primary checkout); other repos use plain `git worktree add`. This suite's shared read server tracks git HEAD and refreshes on `ops status`, `ops doctor` and workspace open.
 
 The flow is enforced in layers that all work on GitHub Free:
 - **CI:** the `pr-policy` workflow checks the target, the branch name (its user part must match the PR author) and the title.
-- **Local hooks:** prek's `no-commit-to-branch` blocks commits on environment branches.
+- **Local hooks:** prek's `no-commit-to-branch` blocks commits on environment branches; each repo's push hooks run its lint and tests (in this suite: biome and tsc on commit, vitest on push).
 - **Agent guardrails:** ops-core denies pushes and commits to environment branches and badly named branches. `github_pr_merge` refuses red checks, work branches into `main`, and squashed promotions.
 - **Rulesets:** `github_repo_bootstrap` applies them where the plan allows (public repos on Free, any repo on paid plans). They block deletion and force pushes, require a PR, resolved conversations and `pr-policy`, and set the merge methods. There are no bypass actors.
 
@@ -203,6 +204,14 @@ It writes only the `review` and `suite` sections of `~/.ops/config.json` and the
 | `memory_forget` | write | Delete entities, observations or relations |
 
 Writes need approval, so content from a web page or an issue can't plant facts without you seeing them, and both the `ops-core` hook and the tool reject credentials. Concurrent writers are serialized with a lock file and every write replaces the file atomically. The `memory` skill covers what to recall at the start of a task and what is worth recording.
+
+## Model routing
+
+`ops-models` picks the model and effort for a task from the signed-in plan and the included-usage headroom. `models_account` reads both from the Cursor CLI (`agent about`, `agent models`). `models_route` then chooses.
+
+Included models (Grok 4.7, Grok 4.6, Grok 4.5, Composer 2.5) draw from the subscription pool. Composer 2.5 is the default for routine and parallel work. Grok 4.7 at medium effort is the default for implementation. High effort is for hard tasks, and only on plans that allow it while the pool is healthy. Fast mode stays off. Third-party models are not in the pool; on plans that list them they bill from prepaid credit, and only when you name one. Plus keeps effort at medium and has no third-party models.
+
+The chat model is the picker. The route selects a subagent model when the session allowlist has a matching id; otherwise the subagent inherits the chat model. With no CLI installed the plan is unknown and routing stays on included models at medium effort. Install and `agent login` are documented at [cursor.com/docs/cli/installation](https://cursor.com/docs/cli/installation). The tool does not read Cursor's local auth database.
 
 ## Open-source research
 
@@ -339,10 +348,11 @@ Then **quit and reopen Cursor once**, so it picks up `OPS_MCP_TOKEN`. After that
 
 | Command | What it does |
 |---|---|
-| `ops status` | Checkout, loader, read server, plugins and review settings |
+| `ops status` | Checkout, loader, read server, plugins and review settings; refreshes the read server when HEAD moved |
 | `ops setup [--optional] [--yes] [--dry-run] [plugin...]` | Installs missing CLIs for the enabled plugins. Each provider declares its recipes in `provider.ts` (`setup`). npm-based CLIs go into `~/.ops/tools` with pnpm (no admin rights, no PATH change); others use winget on Windows or Homebrew elsewhere. `--optional` adds feature-only tools such as Poppler and a JDK |
-| `ops doctor [--json]` | Runtime, loader, token, read server, config, plugins, and per provider its CLIs, toolchain and sign-in per credential tier. Every failure comes with a fix; sign-in fixes come from the provider's `onboarding` in `provider.ts`. `--json` is for agents |
+| `ops doctor [--json]` | Runtime, loader, token, read server, config, plugins, and per provider its CLIs, toolchain and sign-in per credential tier. Refreshes a stale read server first. Every failure comes with a fix; sign-in fixes come from the provider's `onboarding` in `provider.ts`. `--json` is for agents |
 | `ops serve [--background\|--stop\|--restart]` | The shared read server; foreground by default, logs to `~/.ops/serve.log` |
+| `ops worktree add\|list\|remove …` | Linked suite checkouts for concurrent agents (`<repo>-wt/<user>/<type>/<kebab>` from `origin/dev`; see `ops worktree --help`) |
 | `ops agent [args...]` | The Cursor CLI agent (`agent`) with every enabled suite plugin passed as `--plugin-dir` |
 | `ops install [--no-user-env]` / `ops uninstall` | Registers or removes the loader hook, the read server token, the `ops` launcher and its PATH entry (see above) |
 

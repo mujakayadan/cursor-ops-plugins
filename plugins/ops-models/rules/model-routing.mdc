@@ -1,0 +1,13 @@
+---
+description: Pick the Cursor model and effort from the task and the subscription. Included models are the default.
+alwaysApply: true
+---
+
+# Model routing
+
+- Call `models_route` (ops-models) before a substantial task or a subagent. Pass the session's subagent allowlist.
+- Default to included models: Composer 2.5 for routine and parallel work, Grok 4.7 at medium effort for implementation.
+- Raise effort only when the route's `effort` is `high`. Leave fast mode off.
+- Pass a subagent `model` only when the route returns `taskModel`. Otherwise inherit the chat model.
+- A third-party model spends prepaid credit. Use one only when the route's `billing` is `credit`.
+- When `models_account` reports no CLI, stay on included models at medium effort. Do not read Cursor's auth database and do not pipe the CLI install script.
