@@ -1,0 +1,17 @@
+{
+  "name": "ops-oss",
+  "displayName": "Ops: Open Source",
+  "version": "1.7.1",
+  "description": "Open-source research for new projects: find exemplar projects and reusable components, and vet them from public data (deps.dev, OSV, OpenSSF Scorecard) for license, maintenance, provenance, advisories and vulnerable dependencies.",
+  "author": {
+    "name": "Muja Kayadan"
+  },
+  "license": "MIT",
+  "keywords": [
+    "open-source",
+    "supply-chain",
+    "licenses",
+    "scorecard"
+  ],
+  "category": "developer-tools"
+}

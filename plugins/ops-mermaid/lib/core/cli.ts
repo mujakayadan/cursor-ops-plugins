@@ -80,8 +80,13 @@ const ENVIRONMENT_KEYS = [
   "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment",
 ];
 
+/** Misses re-read the registry at most this often, so a missing CLI doesn't spawn reg.exe per call. */
+const REGISTRY_TTL_MS = 30000;
+let registryCache: { dirs: string[]; at: number } | undefined;
+
 /** The user and machine PATH as stored now, which includes installs made after this process started. */
 function registryPath(): string[] {
+  if (registryCache && Date.now() - registryCache.at < REGISTRY_TTL_MS) return registryCache.dirs;
   const dirs: string[] = [];
   for (const key of ENVIRONMENT_KEYS) {
     try {
@@ -98,6 +103,7 @@ function registryPath(): string[] {
       // Key or value missing.
     }
   }
+  registryCache = { dirs, at: Date.now() };
   return dirs;
 }
 

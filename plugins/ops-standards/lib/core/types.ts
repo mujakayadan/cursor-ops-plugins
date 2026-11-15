@@ -140,6 +140,7 @@ export interface HookResponse {
   user_message?: string;
   agent_message?: string;
   followup_message?: string;
+  additional_context?: string;
 }
 
 export interface ShellRule {

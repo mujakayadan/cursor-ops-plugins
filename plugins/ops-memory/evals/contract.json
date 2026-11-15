@@ -1,0 +1,6 @@
+[
+  { "name": "search rejects unknown scopes", "server": "read", "tool": "memory_search", "arguments": { "query": "x", "scope": "team" }, "expectError": "invalid format" },
+  { "name": "open needs names", "server": "read", "tool": "memory_open", "arguments": { "names": [] }, "expectError": "at least 1" },
+  { "name": "remember rejects credentials", "server": "write", "tool": "memory_remember", "arguments": { "entities": [{ "name": "deploy", "type": "convention", "observations": ["token ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789"] }] }, "expectError": "must not hold credentials" },
+  { "name": "remember rejects bad types", "server": "write", "tool": "memory_remember", "arguments": { "entities": [{ "name": "x", "type": "Bad Type" }] }, "expectError": "invalid format" }
+]

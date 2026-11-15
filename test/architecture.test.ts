@@ -21,6 +21,8 @@ const SECTION_BODY: Record<string, string> = {
   Deployment: "![Production](docs/architecture/production.png)",
   "Runtime flows": "```mermaid\nsequenceDiagram\n  A->>B: call\n```",
   Data: "```mermaid\nerDiagram\n  CUSTOMER ||--o{ ORDER : places\n```",
+  "Open source and dependencies":
+    "| Component | Purpose | Version | License | Scorecard | Verdict | Rationale |\n|---|---|---|---|---|---|---|\n| FastAPI | HTTP API | 0.118.0 | MIT | 7.1 | Adopt | Typed, maintained |",
   Decisions:
     "- [0001](docs/adr/0001-record-architecture-decisions.md) Record architecture decisions",
 };
@@ -178,7 +180,7 @@ describe("architecture blueprint check", () => {
       "ARCHITECTURE.md",
       edit(
         ARCHITECTURE,
-        ["## 18. Glossary", "## 18. Terms"],
+        ["## 19. Glossary", "## 19. Terms"],
         ["sequenceDiagram", "flowchart LR"],
         ["Decided.", "<!-- guide: fill this -->"],
       ),
