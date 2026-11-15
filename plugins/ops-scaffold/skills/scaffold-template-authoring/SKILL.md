@@ -12,6 +12,7 @@ Templates live in the `cursor-ops-plugins` repo:
 
 ## Rules
 - Write rule and skill content once in `_shared/<language>/` and include it from both `.cursor/` and `.claude/` wrappers.
+- `_shared/standards/*.md` are the suite's engineering standards. The common AGENTS.md section includes them, and `pnpm run sync` generates the review plugins' rules from them, so edit the fragment and run sync. Fragments are plain Markdown with no Jinja syntax and no trailing newline.
 - Skills render only into `.claude/skills/` when Claude is selected (Cursor reads that folder too) and into `.cursor/skills/` otherwise. The `_exclude` rules enforce this.
 - Profile-specific files are dropped through `_exclude` entries guarded by `language == ... and profile ...`. Add one for every new profile-only file.
 - Generated code must pass the project's own formatter as rendered. Keep lines that interpolate user input (names, descriptions) on their own lines or behind a magic trailing comma.
@@ -30,4 +31,4 @@ pnpm run ci                  # plugin validation, unit tests, evals
 Use `node scripts/test-templates.ts --only java/backend --keep` to inspect a single rendered case.
 
 ## Release
-Commit, push, then tag a PEP 440 version (`git tag v1.2.0 && git push --tags`). `copier update` in generated projects moves to the newest tag.
+Template changes ship with the suite: merge the work branch into `dev`, promote `dev` to `main`, and merge the release-please PR, which tags `vX.Y.Z`. `copier update` in generated projects moves to the newest tag.

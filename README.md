@@ -75,6 +75,7 @@ copier.yml                        # scaffold questions; selects templates/<langu
 templates/
   python/ typescript/ java/       # rendered trees (*.jinja files are templated)
   _shared/                        # include-only fragments (license, MCP, rules, skills)
+    standards/                    # engineering standards: AGENTS.md sections and the review plugins' rules
 evals/run.ts                      # eval harness
 scripts/                          # sync, validate, install, doctor, smoke, scaffold, test-templates
 ```
@@ -180,7 +181,7 @@ Both plugins render locally and show the agent its own output: preview tools wri
 The stack is a standard, not a menu: one package manager and one runtime version per language. This repo follows the same standard: it is a strict TypeScript 7 project on Node 24 with pnpm, Biome, Vitest and prek. Hooks and MCP servers are `.ts` files that Node runs directly (built-in type stripping), so there is no build step and nothing to install at runtime. Bumping a runtime is a template change, and `copier update` rolls it out to existing projects.
 
 Every project gets the same set of shared files:
-- `AGENTS.md`
+- `AGENTS.md`, including the suite's engineering standards (clean code and current state only, docs matching the code, secure by default, performance aware). It includes the same text the review plugins enforce, so a project states the standard even where the plugins aren't installed.
 - Cursor and/or Claude Code rules
 - a `verify` skill that knows the project's commands
 - optional Context7/GitHub MCP config (URLs only)
@@ -237,7 +238,7 @@ Configure least-privilege credentials per tier in `~/.ops/config.json`. See `con
 ```powershell
 pnpm install            # dev tools (TypeScript, Biome, Vitest, prek)
 pnpm exec prek install  # git hooks: Biome, typecheck, vendoring on commit; tests on push
-pnpm run sync           # after editing packages/core
+pnpm run sync           # after editing packages/core or templates/_shared/standards
 pnpm run format         # Biome format + safe fixes
 pnpm run typecheck      # tsc (strict, no emit)
 pnpm test               # Vitest

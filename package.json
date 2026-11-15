@@ -11,13 +11,13 @@
     "node": ">=24"
   },
   "scripts": {
-    "sync": "node scripts/sync-core.ts",
+    "sync": "node scripts/sync-core.ts && node scripts/sync-standards.ts",
     "lint": "biome check .",
     "format": "biome check --write .",
     "typecheck": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "biome ci . && pnpm run typecheck && node scripts/sync-core.ts --check && node scripts/validate.ts",
+    "check": "biome ci . && pnpm run typecheck && node scripts/sync-core.ts --check && node scripts/sync-standards.ts --check && node scripts/validate.ts",
     "evals": "node evals/run.ts policy contract",
     "evals:agent": "node evals/run.ts agent",
     "ci": "pnpm run check && pnpm test && pnpm run evals",
