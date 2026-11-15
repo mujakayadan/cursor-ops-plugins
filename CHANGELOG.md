@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.6.0...v1.6.1) (2026-11-15)
+
+
+### Bug Fixes
+
+* keep personal values out of shared code, docs and examples ([#34](https://github.com/mujakayadan/cursor-ops-plugins/issues/34)) ([cd5467b](https://github.com/mujakayadan/cursor-ops-plugins/commit/cd5467b08b69fec760a696e7ecfb9fba257fed3f))
+
 ## [1.6.0](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.5.0...v1.6.0) (2026-11-15)
 
 
