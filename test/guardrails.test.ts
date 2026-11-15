@@ -15,6 +15,7 @@ import {
   SHELL_RULES,
   TAMPER_RULES,
   withOverrides,
+  withoutGitRepoEnv,
 } from "../plugins/ops-core/hooks/guardrails.ts";
 
 const decide = (command: string, rules: ShellRule[] = SHELL_RULES) =>
@@ -88,22 +89,12 @@ describe("gitops branch guardrails", () => {
     GIT_COMMITTER_NAME: "t",
     GIT_COMMITTER_EMAIL: "t@example.com",
   };
-  // Drop repo-pinning vars so a pre-push run in a worktree doesn't redirect these calls.
-  const gitEnv = (): NodeJS.ProcessEnv => {
-    const env: NodeJS.ProcessEnv = { ...process.env, ...IDENTITY };
-    for (const k of [
-      "GIT_DIR",
-      "GIT_WORK_TREE",
-      "GIT_COMMON_DIR",
-      "GIT_OBJECT_DIRECTORY",
-      "GIT_INDEX_FILE",
-      "GIT_ALTERNATE_OBJECT_DIRECTORIES",
-    ])
-      delete env[k];
-    return env;
-  };
   const git = (cwd: string, ...args: string[]) =>
-    execFileSync("git", args, { cwd, stdio: "ignore", env: gitEnv() });
+    execFileSync("git", args, {
+      cwd,
+      stdio: "ignore",
+      env: withoutGitRepoEnv({ ...process.env, ...IDENTITY }),
+    });
   const decideIn = (cwd: string, command: string) =>
     evaluateShell(normalizeCommand(command), SHELL_RULES, { cwd }).permission;
 
