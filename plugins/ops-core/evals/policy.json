@@ -175,7 +175,7 @@
   {"name":"gitops: git branch with bad name denied","event":"beforeShellExecution","input":{"command":"git branch wip"},"expect":{"permission":"deny"}},
   {"name":"gitops: worktree with bad branch denied","event":"beforeShellExecution","input":{"command":"git worktree add -b tmp ../tmp"},"expect":{"permission":"deny"}},
   {"name":"gitops: conventional branch allowed","event":"beforeShellExecution","input":{"command":"git switch -c mujakayadan/fix/login-crash"},"expect":{"permission":"allow"}},
-  {"name":"gitops: checkout -b with start point allowed","event":"beforeShellExecution","input":{"command":"git checkout -b Muja-K/chore/bump-deps origin/dev"},"expect":{"permission":"allow"}},
+  {"name":"gitops: checkout -b with start point allowed","event":"beforeShellExecution","input":{"command":"git checkout -b octocat/chore/bump-deps origin/dev"},"expect":{"permission":"allow"}},
   {"name":"gitops: creating env branch allowed","event":"beforeShellExecution","input":{"command":"git checkout -b dev"},"expect":{"permission":"allow"}},
   {"name":"gitops: listing and deleting branches allowed","event":"beforeShellExecution","input":{"command":"git branch -a && git branch -d old-thing && git branch --show-current"},"expect":{"permission":"allow"}},
   {"name":"gitops: switching branches allowed","event":"beforeShellExecution","input":{"command":"git switch dev && git checkout main"},"expect":{"permission":"allow"}}

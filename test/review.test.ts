@@ -184,17 +184,27 @@ describe("review scanner", () => {
   it("flags personal and machine-specific paths but not placeholders", () => {
     const rules = (text: string, path = "docs/setup.md") =>
       scanEdit("standards", path, [{ new_string: text }]).map((h) => h.rule);
-    const personal = "standards/personal-path";
-    assert.deepEqual(rules(`Clone into ${["C:", "Users", "alice", "code"].join("\\")}.`), [
-      personal,
-    ]);
-    assert.deepEqual(
-      rules(`const dir = "${["", "home", "alice", "app"].join("/")}";`, "src/x.ts"),
-      [personal],
-    );
-    assert.deepEqual(rules(`Projects live in ${"D"}:\\Work\\app.`), [personal]);
-    assert.deepEqual(rules("Use `C:/Users/<you>/.ops/gh-read` or `~/code/app`."), []);
-    assert.deepEqual(rules("Set %USERPROFILE% or $HOME; see https://example.com/home/docs."), []);
+    for (const text of [
+      "Clone into C:\\Users\\alice\\code.",
+      "Clone into c:\\users\\bob\\code.",
+      "Open C:\\Users\\me.alice\\code.",
+      "Projects live in D:\\Work\\app.",
+      "Projects live in d:\\work\\app.",
+      'const dir = "/home/alice/app";',
+      "See file:///Users/alice/notes.",
+      "Mounted at /mnt/c/Users/alice/code.",
+    ]) {
+      assert.deepEqual(rules(text), ["standards/personal-path"], text);
+    }
+    for (const text of [
+      "Use `C:/Users/<you>/.ops/gh-read` or `~/code/app`.",
+      "Shared files are in C:\\Users\\Public\\x and /Users/Shared/x.",
+      "Expand C:\\Users\\%USERNAME%\\x or /home/$USER/app.",
+      "Set %USERPROFILE% or $HOME; see https://example.com/home/docs.",
+      "Create C:\\code\\app for the example.",
+    ]) {
+      assert.deepEqual(rules(text), [], text);
+    }
   });
 
   it("finds docs that mention identifiers an edit removed", () => {
