@@ -32,7 +32,7 @@ Every tool acts as the active m365 connection. `msgraph_connection_list` shows t
 
 ## 5. Settings (`~/.ops/config.json`)
 ```json
-{ "providers": { "msgraph": { "timeZone": "Europe/Istanbul", "scope": { "allowedRecipientDomains": ["contoso.com"] } } } }
+{ "providers": { "msgraph": { "timeZone": "America/New_York", "scope": { "allowedRecipientDomains": ["contoso.com"] } } } }
 ```
 - `timeZone`: default zone for calendar tools (else this machine's zone).
 - `scope.allowedRecipientDomains`: mail, replies, forwards and invitations may only reach these domains (and their subdomains).

@@ -24,7 +24,7 @@ $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [En
 
 ### 2. Clone
 
-Clone to the folder the user named, otherwise `~/Codes/cursor-ops-plugins`. Skip this if you are already inside the checkout.
+Clone to the folder the user named, otherwise `~/code/cursor-ops-plugins`. Skip this if you are already inside the checkout.
 
 ```powershell
 git clone https://github.com/mujakayadan/cursor-ops-plugins.git <folder>

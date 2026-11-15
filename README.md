@@ -156,14 +156,14 @@ Each review plugin is one lens. Install any combination, and every agent turn th
 |---|---|---|---|
 | Security | `ops-security` | code and infrastructure files | string-built SQL or shell commands, `eval`, raw HTML sinks, hardcoded secrets, disabled TLS, weak crypto, unsafe deserialization, CORS `*`, workflow script injection, permissive containers |
 | Performance | `ops-performance` | code, not tests | queries or `await` inside loops, `forEach(async`, sync I/O, `SELECT *`, unbounded queries, nested scans, JSON clones |
-| Standards | `ops-standards` | code, infrastructure and docs, not changelogs | history narration in comments and docs, commented-out code, `legacy`/`V1`/`@deprecated` duplicates, TODO markers, suppressions without a reason, debug leftovers |
+| Standards | `ops-standards` | code, infrastructure and docs, not changelogs | history narration in comments and docs, commented-out code, `legacy`/`V1`/`@deprecated` duplicates, TODO markers, suppressions without a reason, debug leftovers, personal or machine-specific paths |
 | Docs | `ops-docs` | code, infrastructure and docs, not tests or changelogs | docs that still mention an identifier the edit removed, broken relative links, backticked repository paths that don't exist |
 
 1. **While the agent works,** an `afterFileEdit` hook records each changed file and collects the hints.
 2. **When the turn finishes,** the `stop` hook sends one follow-up asking for a review of exactly those files, with the hints attached. The agent follows each lens's skill (`security-review`, `performance-review`, `standards-review`, `docs-review`). It fixes clear low-risk issues, lists the rest, and ends with a short **Review** section. Large changes (8+ files) are handed to the read-only reviewer subagents.
 3. **It doesn't loop:** fixes made during the review aren't re-reviewed (one round per prompt by default). Lockfiles, generated or vendored code, and changes of fewer than three lines without a hint are skipped.
 
-All lenses share one log per conversation in `~/.ops/review/`, which is pruned after 7 days. Each `stop` hook builds the same combined message, so the plugins never overwrite each other's request. Each plugin also adds an always-on rule (`secure-by-default`, `performance-aware`, `clean-code`, `docs-current`) so the work is done that way in the first place. The standards rule keeps code and docs to the current state only: no history narration, compatibility shims, legacy or dead code; git history is the record. The `docs-review` skill also covers a full-repository stale-docs audit on request. Turn reviews off with `review.enabled: false`, a single lens with `review.lenses.<lens>: false`, or temporarily with `OPS_REVIEW=off`.
+All lenses share one log per conversation in `~/.ops/review/`, which is pruned after 7 days. Each `stop` hook builds the same combined message, so the plugins never overwrite each other's request. Each plugin also adds an always-on rule (`secure-by-default`, `performance-aware`, `clean-code`, `docs-current`) so the work is done that way in the first place. The standards rule keeps code and docs to the current state only: no history narration, compatibility shims, legacy or dead code; git history is the record. It also keeps them portable: no one person's paths, names, accounts or time zones in shared code, docs or examples. The `docs-review` skill also covers a full-repository stale-docs audit on request. Turn reviews off with `review.enabled: false`, a single lens with `review.lenses.<lens>: false`, or temporarily with `OPS_REVIEW=off`.
 
 ## Suite control
 
@@ -223,9 +223,9 @@ Backend profiles (`python/backend`, `java/backend`) also commit `openapi.json` a
 **From the agent:** the `scaffold-project` skill interviews the user, always including the project's license, copyright holder and GitHub visibility, and calls `scaffold_create`. It then publishes and bootstraps the repo through `gitops-workflow`. Calls to `scaffold_create` and `scaffold_update` always ask for approval. The tools refuse non-empty destinations, relative paths, and paths outside `providers.scaffold.scope.allowedRoots` when that is set.
 
 **From a shell:**
-```powershell
-uvx copier copy --trust https://github.com/mujakayadan/cursor-ops-plugins.git D:\Codes\my-app
-cd D:\Codes\my-app; uvx copier update --trust      # later, on a clean tree
+```sh
+uvx copier copy --trust https://github.com/mujakayadan/cursor-ops-plugins.git $HOME/code/my-app
+cd $HOME/code/my-app; uvx copier update --trust      # later, on a clean tree
 ```
 
 **Toolchain guardrails** (`beforeShellExecution`) apply only inside matching projects. They are detected by marker files from the command's working directory upward:
@@ -243,9 +243,9 @@ The template source defaults to this repo's GitHub URL. Set `providers.scaffold.
 
 Requirements: Git, Node 24 or newer, and pnpm (`winget install --id pnpm.pnpm --exact` or `brew install pnpm`). The suite has no runtime dependencies, so there is nothing to `pnpm install` unless you develop it.
 
-```powershell
-git clone https://github.com/mujakayadan/cursor-ops-plugins.git D:\Codes\cursor-ops-plugins
-cd D:\Codes\cursor-ops-plugins
+```sh
+git clone https://github.com/mujakayadan/cursor-ops-plugins.git $HOME/code/cursor-ops-plugins
+cd $HOME/code/cursor-ops-plugins
 node scripts/ops.ts install   # suite loader for Cursor, the `ops` command, ~/.ops/config.json
 node scripts/ops.ts setup     # install the CLIs the enabled plugins need
 # quit and reopen Cursor, then in a new terminal:
