@@ -1,6 +1,6 @@
 # cursor-ops-plugins
 
-Cursor plugin suite for operating **GitHub, DigitalOcean, Vercel and AWS** from the agent with least privilege. Each provider plugin ships:
+Cursor plugin suite for operating **GitHub, DigitalOcean, Vercel, AWS and Microsoft 365** (Outlook mail, calendar and Teams through Microsoft Graph) from the agent with least privilege. Each provider plugin ships:
 
 | Layer | What it is | Where |
 |---|---|---|
@@ -117,6 +117,17 @@ Workflows on PRs opened with the default `GITHUB_TOKEN` (the release and sync PR
 
 The `gitops-workflow` skill (ops-github) drives this from the agent. `github_repo_create` always asks for the visibility. `github_repo_bootstrap` creates `dev` and any extra environments, sets the merge settings, labels and rulesets, lets Actions open PRs, links a project board, and reports whether `GITOPS_TOKEN` is set. `github_release_list`, `github_project_list` and `github_project_item_add` cover releases and boards. The project tools need the `project` token scope (`gh auth refresh -s project`).
 
+## Microsoft 365
+
+`ops-msgraph` reads and acts on Outlook mail, calendars and Microsoft Teams through Microsoft Graph, using the [CLI for Microsoft 365](https://pnp.github.io/cli-microsoft365/) (`m365`) for sign-in and requests.
+
+- **Read (auto-allowed):** identity and connections, mail list/get/folders, people search, calendars, events (recurrences expanded), meeting-time suggestions, joined teams, channels, chats, and chat and channel messages.
+- **Write (always approved):** send, draft, reply, forward, move (including to Deleted Items) and mark mail; create, update, respond to and cancel events; post Teams chat messages, channel posts and thread replies. Nothing hard-deletes.
+- **Accounts:** `m365 login --connectionName work|personal` once per account; `msgraph_connection_use` switches. Teams tools need a work or school account.
+- **Guards:** `providers.msgraph.scope.allowedRecipientDomains` fences who mail, replies, forwards and invitations can reach. Message and event bodies are treated as untrusted content. The shell guard asks before `m365` sends, removals, raw write requests and Entra changes, and ops-core asks before tokens or the m365 token cache are read.
+
+The `msgraph-setup` skill covers the Entra app registration (delegated permissions), sign-in and troubleshooting; `m365-assistant` covers inbox triage, scheduling and Teams.
+
 ## Scaffolders
 
 `copier.yml` and `templates/` form a single [Copier](https://copier.readthedocs.io/) template. The `language` answer selects `templates/<language>` through `_subdirectory`, so the template has one version history and `copier update` works for all three stacks.
@@ -164,7 +175,7 @@ The template source defaults to this repo's GitHub URL. Set `providers.scaffold.
 
 ## Setup (any machine)
 
-Requirements: Node 24, pnpm (`corepack enable pnpm`), and whichever CLIs you use (`gh`, `doctl`, `aws`, `vercel`).
+Requirements: Node 24, pnpm (`corepack enable pnpm`), and whichever CLIs you use (`gh`, `doctl`, `aws`, `vercel`, `m365` from `npm install -g @pnp/cli-microsoft365`).
 
 ```powershell
 git clone https://github.com/mujakayadan/cursor-ops-plugins.git D:\Codes\cursor-ops-plugins
@@ -173,7 +184,7 @@ pnpm run install-local   # junctions into ~/.cursor/plugins/local, creates ~/.op
 pnpm run doctor          # CLIs, install, config, identity per tier
 ```
 
-Then run **Developer: Reload Window** in Cursor. The plugins appear under Customize → Plugins, and the eight MCP servers under Settings → MCP. Because the install uses junctions, `git pull` updates the plugins in place; reload Cursor afterwards.
+Then run **Developer: Reload Window** in Cursor. The plugins appear under Customize → Plugins, and the twelve MCP servers under Settings → MCP. Because the install uses junctions, `git pull` updates the plugins in place; reload Cursor afterwards.
 
 Configure least-privilege credentials per tier in `~/.ops/config.json`. See `config.example.json` and the `ops-onboarding` skill.
 
@@ -213,6 +224,8 @@ To add a tool, add a `tool({...})` entry to the provider's `tools` array with a 
 | `providers.digitalocean.scope.protectedTags` | `["production"]` | Droplets that privileged tools refuse to touch |
 | `providers.scaffold.source` / `ref` | this repo's GitHub URL / latest tag | Copier template location and version |
 | `providers.scaffold.scope.allowedRoots` | `[]` (anywhere) | Directories new projects may be created in |
+| `providers.msgraph.scope.allowedRecipientDomains` | `[]` (anyone) | Domains (and subdomains) mail, replies, forwards and invitations may reach |
+| `providers.msgraph.timeZone` | `null` (this machine's zone) | Default time zone for calendar tools |
 | `thirdPartyMcp.{read,write,privileged,unknown}` | allow/ask/ask/allow | Policy for non-ops MCP servers; `serverOverrides` per server regex |
 | `thirdPartyMcp.deniedTools` | destroy/drop/delete + database, project, cluster, bucket, repo, … | Tool-name regexes (snake_case-normalized) that are always denied |
 | `guardrails.shell.overrides` | `{}` | Per-rule decision (`allow`/`ask`/`deny`) for the [safety guardrails](#safety-guardrails); tamper rules can't be relaxed |

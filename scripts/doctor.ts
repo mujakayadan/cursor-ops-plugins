@@ -16,6 +16,7 @@ const WHOAMI: Partial<Record<string, string>> = {
   digitalocean: "digitalocean_account_get",
   vercel: "vercel_whoami",
   aws: "aws_whoami",
+  msgraph: "msgraph_whoami",
 };
 const TIERS: ServerTier[] = ["read", "write"];
 

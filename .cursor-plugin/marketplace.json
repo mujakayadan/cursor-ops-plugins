@@ -31,6 +31,10 @@
     {
       "name": "ops-scaffold",
       "source": "./plugins/ops-scaffold"
+    },
+    {
+      "name": "ops-msgraph",
+      "source": "./plugins/ops-msgraph"
     }
   ]
 }

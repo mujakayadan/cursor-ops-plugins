@@ -33,6 +33,11 @@ const CALLS: Record<string, [string, Record<string, unknown>][]> = {
     ["aws_s3_buckets", {}],
   ],
   scaffold: [["scaffold_list_templates", {}]],
+  msgraph: [
+    ["msgraph_whoami", {}],
+    ["msgraph_mail_list", { top: 3 }],
+    ["msgraph_event_list", { top: 5 }],
+  ],
 };
 
 function shape(text: string): string {

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "ops-msgraph-read": {
+      "command": "node",
+      "args": ["${CURSOR_PLUGIN_ROOT}/lib/core/run-mcp.ts", "--tier", "read"]
+    },
+    "ops-msgraph-write": {
+      "command": "node",
+      "args": ["${CURSOR_PLUGIN_ROOT}/lib/core/run-mcp.ts", "--tier", "write"]
+    }
+  }
+}
