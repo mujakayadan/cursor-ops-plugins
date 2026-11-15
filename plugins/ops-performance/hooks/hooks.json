@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeSubmitPrompt": [
+      { "command": "node ./hooks/review.ts beforeSubmitPrompt", "timeout": 10 }
+    ],
+    "afterFileEdit": [{ "command": "node ./hooks/review.ts afterFileEdit", "timeout": 10 }],
+    "stop": [
+      {
+        "command": "node -e \"import(require('node:url').pathToFileURL(process.env.CURSOR_PLUGIN_ROOT+'/hooks/review.ts').href)\"",
+        "timeout": 10,
+        "loop_limit": 5
+      }
+    ]
+  }
+}

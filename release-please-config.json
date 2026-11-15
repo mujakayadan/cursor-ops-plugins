@@ -47,6 +47,16 @@
           "type": "json",
           "path": "plugins/ops-msgraph/.cursor-plugin/plugin.json",
           "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "plugins/ops-security/.cursor-plugin/plugin.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "plugins/ops-performance/.cursor-plugin/plugin.json",
+          "jsonpath": "$.version"
         }
       ]
     }

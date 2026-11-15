@@ -25,6 +25,8 @@ interface PolicyCase {
   input: Record<string, unknown> & { command?: string };
   env?: Record<string, string>;
   expect: Record<string, unknown>;
+  /** Regexes the stringified response fields must match ("^$" asserts a field is absent). */
+  match?: Record<string, string>;
 }
 interface ContractCase {
   name: string;
@@ -90,6 +92,8 @@ function baseEnv(extra: Record<string, string> = {}): NodeJS.ProcessEnv {
     ...process.env,
     OPS_CONFIG: FIXTURE_CONFIG,
     OPS_AUDIT_DIR: auditDir,
+    OPS_REVIEW_DIR: join(auditDir, "review"),
+    OPS_REVIEW: "",
     OPS_ALLOW_PRIVILEGED: "",
     ...extra,
   };
@@ -112,8 +116,8 @@ function runPolicy(): void {
       );
       let response: Record<string, unknown> = {};
       for (const def of applicable) {
-        const [cmd = "", ...args] = def.command.split(" ");
-        const proc = spawnSync(cmd, args, {
+        const proc = spawnSync(def.command, {
+          shell: true,
           cwd: join(PLUGINS_DIR, plugin),
           input: JSON.stringify({
             hook_event_name: c.event,
@@ -132,13 +136,18 @@ function runPolicy(): void {
       if (!applicable.length && c.event.startsWith("before") && c.event !== "beforeSubmitPrompt") {
         response = { permission: "allow", note: "no matching hook" };
       }
-      const mismatches = Object.entries(c.expect).filter(([k, v]) => response[k] !== v);
+      const mismatches = [
+        ...Object.entries(c.expect).filter(([k, v]) => response[k] !== v),
+        ...Object.entries(c.match ?? {}).filter(
+          ([k, re]) => !new RegExp(re).test(String(response[k] ?? "")),
+        ),
+      ];
       record(
         "policy",
         name,
         mismatches.length === 0,
         mismatches.length
-          ? `expected ${JSON.stringify(c.expect)} got ${JSON.stringify(response).slice(0, 200)}`
+          ? `expected ${JSON.stringify({ ...c.expect, ...c.match })} got ${JSON.stringify(response).slice(0, 300)}`
           : "",
       );
     }

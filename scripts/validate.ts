@@ -160,7 +160,7 @@ for (const plugin of listPlugins()) {
     if (hooks.version !== 1) fail(`${plugin}/hooks`, "hooks.json version must be 1");
     for (const [event, defs] of Object.entries(hooks.hooks)) {
       for (const def of defs) {
-        const script = def.command.split(" ").find((p) => p.endsWith(".ts"));
+        const script = def.command.match(/hooks\/[\w.-]+\.ts/)?.[0];
         if (script && !existsSync(join(root, script))) {
           fail(`${plugin}/hooks`, `${event} references missing ${script}`);
         }

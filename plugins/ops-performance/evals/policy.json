@@ -1,0 +1,72 @@
+[
+  {
+    "name": "user prompt starts a reviewed turn",
+    "event": "beforeSubmitPrompt",
+    "input": { "conversation_id": "perf-1", "generation_id": "g1", "prompt": "load order totals" },
+    "expect": { "continue": true }
+  },
+  {
+    "name": "code edit is recorded",
+    "event": "afterFileEdit",
+    "input": {
+      "conversation_id": "perf-1",
+      "generation_id": "g1",
+      "workspace_roots": ["${TMP}"],
+      "file_path": "${TMP}/src/orders.ts",
+      "edits": [
+        {
+          "old_string": "",
+          "new_string": "for (const order of orders) {\n  const lines = await db.query(\"SELECT * FROM lines WHERE order_id = $1\", [order.id]);\n  totals.push(sum(lines));\n}"
+        }
+      ]
+    },
+    "expect": {}
+  },
+  {
+    "name": "stop requests a performance review with static hints",
+    "event": "stop",
+    "input": { "conversation_id": "perf-1", "generation_id": "g1", "status": "completed", "loop_count": 0 },
+    "expect": {},
+    "match": {
+      "followup_message": "^\\[ops-review\\][\\s\\S]*performance-review[\\s\\S]*`src/orders\\.ts` performance/select-star[\\s\\S]*performance/query-in-loop"
+    }
+  },
+  {
+    "name": "test files are not performance-reviewed",
+    "event": "afterFileEdit",
+    "input": {
+      "conversation_id": "perf-2",
+      "generation_id": "g1",
+      "workspace_roots": ["${TMP}"],
+      "file_path": "${TMP}/src/orders.test.ts",
+      "edits": [{ "old_string": "", "new_string": "items.forEach(async (i) => {\n  await check(i);\n});\nexpect(x);" }]
+    },
+    "expect": {}
+  },
+  {
+    "name": "stop with only test changes stays quiet",
+    "event": "stop",
+    "input": { "conversation_id": "perf-2", "generation_id": "g1", "status": "completed", "loop_count": 0 },
+    "expect": {},
+    "match": { "followup_message": "^$" }
+  },
+  {
+    "name": "small unhinted change is below the review threshold",
+    "event": "afterFileEdit",
+    "input": {
+      "conversation_id": "perf-3",
+      "generation_id": "g1",
+      "workspace_roots": ["${TMP}"],
+      "file_path": "${TMP}/src/label.ts",
+      "edits": [{ "old_string": "const label = \"Total\";", "new_string": "const label = \"Grand total\";" }]
+    },
+    "expect": {}
+  },
+  {
+    "name": "stop after a trivial change stays quiet",
+    "event": "stop",
+    "input": { "conversation_id": "perf-3", "generation_id": "g1", "status": "completed", "loop_count": 0 },
+    "expect": {},
+    "match": { "followup_message": "^$" }
+  }
+]

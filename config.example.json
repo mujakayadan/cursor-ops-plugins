@@ -2,6 +2,13 @@
   "audit": { "enabled": true, "dir": null, "maxFieldChars": 4000 },
   "execution": { "timeoutMs": 120000, "maxOutputChars": 60000 },
   "prompts": { "blockSecrets": true },
+  "review": {
+    "enabled": true,
+    "lenses": { "security": true, "performance": true },
+    "maxRounds": 1,
+    "minChangedLines": 3,
+    "ignore": ["^docs/generated/"]
+  },
 
   "thirdPartyMcp": {
     "read": "allow",
