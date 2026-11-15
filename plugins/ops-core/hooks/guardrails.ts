@@ -103,7 +103,7 @@ export const GIT_RULES: ShellRule[] = [
     id: "git-delete-protected-branch",
     decision: "deny",
     re: re(
-      `${GIT}(?:push\\b(?=${A}\\s(?:--delete|-d)\\b)(?=${A}\\s${PROTECTED_BRANCHES}${END})|push\\b${A}\\s:${PROTECTED_BRANCHES}${END}|branch\\b${A}\\s(?:-D|-d|--delete)\\s+(?:\\S+\\s+)*${PROTECTED_BRANCHES}${END})`,
+      `${GIT}(?:push\\b(?=${A}\\s(?:--delete|-d)\\b)(?=${A}\\s${PROTECTED_BRANCHES}${END})|push\\b${A}\\s:${PROTECTED_BRANCHES}${END}|branch\\b${A}\\s(?:-D|-d|--delete)\\s+(?:[^\\s;&|]+\\s+)*${PROTECTED_BRANCHES}${END})`,
       "i",
     ),
     reason: "Deleting a protected branch is not allowed.",

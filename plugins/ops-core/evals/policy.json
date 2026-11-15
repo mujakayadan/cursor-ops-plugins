@@ -49,6 +49,8 @@
   {"name":"denies git branch -D main","event":"beforeShellExecution","input":{"command":"git branch -D main"},"expect":{"permission":"deny"}},
   {"name":"asks for git push origin --delete feature/old","event":"beforeShellExecution","input":{"command":"git push origin --delete feature/old"},"expect":{"permission":"ask"}},
   {"name":"asks for git branch -D feature/old","event":"beforeShellExecution","input":{"command":"git branch -D feature/old"},"expect":{"permission":"ask"}},
+  {"name":"denies git branch -D with a protected branch among several","event":"beforeShellExecution","input":{"command":"git branch -D feat/a dev"},"expect":{"permission":"deny"}},
+  {"name":"branch -D scope ends at the command separator","event":"beforeShellExecution","input":{"command":"git branch -D mujakayadan/fix/x; gh pr create --base main --head dev"},"expect":{"permission":"ask"}},
   {"name":"allows git branch -d feature/old","event":"beforeShellExecution","input":{"command":"git branch -d feature/old"},"expect":{"permission":"allow"}},
   {"name":"asks for git commit --no-verify -m wip","event":"beforeShellExecution","input":{"command":"git commit --no-verify -m wip"},"expect":{"permission":"ask"}},
   {"name":"asks for git lfs migrate import --everything --include=*.psd","event":"beforeShellExecution","input":{"command":"git lfs migrate import --everything --include=\"*.psd\""},"expect":{"permission":"ask"}},
