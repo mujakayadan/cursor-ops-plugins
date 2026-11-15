@@ -1,0 +1,17 @@
+{
+  "name": "ops-control",
+  "displayName": "Ops: Suite Control",
+  "version": "1.5.0",
+  "description": "Control plane for the ops plugin suite: install and plugin status, audit log and review activity queries, and approval-gated review settings and plugin toggles.",
+  "author": {
+    "name": "Muja Kayadan"
+  },
+  "license": "MIT",
+  "keywords": [
+    "control",
+    "audit",
+    "review",
+    "plugins"
+  ],
+  "category": "developer-tools"
+}

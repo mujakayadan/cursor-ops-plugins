@@ -6,7 +6,7 @@ import { loadConfig, opsHome } from "./config.ts";
 import { redactDeep, truncate } from "./redact.ts";
 import type { Config } from "./types.ts";
 
-function auditDir(cfg: Config): string {
+export function auditDir(cfg: Config): string {
   return process.env.OPS_AUDIT_DIR || cfg.audit.dir || join(opsHome(), "audit");
 }
 

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 import aws, { hideEnvValues } from "../plugins/ops-aws/provider.ts";
+import control from "../plugins/ops-control/provider.ts";
 import digitalocean from "../plugins/ops-digitalocean/provider.ts";
 import github, {
   assertChecksGreen,
@@ -17,7 +18,7 @@ import msgraph, {
 import scaffold from "../plugins/ops-scaffold/provider.ts";
 import vercel from "../plugins/ops-vercel/provider.ts";
 
-const providers = [github, digitalocean, vercel, aws, scaffold, msgraph, mermaid, latex];
+const providers = [github, digitalocean, vercel, aws, scaffold, msgraph, mermaid, latex, control];
 
 describe("provider catalogs", () => {
   for (const p of providers) {

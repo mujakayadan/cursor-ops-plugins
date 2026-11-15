@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-import { existsSync, lstatSync } from "node:fs";
-import { homedir } from "node:os";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { resolveBinary } from "../packages/core/cli.ts";
 import { configPath, loadConfig, privilegedEnabled } from "../packages/core/config.ts";
 import { makeContext } from "../packages/core/mcp-server.ts";
+import { loaderCommand, suitePlugins, userHooksPath } from "../packages/core/suite.ts";
 import type { Config, Provider, ServerTier } from "../packages/core/types.ts";
-import { listPlugins, PLUGINS_DIR, providerPlugins } from "./lib.ts";
+import { PLUGINS_DIR, providerPlugins, REPO_ROOT } from "./lib.ts";
 
 type Status = "OK" | "WARN" | "FAIL";
 
@@ -39,15 +39,21 @@ row(
   String(process.features.typescript),
 );
 
-const localDir = join(process.env.CURSOR_HOME || join(homedir(), ".cursor"), "plugins", "local");
-for (const p of listPlugins()) {
-  const link = join(localDir, p);
-  let linked = false;
-  try {
-    linked =
-      lstatSync(link).isSymbolicLink() || existsSync(join(link, ".cursor-plugin", "plugin.json"));
-  } catch {}
-  row("install", p, linked || null, linked ? link : "not installed — run `pnpm run install-local`");
+try {
+  const loader = loaderCommand();
+  const current = loader?.includes(join(REPO_ROOT, "scripts").replaceAll("\\", "/")) ?? false;
+  row(
+    "install",
+    "workspaceOpen loader",
+    loader ? current || null : false,
+    loader
+      ? current
+        ? loader
+        : `points at another checkout: ${loader}`
+      : "not registered — run `pnpm run install-local`",
+  );
+} catch (err) {
+  row("install", userHooksPath(), false, message(err));
 }
 
 let cfg: Config | undefined;
@@ -57,6 +63,10 @@ try {
   row("config", configPath(), found || null, found ? "loaded" : "missing — using defaults");
 } catch (err) {
   row("config", configPath(), false, message(err));
+}
+
+for (const p of suitePlugins(PLUGINS_DIR, cfg?.suite.disabledPlugins ?? [])) {
+  row("plugins", p.name, p.enabled || null, p.enabled ? p.version : "disabled in config");
 }
 
 /** Pick a human-readable identity out of a whoami-style response. */

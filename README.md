@@ -18,6 +18,8 @@ Cursor plugin suite for operating **GitHub, DigitalOcean, Vercel, AWS and Micros
 
 `ops-security`, `ops-performance`, `ops-standards` and `ops-docs` review the agent's own work. Once installed, every turn that changes code or docs ends with a review of exactly those changes for security, performance, clean code (current state only, no legacy or dead code) and documentation freshness (see [Automatic code review](#automatic-code-review)).
 
+`ops-control` is the suite's control plane (see [Suite control](#suite-control)): the agent can report what is installed and enabled, query the audit log and review activity, and, with your approval, change review settings and which plugins load.
+
 ## Architecture
 
 ```mermaid
@@ -71,6 +73,7 @@ plugins/
   ops-security/ ops-performance/  # review lenses: hooks, rule, review skill, read-only reviewer subagent
   ops-standards/ ops-docs/        # review lenses for clean code and docs freshness (same layout)
   ops-mermaid/ ops-latex/         # diagram/document rendering, routing rule, authoring skills
+  ops-control/                    # suite status, audit and review queries, review and plugin toggles
 copier.yml                        # scaffold questions; selects templates/<language>
 templates/
   python/ typescript/ java/       # rendered trees (*.jinja files are templated)
@@ -153,6 +156,20 @@ Each review plugin is one lens. Install any combination, and every agent turn th
 
 All lenses share one log per conversation in `~/.ops/review/`, which is pruned after 7 days. Each `stop` hook builds the same combined message, so the plugins never overwrite each other's request. Each plugin also adds an always-on rule (`secure-by-default`, `performance-aware`, `clean-code`, `docs-current`) so the work is done that way in the first place. The standards rule keeps code and docs to the current state only: no history narration, compatibility shims, legacy or dead code; git history is the record. The `docs-review` skill also covers a full-repository stale-docs audit on request. Turn reviews off with `review.enabled: false`, a single lens with `review.lenses.<lens>: false`, or temporarily with `OPS_REVIEW=off`.
 
+## Suite control
+
+`ops-control` runs as `ops-control-read` and `ops-control-write`, like the provider plugins.
+
+| Tool | Tier | What it does |
+|---|---|---|
+| `control_status` | read | Checkout and branch, loader registration, every plugin's version and enabled state, review settings, which providers have privileged tools on |
+| `control_audit` | read | Newest-first audit records, filtered by days, source, decision and text |
+| `control_reviews` | read | Per conversation: files and hints each review lens recorded, review requests sent |
+| `control_review_set` | write | Reviews or one lens on/off, `maxRounds`, `minChangedLines`, `maxFiles` |
+| `control_plugin_set` | write | Whether a plugin loads (`suite.disabledPlugins`); applies after a window reload |
+
+It writes only the `review` and `suite` sections of `~/.ops/config.json`. Guardrail overrides, privileged tools, credentials, scope, third-party MCP policy and the loader itself stay in your hands, and the shell guard still denies the agent from editing those files.
+
 ## Authoring (Mermaid and LaTeX)
 
 Both plugins render locally and show the agent its own output: preview tools write PNGs to a temp folder, and the agent reads them to check the layout before it finishes.
@@ -220,11 +237,13 @@ Requirements: Node 24, pnpm (`corepack enable pnpm`), and whichever CLIs you use
 ```powershell
 git clone https://github.com/mujakayadan/cursor-ops-plugins.git D:\Codes\cursor-ops-plugins
 cd D:\Codes\cursor-ops-plugins
-pnpm run install-local   # junctions into ~/.cursor/plugins/local, creates ~/.ops/config.json
-pnpm run doctor          # CLIs, install, config, identity per tier
+pnpm run install-local   # registers the suite loader in ~/.cursor/hooks.json, creates ~/.ops/config.json
+pnpm run doctor          # CLIs, loader, plugins, config, identity per tier
 ```
 
-Then run **Developer: Reload Window** in Cursor. The plugins appear under Customize → Plugins, and the sixteen MCP servers under Settings → MCP. Because the install uses junctions, `git pull` updates the plugins in place; reload Cursor afterwards.
+`install-local` adds a user-level `workspaceOpen` hook that runs `scripts/workspace-plugins.ts`. When any workspace opens, it returns the paths of every enabled plugin in this checkout, so every project gets the whole suite and `git pull` updates it in place. (Cursor skips links in `~/.cursor/plugins/local` that point elsewhere, so the suite keeps none there.) `pnpm run uninstall-local` removes the hook.
+
+Then run **Developer: Reload Window** in Cursor, and again after each `git pull`. The plugins appear under Customize → Plugins, and the eighteen MCP servers under Settings → MCP.
 
 Configure least-privilege credentials per tier in `~/.ops/config.json`. See `config.example.json` and the `ops-onboarding` skill.
 
@@ -277,6 +296,7 @@ To add a tool, add a `tool({...})` entry to the provider's `tools` array with a 
 | `review.maxRounds` / `minChangedLines` / `maxFiles` | `1` / `3` / `30` | Review follow-ups per prompt; smallest unhinted change reviewed; files listed per lens |
 | `review.ignore` | `[]` | Workspace-relative path regexes never reviewed (dependencies, builds, lockfiles and `lib/core` are always skipped) |
 | `audit.{enabled,dir}` | `true`, `~/.ops/audit` | Audit trail |
+| `suite.disabledPlugins` | `[]` | Plugins the loader skips (`ops-core` and `ops-control` always load) |
 
 ## License
 

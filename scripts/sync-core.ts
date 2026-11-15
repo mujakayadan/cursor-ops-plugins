@@ -5,6 +5,7 @@ import { CORE_DIR, listPlugins, PLUGINS_DIR } from "./lib.ts";
 
 const PROVIDER_ONLY = new Set(["run-mcp.ts", "run-guard.ts"]);
 const REVIEW_ONLY = new Set(["review.ts", "review-scan.ts", "review-docs.ts"]);
+const CONTROL_ONLY = new Set(["suite.ts"]);
 const check = process.argv.includes("--check");
 const sources = readdirSync(CORE_DIR).filter((f) => f.endsWith(".ts"));
 const header = (file: string) =>
@@ -16,7 +17,10 @@ for (const plugin of listPlugins()) {
   const isProvider = existsSync(join(PLUGINS_DIR, plugin, "provider.ts"));
   const isReviewer = existsSync(join(PLUGINS_DIR, plugin, "hooks", "review.ts"));
   const wanted = sources.filter(
-    (f) => (isProvider || !PROVIDER_ONLY.has(f)) && (isReviewer || !REVIEW_ONLY.has(f)),
+    (f) =>
+      (isProvider || !PROVIDER_ONLY.has(f)) &&
+      (isReviewer || !REVIEW_ONLY.has(f)) &&
+      (plugin === "ops-control" || !CONTROL_ONLY.has(f)),
   );
   if (!check) mkdirSync(dest, { recursive: true });
 
