@@ -1,0 +1,58 @@
+{% raw %}# API compatibility: diffs the committed openapi.json against the base branch with oasdiff.
+# Breaking changes fail the PR unless declared (`feat(api)!: ...` title or a BREAKING CHANGE
+# footer in the body), which also makes release-please bump the major version.
+name: api-compat
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  api-compat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Diff openapi.json against the base branch
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+          TITLE: ${{ github.event.pull_request.title }}
+          BODY: ${{ github.event.pull_request.body }}
+          OASDIFF: tufin/oasdiff:v1.38.0
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          spec=openapi.json
+          if ! git cat-file -e "origin/$BASE:$spec" 2>/dev/null; then
+            echo "origin/$BASE has no $spec yet; nothing to compare."
+            exit 0
+          fi
+          [ -f "$spec" ] || fail "$spec was deleted; regenerate it with the API tests and commit it."
+          git show "origin/$BASE:$spec" > "$RUNNER_TEMP/base.json"
+          oasdiff() { docker run --rm -v "$RUNNER_TEMP:/base:ro" -v "$PWD:/w:ro" -w /w "$OASDIFF" "$@"; }
+
+          { echo "## API changes against $BASE"; oasdiff changelog /base/base.json "$spec" --format markdown; } >> "$GITHUB_STEP_SUMMARY"
+          set +e
+          oasdiff breaking /base/base.json "$spec" --fail-on ERR --color never
+          status=$?
+          set -e
+          [ "$status" -eq 0 ] && { echo "No breaking API changes."; exit 0; }
+          [ "$status" -eq 1 ] || fail "oasdiff could not compare the specs (exit $status)."
+
+          # Promotions and bot PRs carry changes that were already reviewed on their way in.
+          if [[ "$HEAD" =~ ^(main|dev|qa|staging)$ || "$HEAD" =~ ^(dependabot/|release-please--) ]]; then
+            echo "::warning::Breaking API changes are being promoted from $HEAD."
+            exit 0
+          fi
+          declared='^[a-z]+(\([^)]*\))?!: '
+          if [[ "$TITLE" =~ $declared ]] || grep -qE '^BREAKING[ -]CHANGE: ' <<< "$BODY"; then
+            echo "Breaking API changes are declared; release-please will bump the major version."
+            exit 0
+          fi
+          fail "Breaking API changes: make them compatible, or declare them with '!' in the PR title (feat(api)!: ...) and a line starting 'BREAKING CHANGE: <what clients must do>' in the PR body."
+{% endraw %}

@@ -19,3 +19,19 @@
 - Feature PRs target `dev` and are squash-merged. `main` accepts PRs only from `dev` (or `qa`/`staging`), Dependabot and release-please, merged with a merge commit.
 - PR titles and commit messages follow Conventional Commits (`feat(api): add health check`); release-please turns them into the changelog, the version bump and the GitHub release.
 - Link issues in the PR body (`Closes #12`).
+{%- if api_spec %}
+
+## API contract
+
+- `openapi.json` is the committed API contract. A test compares it with the running app{% if language == 'java' %} (the Testcontainers integration test, so Docker is required){% endif %}. After changing endpoints or models, regenerate it with `UPDATE_OPENAPI=1` (PowerShell: `$env:UPDATE_OPENAPI=1`) and the test command{% if language == 'python' %} (`uv run pytest tests/test_openapi.py`){% else %} (`./gradlew test`){% endif %}, review the diff and commit it with the change.
+{%- if github_ci %}
+- The `api-compat` CI job diffs `openapi.json` against the base branch with oasdiff. Error-level breaking changes (removed endpoints, new required fields, narrowed types) fail the PR unless they are declared: put `!` in the title (`feat(api)!: drop v1 orders`) and a line starting `BREAKING CHANGE: <what clients must do>` in the PR body. Prefer additive, backward-compatible changes.
+{%- endif %}
+{%- endif %}
+{%- if git_lfs %}
+
+## Large files (Git LFS)
+
+- Binaries matching the LFS patterns in `.gitattributes` are stored in Git LFS. Track new kinds with `git lfs track "<glob>"` and commit `.gitattributes` with them.
+- Never run `git lfs migrate import` or `export` without `--no-rewrite` unless the user asks: it rewrites history and needs a force push.
+{%- endif %}

@@ -18,6 +18,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+{%- if git_lfs %}
+        with:
+          lfs: true
+{%- endif %}
       - uses: actions/setup-java@v6
         with:
           distribution: temurin

@@ -205,6 +205,10 @@ const createInput = obj(
     ),
     docker: bool("Add a Dockerfile (backend and next profiles)."),
     github_ci: bool("Add GitHub Actions CI.", true),
+    git_lfs: bool(
+      "Track large binaries (media, models, datasets) with Git LFS. Ask the user; needs git-lfs.",
+      false,
+    ),
     initialize_git: bool("git init (main) and install prek hooks.", true),
     install_deps: bool("Install dependencies after generation.", true),
     package_name: str("Python import package name.", { pattern: "^[a-z][a-z0-9_]{0,59}$" }),
@@ -250,6 +254,7 @@ export function buildAnswers(a: CreateArgs): Record<string, unknown> {
     mcp_servers: a.mcp_servers,
     docker: a.docker,
     github_ci: a.github_ci,
+    git_lfs: a.git_lfs,
     initialize_git: a.initialize_git,
     install_deps: a.install_deps,
   };
@@ -288,8 +293,12 @@ const tools = [
         mcp_servers: ["context7", "github"],
         docker: "default true for backend and next profiles",
         github_ci: "default true",
+        git_lfs: "default false; ask the user",
+        apiContract:
+          "python/backend and java/backend commit openapi.json; CI fails PRs with undeclared breaking API changes (oasdiff)",
       },
       gitAvailable: available("git"),
+      gitLfsAvailable: available("git-lfs"),
     }),
   }),
   tool({
@@ -341,7 +350,7 @@ const tools = [
         );
       }
       const data = buildAnswers(a);
-      if (a.initialize_git) requireBinaries(["git"]);
+      if (a.initialize_git) requireBinaries(a.git_lfs ? ["git", "git-lfs"] : ["git"]);
       if (a.install_deps) requireBinaries(CATALOG[a.language].requires);
 
       const source = templateSource(ctx.provider);
