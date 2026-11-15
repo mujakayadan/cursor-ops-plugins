@@ -127,8 +127,8 @@ Every repository, this one included, follows one branch and release flow:
 
 | Branch | Role | Receives | Merge method |
 |---|---|---|---|
-| `main` | production | PRs from `dev` (or `qa`/`staging`), Dependabot, release-please | merge commit |
-| `dev` | integration | PRs from `<github-user>/<type>/<kebab-name>` branches; the automatic `main → dev` sync | squash (features), merge commit (sync) |
+| `main` | production | PRs from `dev` (or `qa`/`staging`), Dependabot, release-please | merge commit (user merges promote and release-please) |
+| `dev` | integration | PRs from `<github-user>/<type>/<kebab-name>` branches; the automatic `main → dev` sync | squash (agent merges features), merge commit (agent merges sync) |
 | `qa`, `staging` | optional, only when asked | promotions | merge commit |
 
 Work branch types are `feat`, `fix`, `chore`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `style`, `revert` and `hotfix`. PR titles follow Conventional Commits. Each PR covers one concern; leave unrelated dirty files out of the commit. Concurrent agents use linked git worktrees so they do not share a working tree. In this suite, that is `ops worktree add <user>/<type>/<name>` (creates `<repo>-wt/<user>/<type>/<kebab>` beside the primary checkout); other repos use plain `git worktree add`. This suite's shared read server tracks git HEAD and refreshes on `ops status`, `ops doctor` and workspace open.
