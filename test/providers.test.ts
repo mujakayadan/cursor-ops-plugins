@@ -7,6 +7,8 @@ import github, {
   mergeMethodFor,
   rulesetFor,
 } from "../plugins/ops-github/provider.ts";
+import latex from "../plugins/ops-latex/provider.ts";
+import mermaid from "../plugins/ops-mermaid/provider.ts";
 import msgraph, {
   outsideDomains,
   requestArgs,
@@ -15,7 +17,7 @@ import msgraph, {
 import scaffold from "../plugins/ops-scaffold/provider.ts";
 import vercel from "../plugins/ops-vercel/provider.ts";
 
-const providers = [github, digitalocean, vercel, aws, scaffold, msgraph];
+const providers = [github, digitalocean, vercel, aws, scaffold, msgraph, mermaid, latex];
 
 describe("provider catalogs", () => {
   for (const p of providers) {

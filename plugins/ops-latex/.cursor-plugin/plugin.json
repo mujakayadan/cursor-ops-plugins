@@ -1,0 +1,18 @@
+{
+  "name": "ops-latex",
+  "displayName": "Ops: LaTeX & TikZ",
+  "version": "1.5.0",
+  "description": "Author LaTeX documents and TikZ diagrams: safe compiles (no shell escape) with PNG previews and parsed errors, PDF/SVG/PNG export, and verified templates for transformer, attention, CNN and MLP architecture diagrams.",
+  "author": {
+    "name": "Muja Kayadan"
+  },
+  "license": "MIT",
+  "keywords": [
+    "latex",
+    "tikz",
+    "diagrams",
+    "neural-networks",
+    "authoring"
+  ],
+  "category": "developer-tools"
+}

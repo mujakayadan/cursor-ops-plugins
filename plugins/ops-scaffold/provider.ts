@@ -8,8 +8,9 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, isAbsolute, join, normalize, relative, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { resolveBinary, runCommand } from "./lib/core/cli.ts";
+import { absPath, checkPath as checkScopedPath } from "./lib/core/paths.ts";
 import {
   bool,
   type Infer,
@@ -76,8 +77,6 @@ const NEXT_STEPS: Record<Language, string[]> = {
   java: ["./gradlew build   (Windows: gradlew.bat build)"],
 };
 
-const absPath = (description: string) =>
-  str(description, { pattern: '^([A-Za-z]:[\\\\/]|/)[^\\u0000<>|"?*]{0,400}$' });
 const ref = str("Template git tag or commit (default: latest tag, else HEAD).", {
   pattern: "^[A-Za-z0-9][A-Za-z0-9._/-]{0,99}$",
 });
@@ -89,23 +88,8 @@ function templateSource(pcfg: ProviderConfig): string {
   return pcfg.source || DEFAULT_SOURCE;
 }
 
-function checkPath(raw: string, pcfg: ProviderConfig): string {
-  const path = normalize(raw);
-  if (!isAbsolute(path) || raw.split(/[\\/]/).includes("..")) {
-    throw new ToolError("path must be absolute and must not contain '..'");
-  }
-  const roots = pcfg.scope.allowedRoots ?? [];
-  const within = (root: string) => {
-    const rel = relative(resolve(root), path);
-    return rel === "" || (!rel.startsWith("..") && !isAbsolute(rel));
-  };
-  if (roots.length && !roots.some(within)) {
-    throw new ToolError(
-      `${path} is outside providers.scaffold.scope.allowedRoots (${roots.join(", ")})`,
-    );
-  }
-  return path;
-}
+const checkPath = (raw: string, pcfg: ProviderConfig) =>
+  checkScopedPath(raw, pcfg.scope.allowedRoots, "scaffold");
 
 function available(name: string): boolean {
   try {

@@ -1,0 +1,9 @@
+[
+  { "name": "unknown template rejected", "server": "read", "tool": "latex_templates", "arguments": { "name": "resnet-9000" }, "expectError": "unknown template" },
+  { "name": "preview needs source or file", "server": "read", "tool": "latex_preview", "arguments": {}, "expectError": "exactly one of source or file" },
+  { "name": "preview rejects relative file", "server": "read", "tool": "latex_preview", "arguments": { "file": "paper/main.tex" }, "expectError": "invalid format" },
+  { "name": "preview rejects non-tex file", "server": "read", "tool": "latex_preview", "arguments": { "file": "${REPO_ROOT}/README.md" }, "expectError": "must be a .tex file" },
+  { "name": "preview rejects unknown engine", "server": "read", "tool": "latex_preview", "arguments": { "source": "x", "engine": "context" }, "expectError": "must be one of: pdflatex, xelatex, lualatex" },
+  { "name": "render rejects bad output extension", "server": "write", "tool": "latex_render", "arguments": { "source": "x", "output": "${TMP}/ops-latex-contract.jpg" }, "expectError": "must end in .pdf, .svg or .png" },
+  { "name": "render rejects parent traversal", "server": "write", "tool": "latex_render", "arguments": { "source": "x", "output": "/tmp/../etc/fig.pdf" }, "expectError": "must not contain '..'" }
+]

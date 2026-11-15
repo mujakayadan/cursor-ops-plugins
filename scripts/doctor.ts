@@ -18,6 +18,11 @@ const WHOAMI: Partial<Record<string, string>> = {
   aws: "aws_whoami",
   msgraph: "msgraph_whoami",
 };
+/** Local authoring toolchains: no credentials, one status call that reports readiness. */
+const TOOLCHAIN: Partial<Record<string, string>> = {
+  mermaid: "mermaid_status",
+  latex: "latex_status",
+};
 const TIERS: ServerTier[] = ["read", "write"];
 
 const rows: { area: string; check: string; status: Status; detail: string }[] = [];
@@ -82,6 +87,20 @@ for (const p of providerPlugins()) {
       row(provider.id, `${extra} on PATH`, true);
     } catch (err) {
       row(provider.id, `${extra} on PATH`, false, message(err));
+    }
+  }
+  const status = provider.tools.find((t) => t.name === TOOLCHAIN[provider.id]);
+  if (status) {
+    try {
+      const out = (await status.run({}, makeContext(provider, status, cfg))) as Record<
+        string,
+        unknown
+      >;
+      const ready = out.ready ?? Object.values(out.engines ?? {}).some(Boolean);
+      const detail = String(out.distribution ?? out.mmdc ?? "");
+      row(provider.id, "toolchain", ready === true || null, detail.slice(0, 120));
+    } catch (err) {
+      row(provider.id, "toolchain", false, message(err).slice(0, 120));
     }
   }
   const probe = provider.tools.find((t) => t.name === WHOAMI[provider.id]);

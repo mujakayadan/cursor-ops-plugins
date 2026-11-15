@@ -1,0 +1,11 @@
+---
+description: Choose Mermaid or LaTeX/TikZ for diagrams; neural-network architecture diagrams always use LaTeX.
+alwaysApply: true
+---
+
+# Diagram routing
+
+- **Mermaid** (`mermaid-diagrams` skill, ops-mermaid): flowcharts, sequence, state, class, ER, Gantt, git graphs, mind maps, timelines, and simple system or deployment overviews. Prefer a ```mermaid block in Markdown, which GitHub renders natively.
+- **LaTeX/TikZ** (`latex-diagrams` skill, ops-latex): deep-learning and other complex technical diagrams, such as transformers, attention, encoder-decoder models, CNNs, RNNs, MLPs, diffusion or U-Net pipelines and tensor-shape flows. Also use it for anything that needs math in labels, precise alignment, stacked or 3D blocks, or a publication-quality figure. Start from `latex_templates`.
+- Don't draw a neural-network architecture in Mermaid unless the user explicitly asks for Mermaid. The Mermaid tools refuse such diagrams unless `force` is set.
+- Always preview (`mermaid_preview` / `latex_preview`) and read the PNG before you call a diagram done. Fix overlaps, crossing arrows and unreadable labels.

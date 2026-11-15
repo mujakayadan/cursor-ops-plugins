@@ -57,6 +57,16 @@
           "type": "json",
           "path": "plugins/ops-performance/.cursor-plugin/plugin.json",
           "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "plugins/ops-mermaid/.cursor-plugin/plugin.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "plugins/ops-latex/.cursor-plugin/plugin.json",
+          "jsonpath": "$.version"
         }
       ]
     }

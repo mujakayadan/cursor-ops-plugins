@@ -32,6 +32,10 @@ export interface ProviderConfig {
   scope: ProviderScope;
   defaultRegion?: string | null;
   timeZone?: string | null;
+  /** Chrome/Chromium/Edge executable for mermaid-cli. */
+  browserPath?: string | null;
+  /** TeX engine used when a LaTeX tool call doesn't pick one. */
+  engine?: string | null;
   source?: string | null;
   ref?: string | null;
 }
