@@ -7,7 +7,7 @@ description: Inspect and adjust the ops plugin suite with the ops-control tools.
 
 ## Inspect
 
-- `control_status` answers "what is installed and on": the suite checkout and branch, whether the `workspaceOpen` loader is registered, every plugin with its version and enabled state, the review settings, and which providers have privileged tools enabled.
+- `control_status` answers "what is installed and on": the suite checkout and branch, whether the `workspaceOpen` loader is registered, whether the shared read server is up and on the current commit, every plugin with its version and enabled state, the review settings, and which providers have privileged tools enabled.
 - `control_audit` answers "what happened": guard decisions (`source: "hook"`, filter `decision: "deny"` or `"ask"`), MCP tool calls (`"mcp"`), finished shell commands (`"shell"`) and MCP results (`"mcp-hook"`). Records are already redacted; quote them, never try to recover what was redacted.
 - `control_reviews` answers "what did the reviews see": per conversation, the files and static hints each lens recorded and the review requests sent.
 

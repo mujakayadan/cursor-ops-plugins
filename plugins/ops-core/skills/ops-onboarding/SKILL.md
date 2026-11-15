@@ -33,5 +33,6 @@ Run `ops doctor`. It checks CLIs, the suite loader, the plugins, the config file
 ## Troubleshooting
 - **Tool says a CLI was not found:** run `ops setup` (add the plugin name to limit it, `--optional` for feature-only tools). The servers find new installs on the next call.
 - **`ops` itself is not found:** run `pnpm run install-local` in the suite checkout and open a new terminal.
+- **Read tools fail to connect or return 401:** read tiers run on the shared server. `ops doctor` shows whether it is up and whether `OPS_MCP_TOKEN` matches; after a fresh install, quit and reopen Cursor once so it has the variable. `ops serve --restart` restarts the server; its log is `~/.ops/serve.log`.
 - **The read tier shows the same identity as the write tier:** the per-tier credentials aren't configured, so both tiers use the default login.
 - **Audit records** are in `~/.ops/audit/YYYY-MM-DD.jsonl`, with secrets redacted.

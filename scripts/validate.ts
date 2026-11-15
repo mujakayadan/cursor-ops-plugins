@@ -25,7 +25,7 @@ interface HooksFile {
   hooks: Record<string, { command: string; matcher?: string }[]>;
 }
 interface McpFile {
-  mcpServers: Record<string, { command: string; args?: string[] }>;
+  mcpServers: Record<string, { command?: string; args?: string[]; url?: string }>;
 }
 interface Frontmatter {
   fields: Record<string, string>;
@@ -180,6 +180,9 @@ for (const plugin of listPlugins()) {
     for (const [name, def] of Object.entries(json<McpFile>(mcpPath).mcpServers)) {
       if (!/^ops-[a-z0-9]+-(read|write)$/.test(name)) {
         fail(`${plugin}/mcp.json`, `server "${name}" must be named ops-<provider>-<read|write>`);
+      }
+      if (name.endsWith("-read") !== "url" in def) {
+        fail(`${plugin}/mcp.json`, `${name}: read servers use the shared url, write servers stdio`);
       }
       const entry = def.args?.find((a) => a.endsWith(".ts"));
       if (entry && !existsSync(entry.replace("${CURSOR_PLUGIN_ROOT}", root))) {

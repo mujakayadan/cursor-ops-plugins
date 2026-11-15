@@ -207,13 +207,10 @@ async function startServer(
   extraEnv: Record<string, string> = {},
 ): Promise<StartedServer> {
   const root = join(PLUGINS_DIR, plugin);
-  const mcp = readJson<{ mcpServers: Record<string, { command: string; args: string[] }> }>(
-    join(root, "mcp.json"),
-  );
-  const def = mcp.mcpServers[serverName];
-  if (!def) throw new Error(`${plugin}/mcp.json has no server ${serverName}`);
-  const args = def.args.map((a) => a.replaceAll("${CURSOR_PLUGIN_ROOT}", root));
-  const client = new McpClient(def.command, args, baseEnv(extraEnv), root);
+  const tier = /-(read|write)$/.exec(serverName)?.[1];
+  if (!tier) throw new Error(`${serverName} is not an ops-<provider>-<read|write> server`);
+  const args = [join(root, "lib", "core", "run-mcp.ts"), "--tier", tier];
+  const client = new McpClient(process.execPath, args, baseEnv(extraEnv), root);
   const init = await client.request("initialize", {
     protocolVersion: "2025-06-18",
     capabilities: {},

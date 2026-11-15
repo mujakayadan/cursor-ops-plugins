@@ -36,22 +36,6 @@ const files: Record<string, string> = {
     null,
     2,
   ),
-  "mcp.json": JSON.stringify(
-    {
-      mcpServers: {
-        [`ops-${id}-read`]: {
-          command: "node",
-          args: ["${CURSOR_PLUGIN_ROOT}/lib/core/run-mcp.ts", "--tier", "read"],
-        },
-        [`ops-${id}-write`]: {
-          command: "node",
-          args: ["${CURSOR_PLUGIN_ROOT}/lib/core/run-mcp.ts", "--tier", "write"],
-        },
-      },
-    },
-    null,
-    2,
-  ),
   "hooks/hooks.json": JSON.stringify(
     {
       version: 1,
@@ -169,5 +153,5 @@ release.packages["."]["extra-files"].push(pluginVersionFile(name));
 writeFileSync(releasePath, `${JSON.stringify(release, null, 2)}\n`);
 
 console.log(
-  `Created plugins/${name}. Next: edit provider.ts, add skills/, then run \`pnpm run sync && pnpm run ci\`.`,
+  `Created plugins/${name}. Next: edit provider.ts, add skills/, then run \`pnpm run sync && pnpm run ci\` (sync also writes mcp.json).`,
 );

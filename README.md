@@ -4,7 +4,7 @@ Cursor plugin suite for operating **GitHub, DigitalOcean, Vercel, AWS and Micros
 
 | Layer | What it is | Where |
 |---|---|---|
-| MCP (read) | `ops-<p>-read` server: side-effect-free tools, auto-allowed | `mcp.json`, `provider.ts` |
+| MCP (read) | `ops-<p>-read` server: side-effect-free tools, auto-allowed, served over loopback HTTP by the shared `ops serve` process | `mcp.json`, `provider.ts` |
 | MCP (write) | `ops-<p>-write` server: curated mutations, every call needs approval; privileged tools need opt-in + typed confirmation | same |
 | Guardrails | `beforeMCPExecution` / `beforeShellExecution` hooks (fail-closed) + server-side validation, scope checks, redaction | `hooks/hooks.json`, `lib/core` |
 | Skills | Workflows (triage, release, change sets, DNS, CI) | `skills/*/SKILL.md` |
@@ -48,7 +48,7 @@ Deliberately **not exposed** as tools: repo/project/cluster/database deletion, i
 
 ### Defense in depth
 1. **Credential separation.** Read and write servers run with different CLI identities, configured in `~/.ops/config.json`.
-2. **Tool surface.** The read server cannot list or call write tools. Privileged tools are not registered at all unless enabled.
+2. **Tool surface.** The read server cannot list or call write tools. Privileged tools are not registered at all unless enabled. Write servers run on stdio, so only Cursor, behind its hooks, can call them; the shared read server requires a bearer token.
 3. **Hooks.** Cursor asks for or denies MCP calls and CLI commands before they run. Hooks fail closed on crash or timeout.
 4. **Server checks.** Each server runs JSON-schema validation (no unknown args, anchored patterns, flag-injection safe), typed confirmation, and scope allowlists (GitHub owners, Vercel team, AWS accounts/regions, DigitalOcean protected tags).
 5. **Output hygiene.** Tokens, keys, URL credentials and secret fields are redacted. AWS and DigitalOcean env values are hidden, and output is truncated.
@@ -242,23 +242,31 @@ ops setup                # install the CLIs the enabled plugins need
 ops doctor               # CLIs, loader, plugins, config, identity per tier
 ```
 
-`install-local` does three things:
-- adds a user-level `workspaceOpen` hook that runs `scripts/workspace-plugins.ts`. When any workspace opens, it returns the paths of every enabled plugin in this checkout, so every project gets the whole suite and `git pull` updates it in place. (Cursor skips links in `~/.cursor/plugins/local` that point elsewhere, so the suite keeps none there.)
-- writes the `ops` launcher to `~/.ops/bin` and adds that folder to your user PATH (Windows; elsewhere it prints the line for your shell profile; `--no-path` skips this).
+`install-local` does four things:
+- adds a user-level `workspaceOpen` hook that runs `scripts/workspace-plugins.ts`. When any workspace opens, it starts the shared read server if needed, then returns the paths of every enabled plugin in this checkout, so every project gets the whole suite and `git pull` updates it in place. (Cursor skips links in `~/.cursor/plugins/local` that point elsewhere, so the suite keeps none there.)
+- creates the read server's token (`~/.ops/serve.token`, a random local secret, not a provider credential) and sets it as the `OPS_MCP_TOKEN` user environment variable.
+- writes the `ops` launcher to `~/.ops/bin` and adds that folder to your user PATH. On macOS and Linux it prints the two profile lines instead; `--no-user-env` skips both.
 - creates `~/.ops/config.json` from `config.example.json` if it doesn't exist.
 
-`pnpm run uninstall-local` (or `ops uninstall`) removes the hook, the launcher and the PATH entry.
+Then **quit and reopen Cursor once**, so it picks up `OPS_MCP_TOKEN`. After that, Developer: Reload Window is enough, including after each `git pull`. The plugins appear under Customize → Plugins, and their MCP servers under Settings → MCP. `pnpm run uninstall-local` (or `ops uninstall`) removes the hook, the token, the launcher and the PATH entry.
 
 | Command | What it does |
 |---|---|
-| `ops status` | Checkout, loader, plugins and review settings |
+| `ops status` | Checkout, loader, read server, plugins and review settings |
 | `ops setup [--optional] [--yes] [--dry-run] [plugin...]` | Installs missing CLIs for the enabled plugins. Each provider declares its recipes in `provider.ts` (`setup`). npm-based CLIs go into `~/.ops/tools` with pnpm (no admin rights, no PATH change); others use winget on Windows or Homebrew elsewhere. `--optional` adds feature-only tools such as Poppler and a JDK |
 | `ops doctor` | The checks above, plus sign-in per credential tier |
+| `ops serve [--background\|--stop\|--restart]` | The shared read server; foreground by default, logs to `~/.ops/serve.log` |
+| `ops agent [args...]` | The Cursor CLI agent (`agent`) with every enabled suite plugin passed as `--plugin-dir` |
 | `ops install` / `ops uninstall` | Same as `install-local` / `uninstall-local` |
 
 The MCP servers look for CLIs in `~/.ops/tools` first, then PATH, then (Windows) the PATH stored in the registry, so tools installed while Cursor is running are found on the next call without a restart.
 
-Then run **Developer: Reload Window** in Cursor, and again after each `git pull`. The plugins appear under Customize → Plugins, and the eighteen MCP servers under Settings → MCP.
+### How the MCP servers run
+
+- **Read tiers** share one long-running process, `ops serve`, on `http://127.0.0.1:47821/mcp/<provider>` (Streamable HTTP). Every window, chat and the terminal agent use it, so read tools start instantly and the server keeps warm state. The loader hook starts it before Cursor loads the plugins, and restarts it when the checkout moves to another commit. It answers loopback host names only, rejects requests from web pages, and requires `Authorization: Bearer $OPS_MCP_TOKEN`, which each plugin's `mcp.json` sends from `${env:OPS_MCP_TOKEN}`.
+- **Write tiers** stay on stdio: Cursor starts one process per window, and nothing else can reach it, so every change passes Cursor's approval hooks.
+
+`pnpm run sync` generates every provider's `mcp.json` this way.
 
 Configure least-privilege credentials per tier in `~/.ops/config.json`. See `config.example.json` and the `ops-onboarding` skill.
 
