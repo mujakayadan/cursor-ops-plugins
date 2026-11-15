@@ -97,6 +97,11 @@
           "type": "json",
           "path": "plugins/ops-oss/.cursor-plugin/plugin.json",
           "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "plugins/ops-models/.cursor-plugin/plugin.json",
+          "jsonpath": "$.version"
         }
       ]
     }

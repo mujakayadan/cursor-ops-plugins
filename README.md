@@ -89,6 +89,7 @@ plugins/
   ops-control/                    # suite status, audit and review queries, review and plugin toggles, user profile
   ops-memory/                     # knowledge graph of entities, relations and observations
   ops-oss/                        # open-source vetting from deps.dev, OSV and OpenSSF Scorecard, research skill
+  ops-models/                     # per-task model and effort from the Cursor plan and included usage
 AGENTS.md                         # agent guide: setting up a machine, changing the suite
 copier.yml                        # scaffold questions; selects templates/<language>
 templates/
@@ -203,6 +204,14 @@ It writes only the `review` and `suite` sections of `~/.ops/config.json` and the
 | `memory_forget` | write | Delete entities, observations or relations |
 
 Writes need approval, so content from a web page or an issue can't plant facts without you seeing them, and both the `ops-core` hook and the tool reject credentials. Concurrent writers are serialized with a lock file and every write replaces the file atomically. The `memory` skill covers what to recall at the start of a task and what is worth recording.
+
+## Model routing
+
+`ops-models` picks the model and effort for a task from the signed-in plan and the included-usage headroom. `models_account` reads both from the Cursor CLI (`agent about`, `agent models`). `models_route` then chooses.
+
+Included models (Grok 4.7, Grok 4.6, Grok 4.5, Composer 2.5) draw from the subscription pool. Composer 2.5 is the default for routine and parallel work. Grok 4.7 at medium effort is the default for implementation. High effort is for hard tasks, and only on plans that allow it while the pool is healthy. Fast mode stays off. Third-party models are not in the pool; on plans that list them they bill from prepaid credit, and only when you name one. Plus keeps effort at medium and has no third-party models.
+
+The chat model is the picker. The route selects a subagent model when the session allowlist has a matching id; otherwise the subagent inherits the chat model. With no CLI installed the plan is unknown and routing stays on included models at medium effort. Install and `agent login` are documented at [cursor.com/docs/cli/installation](https://cursor.com/docs/cli/installation). The tool does not read Cursor's local auth database.
 
 ## Open-source research
 

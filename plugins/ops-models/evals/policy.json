@@ -1,0 +1,22 @@
+[
+  {
+    "name": "model routing is a read",
+    "event": "beforeMCPExecution",
+    "input": {
+      "mcp_server_name": "ops-models-read",
+      "tool_name": "models_route",
+      "tool_input": "{\"task\":\"implementation\"}"
+    },
+    "expect": { "permission": "allow" }
+  },
+  {
+    "name": "account status is a read",
+    "event": "beforeMCPExecution",
+    "input": {
+      "mcp_server_name": "ops-models-read",
+      "tool_name": "models_account",
+      "tool_input": "{}"
+    },
+    "expect": { "permission": "allow" }
+  }
+]

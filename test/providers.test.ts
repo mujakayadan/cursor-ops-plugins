@@ -18,6 +18,7 @@ import github, {
 import latex from "../plugins/ops-latex/provider.ts";
 import memory from "../plugins/ops-memory/provider.ts";
 import mermaid from "../plugins/ops-mermaid/provider.ts";
+import models from "../plugins/ops-models/provider.ts";
 import msgraph, {
   outsideDomains,
   requestArgs,
@@ -41,6 +42,7 @@ const providers = [
   control,
   memory,
   oss,
+  models,
 ];
 
 describe("provider list", () => {
