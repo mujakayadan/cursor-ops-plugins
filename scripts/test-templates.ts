@@ -308,7 +308,13 @@ const CHECKS: Record<Toolchain, string[]> = {
     "uvx prek run --all-files",
   ],
 };
-const EXTRA_CHECKS: Partial<Record<string, string[]>> = { "python/library": ["uv build"] };
+const HAS_DOCKER = spawnSync("docker", ["info"], { stdio: "ignore" }).status === 0;
+const SPEC_WRITTEN = `node -e "process.exit(require('node:fs').statSync('openapi.json').size > 0 ? 0 : 1)"`;
+const EXTRA_CHECKS: Partial<Record<string, string[]>> = {
+  "python/library": ["uv build"],
+  // The Java spec test only runs with Docker (Testcontainers).
+  "java/backend": HAS_DOCKER ? [SPEC_WRITTEN] : [],
+};
 
 function run(
   cmd: string,
