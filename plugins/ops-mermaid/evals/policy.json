@@ -1,7 +1,7 @@
 [
   { "name": "status allowed", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-mermaid-read", "tool_name": "mermaid_status", "tool_input": "{}" }, "expect": { "permission": "allow" } },
   { "name": "preview allowed", "event": "beforeMCPExecution", "input": { "mcp_server_name": "plugin-ops-mermaid-ops-mermaid-read", "tool_name": "mermaid_preview", "tool_input": "{\"source\":\"flowchart LR\\n  A --> B\"}" }, "expect": { "permission": "allow" } },
-  { "name": "render asks", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-mermaid-write", "tool_name": "mermaid_render", "tool_input": "{\"source\":\"flowchart LR\\n  A --> B\",\"output\":\"D:\\\\Codes\\\\docs\\\\flow.svg\"}" }, "expect": { "permission": "ask" } },
+  { "name": "render asks", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-mermaid-write", "tool_name": "mermaid_render", "tool_input": "{\"source\":\"flowchart LR\\n  A --> B\",\"output\":\"C:\\\\code\\\\docs\\\\flow.svg\"}" }, "expect": { "permission": "ask" } },
   { "name": "render on read server denied", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-mermaid-read", "tool_name": "mermaid_render", "tool_input": "{}" }, "expect": { "permission": "deny" } },
   { "name": "unknown mermaid tool denied", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-mermaid-write", "tool_name": "mermaid_exec", "tool_input": "{}" }, "expect": { "permission": "deny" } }
 ]

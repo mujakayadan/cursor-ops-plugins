@@ -181,6 +181,22 @@ describe("review scanner", () => {
     assert.deepEqual(rules("Run `pnpm serve` to start the server.", "docs/cli.md"), []);
   });
 
+  it("flags personal and machine-specific paths but not placeholders", () => {
+    const rules = (text: string, path = "docs/setup.md") =>
+      scanEdit("standards", path, [{ new_string: text }]).map((h) => h.rule);
+    const personal = "standards/personal-path";
+    assert.deepEqual(rules(`Clone into ${["C:", "Users", "alice", "code"].join("\\")}.`), [
+      personal,
+    ]);
+    assert.deepEqual(
+      rules(`const dir = "${["", "home", "alice", "app"].join("/")}";`, "src/x.ts"),
+      [personal],
+    );
+    assert.deepEqual(rules(`Projects live in ${"D"}:\\Work\\app.`), [personal]);
+    assert.deepEqual(rules("Use `C:/Users/<you>/.ops/gh-read` or `~/code/app`."), []);
+    assert.deepEqual(rules("Set %USERPROFILE% or $HOME; see https://example.com/home/docs."), []);
+  });
+
   it("finds docs that mention identifiers an edit removed", () => {
     writeFileSync(join(root, "README.md"), "# App\n\nCall `loadOrderTotals()` first.\n");
     mkdirSync(join(root, "node_modules", "dep"), { recursive: true });
