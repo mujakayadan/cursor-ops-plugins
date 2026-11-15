@@ -69,6 +69,14 @@
     "msgraph": {
       "timeZone": null,
       "scope": { "allowedRecipientDomains": [] }
+    },
+    "mermaid": {
+      "browserPath": null,
+      "scope": { "allowedRoots": [] }
+    },
+    "latex": {
+      "engine": null,
+      "scope": { "allowedRoots": [] }
     }
   }
 }

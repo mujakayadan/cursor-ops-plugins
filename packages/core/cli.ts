@@ -35,10 +35,15 @@ function candidates(name: string): string[] {
 /** Locate a package-manager shim's JS entry point so it can run under node without a shell. */
 function shimTarget(shimPath: string): string | null {
   const text = readFileSync(shimPath, "utf8");
-  const match = text.match(/node_modules[\\/][^"'\s$]+?\.[cm]?js/);
-  if (!match) return null;
-  const target = resolve(dirname(shimPath), match[0]);
-  return existsSync(target) ? target : null;
+  // pnpm and npm shims launch `<shim dir>/<path>.js`; NODE_PATH lines also mention node_modules.
+  const anchored = text.match(/(?:%~dp0|%dp0%|\$basedir)[\\/]([^"'\s;%$]+?\.[cm]?js)\b/);
+  const loose = text.match(/node_modules[\\/][^"'\s$;]+?\.[cm]?js/);
+  for (const rel of [anchored?.[1], loose?.[0]]) {
+    if (!rel) continue;
+    const target = resolve(dirname(shimPath), rel);
+    if (existsSync(target)) return target;
+  }
+  return null;
 }
 
 /**

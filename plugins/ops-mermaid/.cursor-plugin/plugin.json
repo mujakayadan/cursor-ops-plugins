@@ -1,0 +1,17 @@
+{
+  "name": "ops-mermaid",
+  "displayName": "Ops: Mermaid Diagrams",
+  "version": "1.5.0",
+  "description": "Author Mermaid diagrams (flowcharts, sequence, state, class, ER, Gantt, mind maps): validate and preview to PNG, render to SVG/PNG/PDF, and route neural-network architecture diagrams to LaTeX/TikZ.",
+  "author": {
+    "name": "Muja Kayadan"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mermaid",
+    "diagrams",
+    "documentation",
+    "authoring"
+  ],
+  "category": "developer-tools"
+}

@@ -33,6 +33,11 @@ const CALLS: Record<string, [string, Record<string, unknown>][]> = {
     ["aws_s3_buckets", {}],
   ],
   scaffold: [["scaffold_list_templates", {}]],
+  mermaid: [["mermaid_status", {}]],
+  latex: [
+    ["latex_status", {}],
+    ["latex_templates", {}],
+  ],
   msgraph: [
     ["msgraph_whoami", {}],
     ["msgraph_mail_list", { top: 3 }],
