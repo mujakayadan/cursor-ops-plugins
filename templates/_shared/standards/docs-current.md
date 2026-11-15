@@ -1,0 +1,5 @@
+- **Same change, same turn.** When you change behavior, names, options, config keys, defaults, paths, commands, tool lists or counts, find and update every doc that describes them in the same turn: READMEs, guides, rules, skills, config references, examples, help text and code comments. Search for the old name with `rg` before you finish.
+- **Delete, don't annotate.** When a feature, option or file goes away, delete its documentation. Don't mark it as removed or deprecated.
+- **Document new user-facing behavior** where users will look for it, in the existing structure. Don't create new doc files unless asked.
+- **Current state only.** Docs describe how things work now, with no history, migration notes or "previously". Git history keeps the past. Changelogs generated from commits are the exception.
+- **Verifiable.** Commands, paths, file names, links and examples must work as written. Prefer facts the reader can check over claims.

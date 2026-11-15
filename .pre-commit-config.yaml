@@ -25,11 +25,11 @@ repos:
         language: system
         types_or: [javascript, ts, json]
       - id: sync-core
-        name: vendored core in sync
+        name: vendored core and standards rules in sync
         entry: pnpm run sync
         language: system
         pass_filenames: false
-        files: ^packages/core/
+        files: ^(packages/core/|templates/_shared/standards/|plugins/[^/]+/rules/)
       - id: typecheck
         name: tsc
         entry: pnpm run typecheck

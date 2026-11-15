@@ -12,6 +12,26 @@
 - The GitHub MCP server can write. Confirm consequential write operations (merges, releases, settings) with the user first.
 {%- endif %}
 
+## Engineering standards
+
+These are the standards of the [ops plugin marketplace](https://github.com/mujakayadan/cursor-ops-plugins). In Cursor, its `ops-standards`, `ops-docs`, `ops-security` and `ops-performance` plugins review every change against them automatically.
+
+### Clean code, current state only
+
+{% include 'templates/_shared/standards/clean-code.md' %}
+
+### Docs match the code
+
+{% include 'templates/_shared/standards/docs-current.md' %}
+
+### Secure by default
+
+{% include 'templates/_shared/standards/secure-by-default.md' %}
+
+### Performance aware
+
+{% include 'templates/_shared/standards/performance-aware.md' %}
+
 ## Branches and releases (GitOps)
 
 - `main` is production and `dev` is integration{% if github_ci %}; both change only through pull requests, and `pr-policy` CI enforces the rules below{% endif %}. Never commit or push to `main`, `dev`, `qa` or `staging` directly; the git hooks refuse it.
@@ -25,7 +45,7 @@
 
 - `openapi.json` is the committed API contract. A test compares it with the running app{% if language == 'java' %} (the Testcontainers integration test, so Docker is required){% endif %}. After changing endpoints or models, regenerate it with `UPDATE_OPENAPI=1` (PowerShell: `$env:UPDATE_OPENAPI=1`) and the test command{% if language == 'python' %} (`uv run pytest tests/test_openapi.py`){% else %} (`./gradlew test`){% endif %}, review the diff and commit it with the change.
 {%- if github_ci %}
-- The `api-compat` CI job diffs `openapi.json` against the base branch with oasdiff. Error-level breaking changes (removed endpoints, new required fields, narrowed types) fail the PR unless they are declared: put `!` in the title (`feat(api)!: drop v1 orders`) and a line starting `BREAKING CHANGE: <what clients must do>` in the PR body. Prefer additive, backward-compatible changes.
+- The `api-compat` CI job diffs `openapi.json` against the base branch with oasdiff. Error-level breaking changes (removed endpoints, new required fields, narrowed types) fail the PR unless they are declared: put `!` in the title (`feat(api)!: drop v1 orders`) and a line starting `BREAKING CHANGE: <what clients must do>` in the PR body. Prefer additive changes to the published contract; make a breaking change only when the user decides to.
 {%- endif %}
 {%- endif %}
 {%- if git_lfs %}
