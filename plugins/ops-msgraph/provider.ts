@@ -291,7 +291,8 @@ const tools = [
       "The active m365 CLI connection (account, app, tenant) and the signed-in user's profile. Call first; fails with setup steps when m365 is not logged in.",
     run: async (_a, { cli }) => {
       const status = await cli<JsonObject | string>(["status", "--output", "json"]);
-      if (typeof status !== "object" || !status.connectedAs) {
+      // connectedAs is empty for personal Microsoft accounts
+      if (typeof status !== "object" || !status.connectionName) {
         throw new ToolError(
           "m365 is not logged in. Ask the user to run `m365 login` (see the msgraph-setup skill).",
         );

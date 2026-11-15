@@ -205,6 +205,21 @@ describe("msgraph requests", () => {
     );
     assert.deepEqual(outsideDomains(["x@anything.io"], { ...pcfg, scope: {} }), []);
   });
+  it("whoami accepts personal accounts, whose status has no connectedAs", async () => {
+    const whoami = msgraph.tools.find((t) => t.name === "msgraph_whoami");
+    assert.ok(whoami);
+    const ctx = (status: unknown) =>
+      ({
+        cli: async (args: string[]) =>
+          args[0] === "status" ? status : { displayName: "Ana", mail: "ana@outlook.com" },
+      }) as unknown as ToolContext;
+    const personal = { connectionName: "personal", connectedAs: "", appTenant: "consumers" };
+    assert.deepEqual(((await whoami.run({}, ctx(personal))) as { user: unknown }).user, {
+      displayName: "Ana",
+      mail: "ana@outlook.com",
+    });
+    await assert.rejects(async () => whoami.run({}, ctx("Logged out")), /not logged in/);
+  });
   it("flattens Teams HTML to text", () => {
     assert.equal(
       stripHtml("<p>Hi&nbsp;<b>Ana</b></p><p>a &lt;b&gt; &amp;amp;</p>"),
