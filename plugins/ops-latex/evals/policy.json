@@ -1,6 +1,5 @@
 [
   { "name": "status allowed", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-latex-read", "tool_name": "latex_status", "tool_input": "{}" }, "expect": { "permission": "allow" } },
-  { "name": "templates allowed", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-latex-read", "tool_name": "latex_templates", "tool_input": "{\"name\":\"transformer\"}" }, "expect": { "permission": "allow" } },
   { "name": "preview allowed", "event": "beforeMCPExecution", "input": { "mcp_server_name": "plugin-ops-latex-ops-latex-read", "tool_name": "latex_preview", "tool_input": "{\"source\":\"\\\\begin{tikzpicture}\\\\end{tikzpicture}\"}" }, "expect": { "permission": "allow" } },
   { "name": "render asks", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-latex-write", "tool_name": "latex_render", "tool_input": "{\"file\":\"D:\\\\Codes\\\\docs\\\\model.tex\",\"output\":\"D:\\\\Codes\\\\docs\\\\model.svg\"}" }, "expect": { "permission": "ask" } },
   { "name": "render on read server denied", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-latex-read", "tool_name": "latex_render", "tool_input": "{}" }, "expect": { "permission": "deny" } },

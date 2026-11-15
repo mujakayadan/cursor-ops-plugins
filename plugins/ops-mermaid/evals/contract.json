@@ -1,7 +1,7 @@
 [
   { "name": "preview needs source or file", "server": "read", "tool": "mermaid_preview", "arguments": {}, "expectError": "exactly one of source or file" },
   { "name": "preview rejects source and file together", "server": "read", "tool": "mermaid_preview", "arguments": { "source": "flowchart LR\n  A --> B", "file": "${REPO_ROOT}/README.md" }, "expectError": "exactly one of source or file" },
-  { "name": "preview routes architectures to TikZ", "server": "read", "tool": "mermaid_preview", "arguments": { "source": "flowchart TB\n  E[Embedding] --> A[Multi-Head Attention] --> N[Add & Norm] --> F[Feed Forward] --> S[Softmax]" }, "expectError": "neural-network architecture" },
+  { "name": "preview rejects removed force flag", "server": "read", "tool": "mermaid_preview", "arguments": { "source": "flowchart LR\n  A --> B", "force": true }, "expectError": "not allowed" },
   { "name": "preview rejects relative file", "server": "read", "tool": "mermaid_preview", "arguments": { "file": "docs/flow.mmd" }, "expectError": "invalid format" },
   { "name": "preview rejects unsupported file type", "server": "read", "tool": "mermaid_preview", "arguments": { "file": "${REPO_ROOT}/package.json" }, "expectError": "file must be" },
   { "name": "render rejects bad output extension", "server": "write", "tool": "mermaid_render", "arguments": { "source": "flowchart LR\n  A --> B", "output": "${TMP}/ops-mermaid-contract.gif" }, "expectError": "must end in .svg, .png or .pdf" },

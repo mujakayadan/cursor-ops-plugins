@@ -6,14 +6,9 @@ import { describe, it } from "vitest";
 import { resolveBinary } from "../packages/core/cli.ts";
 import { evaluateShell } from "../packages/core/policy.ts";
 import type { ProviderConfig } from "../packages/core/types.ts";
-import latex, {
-  listTemplates,
-  parseLog,
-  pickEngine,
-  wrapSnippet,
-} from "../plugins/ops-latex/provider.ts";
+import latex, { parseLog, pickEngine, wrapSnippet } from "../plugins/ops-latex/provider.ts";
 import mermaid, {
-  architectureTerms,
+  complexitySignals,
   extractMermaidBlocks,
 } from "../plugins/ops-mermaid/provider.ts";
 
@@ -48,12 +43,23 @@ describe("mermaid", () => {
     assert.match(blocks[0]?.source ?? "", /^flowchart LR/);
     assert.match(blocks[1]?.source ?? "", /^sequenceDiagram/);
   });
-  it("flags neural-network architectures but not ordinary flowcharts", () => {
-    const transformer =
-      "flowchart TB\n E[Token Embedding] --> A[Multi-Head Attention] --> N[Add & Norm] --> F[Feed Forward]";
-    assert.ok(architectureTerms(transformer).length >= 3);
+  it("leaves ordinary diagrams alone", () => {
     const deploy = "flowchart LR\n dev --> ci[CI checks] --> review --> merge --> deploy[Deploy]";
-    assert.deepEqual(architectureTerms(deploy), []);
+    assert.deepEqual(complexitySignals(deploy), []);
+    const longSequence = `sequenceDiagram\n${"  A->>B: call\n  B-->>A: reply\n".repeat(30)}`;
+    assert.deepEqual(complexitySignals(longSequence), []);
+  });
+  it("flags diagrams that outgrow automatic layout", () => {
+    assert.deepEqual(complexitySignals('flowchart LR\n  x["$x_{t-1}$"] --> h["$h_t$"]'), [
+      "math notation in labels",
+    ]);
+    const nested =
+      "flowchart TB\n subgraph a\n  subgraph b\n   subgraph c\n    n1 --> n2\n   end\n  end\n end";
+    assert.deepEqual(complexitySignals(nested), ["subgraphs nested 3 deep"]);
+    const big = `flowchart LR\n${Array.from({ length: 41 }, (_, i) => `  n${i} --> n${i + 1}`).join("\n")}`;
+    assert.deepEqual(complexitySignals(big), ["41 edge lines"]);
+    const spaced = "flowchart LR\n  a ~~~ b\n  b ~~~ c\n  c ~~~ d\n  a --> d";
+    assert.deepEqual(complexitySignals(spaced), ["3 invisible spacer links"]);
   });
   it("has read status/preview tools and a write render tool", () => {
     const tiers = Object.fromEntries(mermaid.tools.map((t) => [t.name, t.tier]));
@@ -89,11 +95,6 @@ describe("latex snippets and engines", () => {
     assert.equal(pickEngine("\\usepackage[math]{unicode-math}", undefined, pcfg()), "xelatex");
     assert.equal(pickEngine("x", undefined, pcfg("lualatex")), "lualatex");
     assert.equal(pickEngine("x", undefined, pcfg("context")), "pdflatex");
-  });
-  it("ships compilable architecture templates", () => {
-    const names = listTemplates().map((t) => t.name);
-    for (const n of ["transformer", "attention", "cnn", "mlp"]) assert.ok(names.includes(n), n);
-    for (const t of listTemplates()) assert.ok(t.title && t.description, t.name);
   });
 });
 

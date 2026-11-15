@@ -1,13 +1,19 @@
 ---
 name: mermaid-diagrams
-description: Write, validate and render Mermaid diagrams (flowchart, sequence, state, class, ER, Gantt, git graph, mind map, timeline) with the ops-mermaid tools. Use when the user asks for a diagram, chart or flow in Markdown, docs or a README, or to fix a Mermaid parse error. Neural-network architectures go to the latex-diagrams skill instead.
+description: Write, validate and render Mermaid diagrams (flowchart, sequence, state, class, ER, Gantt, git graph, mind map, timeline) with the ops-mermaid tools. Use when the user asks for a diagram, chart or flow in Markdown, docs or a README, or to fix a Mermaid parse error. Complicated diagrams (precise layout, math, nested groups, 3D blocks, e.g. deep-learning architectures) go to the latex-diagrams skill instead.
 ---
 
 # Mermaid diagrams
 
 ## Pick the tool first
 
-Mermaid suits boxes and arrows with automatic layout. If the diagram is a **neural-network or deep-learning architecture** (transformer, attention, CNN, encoder-decoder, MLP, U-Net) or needs math, precise alignment or stacked/3D blocks, stop and use the `latex-diagrams` skill (ops-latex). The Mermaid tools refuse architecture-like diagrams unless the user explicitly asked for Mermaid (`force: true`).
+Mermaid suits boxes and arrows where automatic layout is good enough. If the diagram is **complicated**, stop and use the `latex-diagrams` skill (ops-latex) instead. Complicated means it needs any of:
+- precise placement, such as columns, stacks or layers;
+- nested or repeated groups, or parallel and skip paths that must stay untangled;
+- math in labels, or 3D blocks;
+- publication quality.
+
+Deep-learning architectures are a typical case, but so are detailed block diagrams and system figures. The exception is when the user explicitly asks for Mermaid. `mermaid_preview` adds an `advice` field when a diagram shows these signs (math, deeply nested subgraphs, a very large flowchart, spacer links fighting the layout).
 
 | Need | Mermaid type |
 | --- | --- |

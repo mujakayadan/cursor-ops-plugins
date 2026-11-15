@@ -1,5 +1,4 @@
 [
-  { "name": "unknown template rejected", "server": "read", "tool": "latex_templates", "arguments": { "name": "resnet-9000" }, "expectError": "unknown template" },
   { "name": "preview needs source or file", "server": "read", "tool": "latex_preview", "arguments": {}, "expectError": "exactly one of source or file" },
   { "name": "preview rejects relative file", "server": "read", "tool": "latex_preview", "arguments": { "file": "paper/main.tex" }, "expectError": "invalid format" },
   { "name": "preview rejects non-tex file", "server": "read", "tool": "latex_preview", "arguments": { "file": "${REPO_ROOT}/README.md" }, "expectError": "must be a .tex file" },
