@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.1](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.9.0...v1.9.1) (2026-11-15)
+
+
+### Bug Fixes
+
+* **models:** match routing docs to the route and cache the account read ([#62](https://github.com/mujakayadan/cursor-ops-plugins/issues/62)) ([31db613](https://github.com/mujakayadan/cursor-ops-plugins/commit/31db613031f731927095167de72380d5d53ce938))
+
 ## [1.9.0](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.8.0...v1.9.0) (2026-11-15)
 
 

@@ -1,7 +1,7 @@
 {
   "name": "ops-msgraph",
   "displayName": "Ops: Microsoft 365 (Graph)",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "description": "Outlook mail, calendar and Microsoft Teams through Microsoft Graph and the m365 CLI, with separate read and write MCP servers, recipient-domain fences and m365 guardrails.",
   "author": {
     "name": "Muja Kayadan"

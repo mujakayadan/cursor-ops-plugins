@@ -1,7 +1,7 @@
 {
   "name": "ops-latex",
   "displayName": "Ops: LaTeX & TikZ",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "description": "Author LaTeX documents and TikZ diagrams: safe compiles (no shell escape) with PNG previews and parsed errors, PDF/SVG/PNG export, and guidance for complicated figures such as deep-learning architectures and detailed block diagrams.",
   "author": {
     "name": "Muja Kayadan"
