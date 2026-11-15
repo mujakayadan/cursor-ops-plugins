@@ -1,5 +1,5 @@
 import { resolveBinary, runCommand } from "./lib/core/cli.ts";
-import { type AccountView, PLANS, type Plan } from "./route.ts";
+import type { AccountView, Plan } from "./route.ts";
 
 const SECRET_KEY = /token|secret|password|cookie|email|authorization|api.?key/i;
 const MODEL_ID = /^[A-Za-z0-9][A-Za-z0-9._:+-]{1,80}$/;
@@ -76,7 +76,6 @@ export function parseAccount(about: string, modelsText: string, cli: boolean): A
     }
   }
   if (plan === "unknown") plan = parsePlan(about);
-  if (!PLANS.includes(plan)) plan = "unknown";
   const thirdParty = models.length
     ? models.some((id) => !/grok|composer|^auto$|^cursor/i.test(id))
     : null;
@@ -91,8 +90,10 @@ const empty = (): AccountView => ({
   cli: null,
 });
 
-/** Read plan and models from the Cursor CLI. Missing CLI yields an unknown account, not an error. */
-export async function loadAccount(): Promise<AccountView> {
+const ACCOUNT_TTL_MS = 30_000;
+let cached: { at: number; account: AccountView } | undefined;
+
+async function readAccount(): Promise<AccountView> {
   try {
     resolveBinary("agent");
   } catch {
@@ -107,4 +108,12 @@ export async function loadAccount(): Promise<AccountView> {
     models.code === 0 ? models.stdout : "",
     true,
   );
+}
+
+/** Read plan and models from the Cursor CLI. Missing CLI yields an unknown account, not an error. */
+export async function loadAccount(force = false): Promise<AccountView> {
+  if (!force && cached && Date.now() - cached.at < ACCOUNT_TTL_MS) return cached.account;
+  const account = await readAccount();
+  cached = { at: Date.now(), account };
+  return account;
 }

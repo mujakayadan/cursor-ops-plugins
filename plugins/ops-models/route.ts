@@ -73,9 +73,14 @@ function caps(plan: Plan): Caps {
   }
 }
 
+/** Remaining included-pool percent below this uses Composer only. */
+const POOL_LOW_PERCENT = 15;
+/** Remaining included-pool percent below this keeps effort at medium. Unknown remaining counts as tight. */
+const POOL_TIGHT_PERCENT = 40;
+
 function pressure(remaining: number | null): "ok" | "tight" | "low" {
-  if (remaining !== null && remaining < 15) return "low";
-  if (remaining === null || remaining < 40) return "tight";
+  if (remaining !== null && remaining < POOL_LOW_PERCENT) return "low";
+  if (remaining === null || remaining < POOL_TIGHT_PERCENT) return "tight";
   return "ok";
 }
 
@@ -91,17 +96,14 @@ function matchSlug(prefer: string, available: string[]): string | null {
   return hits.find((id) => !/fast/i.test(id)) ?? hits[0] ?? null;
 }
 
-/** High effort only. A medium slug must not be upgraded to the high-fast variant. */
-function highSlug(
-  family: "grok-4.7" | "grok-4.6",
-  available: string[],
-  allowFast: boolean,
-): string | null {
+/** High effort only. Prefers a high id that is not fast, then the high-fast id when that is the only one. */
+function highSlug(family: "grok-4.7", available: string[]): string | null {
   const hits = available.filter((id) => compact(id).includes(compact(family)));
-  const high = hits.find((id) => /high/i.test(id) && !/fast/i.test(id));
-  if (high) return high;
-  if (!allowFast) return null;
-  return hits.find((id) => /high/i.test(id)) ?? null;
+  return (
+    hits.find((id) => /high/i.test(id) && !/fast/i.test(id)) ??
+    hits.find((id) => /high/i.test(id)) ??
+    null
+  );
 }
 
 function includedRoute(
@@ -118,7 +120,7 @@ function includedRoute(
   const model = grok ? "grok-4.7" : "composer-2.5";
   const effort = wantHigh ? "high" : "medium";
   const context = long && planCaps.long && level === "ok" ? "500k" : "256k";
-  const taskModel = effort === "high" ? highSlug("grok-4.7", subagents, true) : null;
+  const taskModel = effort === "high" ? highSlug("grok-4.7", subagents) : null;
   const reason =
     level === "low"
       ? "Included pool is nearly spent, so this stays on Composer 2.5."
@@ -168,7 +170,7 @@ export function route(input: RouteInput): Route {
       effort: family === "composer-2.5" ? "medium" : fallback.effort,
       taskModel:
         family === "grok-4.7" && fallback.effort === "high"
-          ? highSlug("grok-4.7", input.subagents, true)
+          ? highSlug("grok-4.7", input.subagents)
           : null,
       reason: `Using ${family} as requested. It draws from the included pool.`,
     };
@@ -187,7 +189,7 @@ export function route(input: RouteInput): Route {
       ...fallback,
       model: "grok-4.7",
       effort: high ? "high" : "medium",
-      taskModel: high ? highSlug("grok-4.7", input.subagents, true) : null,
+      taskModel: high ? highSlug("grok-4.7", input.subagents) : null,
       reason: third
         ? "No third-party model was named, so this stays on Grok 4.7. Name one to spend prepaid credit."
         : "Third-party models are not on this plan. Grok 4.7 is the included model for hard work.",
