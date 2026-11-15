@@ -147,9 +147,20 @@ const PERFORMANCE_RULES: LineRule[] = [
 const HISTORY =
   /\b(?:previously|formerly|used to (?:be|use|return|call|have)|no longer|anymore|(?:was|were|got|has been) (?:renamed|replaced|removed|moved|changed|rewritten)|renamed (?:from|to)|(?:old|legacy|previous) (?:behaviou?r|implementation|version|approach|code|api|format|name)|backwards?[- ]compat\w*|for (?:backward |legacy )?compatibility|kept for compat\w*|deprecated|this (?:PR|change|commit|refactor) |we (?:changed|switched|moved|now)|now (?:uses|supports|returns|handles|lives)|correction:|as of v?\d)/i;
 const COMMENT = /(?:\/\/|\/\*|^\s*\*|#|<!--|^\s*--\s)/;
-/** A named user's home (placeholders like `<you>`, `$USER` or `%USERNAME%` pass) or a data-drive folder. */
-const PERSONAL_PATH =
-  /\b[A-Za-z]:[\\/]+Users[\\/]+(?![<{$%]|(?:Public|Default|you|me|user|username|name)\b)[\w.-]+|(?:^|[\s"'`(=])\/(?:Users|home)\/(?![<{$]|(?:you|me|user|username|name)\b)[\w.-]+|\b[D-Z]:[\\/]+[A-Za-z]\w*/;
+/** A home folder name that is a placeholder or shared system folder rather than a real user. */
+const PLACEHOLDER_USER = /(?:[<{$%]|(?:Public|Default|Shared|you|me|user|username|name)(?![\w.-]))/;
+const WINDOWS_HOME = new RegExp(
+  String.raw`\b[a-z]:[\\/]+Users[\\/]+(?!${PLACEHOLDER_USER.source})[\w.-]+`,
+);
+const POSIX_HOME = new RegExp(
+  String.raw`(?:^|[\s"'\x60(=:>/]|\/mnt\/[a-z])\/(?:Users|home)\/(?!${PLACEHOLDER_USER.source})[\w.-]+`,
+);
+/** A folder on a drive other than the system drive `C:`. */
+const DATA_DRIVE = /\b[d-z]:[\\/]+[a-z]\w*/;
+const PERSONAL_PATH = new RegExp(
+  [WINDOWS_HOME, POSIX_HOME, DATA_DRIVE].map((r) => r.source).join("|"),
+  "i",
+);
 
 const STANDARDS_RULES: LineRule[] = [
   {

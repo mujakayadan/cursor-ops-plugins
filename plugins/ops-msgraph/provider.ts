@@ -653,7 +653,7 @@ const tools = [
       "Events (recurring ones expanded) between two instants, in start order, with attendees, responses and Teams join links. Defaults to the next 7 days in the user's time zone.",
     input: obj({
       start: instant(
-        "Window start, ISO 8601 with offset (e.g. 2026-11-16T00:00:00+03:00). Default now.",
+        "Window start, ISO 8601 with offset (e.g. 2026-11-16T00:00:00-05:00). Default now.",
       ),
       end: instant("Window end, ISO 8601 with offset. Default start + 7 days."),
       calendarId: graphId("Calendar (default calendar when omitted)"),
