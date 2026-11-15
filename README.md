@@ -130,11 +130,11 @@ Every repository, this one included, follows one branch and release flow:
 | `dev` | integration | PRs from `<github-user>/<type>/<kebab-name>` branches; the automatic `main → dev` sync | squash (features), merge commit (sync) |
 | `qa`, `staging` | optional, only when asked | promotions | merge commit |
 
-Work branch types are `feat`, `fix`, `chore`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `style`, `revert` and `hotfix`. PR titles follow Conventional Commits. Each PR covers one concern; leave unrelated dirty files out of the commit. Concurrent agents use linked worktrees (`ops worktree add <user>/<type>/<name>`) so they do not share a working tree. The shared read server tracks git HEAD and refreshes on `ops status`, `ops doctor` and workspace open.
+Work branch types are `feat`, `fix`, `chore`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `style`, `revert` and `hotfix`. PR titles follow Conventional Commits. Each PR covers one concern; leave unrelated dirty files out of the commit. Concurrent agents use linked git worktrees so they do not share a working tree. In this suite, that is `ops worktree add <user>/<type>/<name>` (creates `<repo>-wt/<user>/<type>/<kebab>` beside the primary checkout); other repos use plain `git worktree add`. This suite's shared read server tracks git HEAD and refreshes on `ops status`, `ops doctor` and workspace open.
 
 The flow is enforced in layers that all work on GitHub Free:
 - **CI:** the `pr-policy` workflow checks the target, the branch name (its user part must match the PR author) and the title.
-- **Local hooks:** prek's `no-commit-to-branch` blocks commits on environment branches; push also runs biome, tsc and vitest.
+- **Local hooks:** prek's `no-commit-to-branch` blocks commits on environment branches; each repo's push hooks run its lint and tests (in this suite: biome and tsc on commit, vitest on push).
 - **Agent guardrails:** ops-core denies pushes and commits to environment branches and badly named branches. `github_pr_merge` refuses red checks, work branches into `main`, and squashed promotions.
 - **Rulesets:** `github_repo_bootstrap` applies them where the plan allows (public repos on Free, any repo on paid plans). They block deletion and force pushes, require a PR, resolved conversations and `pr-policy`, and set the merge methods. There are no bypass actors.
 
@@ -339,10 +339,11 @@ Then **quit and reopen Cursor once**, so it picks up `OPS_MCP_TOKEN`. After that
 
 | Command | What it does |
 |---|---|
-| `ops status` | Checkout, loader, read server, plugins and review settings |
+| `ops status` | Checkout, loader, read server, plugins and review settings; refreshes the read server when HEAD moved |
 | `ops setup [--optional] [--yes] [--dry-run] [plugin...]` | Installs missing CLIs for the enabled plugins. Each provider declares its recipes in `provider.ts` (`setup`). npm-based CLIs go into `~/.ops/tools` with pnpm (no admin rights, no PATH change); others use winget on Windows or Homebrew elsewhere. `--optional` adds feature-only tools such as Poppler and a JDK |
-| `ops doctor [--json]` | Runtime, loader, token, read server, config, plugins, and per provider its CLIs, toolchain and sign-in per credential tier. Every failure comes with a fix; sign-in fixes come from the provider's `onboarding` in `provider.ts`. `--json` is for agents |
+| `ops doctor [--json]` | Runtime, loader, token, read server, config, plugins, and per provider its CLIs, toolchain and sign-in per credential tier. Refreshes a stale read server first. Every failure comes with a fix; sign-in fixes come from the provider's `onboarding` in `provider.ts`. `--json` is for agents |
 | `ops serve [--background\|--stop\|--restart]` | The shared read server; foreground by default, logs to `~/.ops/serve.log` |
+| `ops worktree add\|list\|remove …` | Linked suite checkouts for concurrent agents (`<repo>-wt/<user>/<type>/<kebab>` from `origin/dev`; see `ops worktree --help`) |
 | `ops agent [args...]` | The Cursor CLI agent (`agent`) with every enabled suite plugin passed as `--plugin-dir` |
 | `ops install [--no-user-env]` / `ops uninstall` | Registers or removes the loader hook, the read server token, the `ops` launcher and its PATH entry (see above) |
 

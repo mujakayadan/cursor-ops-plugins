@@ -180,6 +180,19 @@ const onEnvBranch = (p: HookPayload): boolean => {
   return Boolean(cwd) && ENV_BRANCH_RE.test(currentBranch(cwd) ?? "");
 };
 
+/** `<github-user>/<type>/<kebab-name>` work branches (not environment branches). */
+export const WORK_BRANCH_RE = new RegExp(
+  `^[A-Za-z0-9][A-Za-z0-9-]*/(?:${BRANCH_TYPES.join("|")})/[a-z0-9][a-z0-9._-]*$`,
+);
+
+export function assertWorkBranch(branch: string): void {
+  if (!WORK_BRANCH_RE.test(branch)) {
+    throw new Error(
+      `Branch '${branch}' must be <github-user>/<type>/<kebab-name> with type one of: ${BRANCH_TYPES.join(", ")}.`,
+    );
+  }
+}
+
 const BRANCH_NAME = String.raw`(?:${ENV_BRANCHES}|[A-Za-z0-9][A-Za-z0-9-]*\/(?:${BRANCH_TYPES.join("|")})\/[a-z0-9][a-z0-9._-]*)${END}`;
 
 export const GITOPS_RULES: ShellRule[] = [
