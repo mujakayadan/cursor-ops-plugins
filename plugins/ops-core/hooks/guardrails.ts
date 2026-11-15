@@ -127,6 +127,13 @@ export const GIT_RULES: ShellRule[] = [
     reason: "Force-deleting a branch can lose unmerged commits.",
   },
   {
+    id: "git-lfs-migrate",
+    decision: "ask",
+    re: re(`${GIT}lfs\\s+migrate\\s+(?:import|export)\\b(?!${A}\\s--no-rewrite\\b)`, ""),
+    reason:
+      "`git lfs migrate` rewrites every commit it touches; collaborators must re-clone and it needs a force push.",
+  },
+  {
     id: "git-hooks-bypass",
     decision: "ask",
     re: re(

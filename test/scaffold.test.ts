@@ -68,6 +68,7 @@ describe("scaffold buildAnswers", () => {
     agents: ["cursor"],
     mcp_servers: [],
     github_ci: true,
+    git_lfs: false,
     initialize_git: false,
     install_deps: false,
   };
@@ -78,6 +79,7 @@ describe("scaffold buildAnswers", () => {
     assert.equal(data.package_name, "billing");
     assert.equal("destination" in data, false);
     assert.equal("docker" in data, false);
+    assert.equal(data.git_lfs, false);
   });
   it("rejects a profile from another language", () => {
     assert.throws(

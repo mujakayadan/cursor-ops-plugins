@@ -2,19 +2,30 @@ package {{ java_package }};
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+import tools.jackson.databind.json.JsonMapper;
 
 /** Boots the full application against a real Postgres. Skipped when Docker is unavailable. */
 @SpringBootTest
+@AutoConfigureMockMvc
 @Testcontainers(disabledWithoutDocker = true)
 class ApplicationIntegrationTest {
+
+    /** The API contract; CI diffs it against the base branch (oasdiff). */
+    private static final Path SPEC = Path.of("openapi.json");
 
     @Container
     @ServiceConnection
@@ -23,11 +34,31 @@ class ApplicationIntegrationTest {
     @Autowired
     private JdbcClient jdbc;
 
+    @Autowired
+    private MockMvcTester mvc;
+
     @Test
     void appliesFlywayMigrations() {
         Integer applied = jdbc.sql("select count(*) from flyway_schema_history where success")
                 .query(Integer.class)
                 .single();
         assertThat(applied).isPositive();
+    }
+
+    @Test
+    void openApiSpecIsCurrent() throws IOException {
+        String body = mvc.get().uri("/v3/api-docs").exchange().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        String current = JsonMapper.shared().readTree(body).toPrettyString().replace("\r\n", "\n") + "\n";
+        boolean missing = !Files.exists(SPEC);
+        if ("1".equals(System.getenv("UPDATE_OPENAPI")) || (missing && System.getenv("CI") == null)) {
+            Files.writeString(SPEC, current);
+            return;
+        }
+        assertThat(missing)
+                .as("openapi.json is missing: run the tests locally and commit it")
+                .isFalse();
+        assertThat(Files.readString(SPEC))
+                .as("openapi.json is stale: rerun the tests with UPDATE_OPENAPI=1 and commit it")
+                .isEqualTo(current);
     }
 }
