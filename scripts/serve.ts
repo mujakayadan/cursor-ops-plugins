@@ -36,13 +36,18 @@ function readBody(req: IncomingMessage): Promise<string> {
   });
 }
 
-function send(res: ServerResponse, status: number, body?: unknown): void {
+function send(
+  res: ServerResponse,
+  status: number,
+  body?: unknown,
+  headers: Record<string, string> = {},
+): void {
   if (body === undefined) {
-    res.writeHead(status);
+    res.writeHead(status, headers);
     res.end();
     return;
   }
-  res.writeHead(status, { "content-type": "application/json" });
+  res.writeHead(status, { "content-type": "application/json", ...headers });
   res.end(JSON.stringify(body));
 }
 
@@ -58,11 +63,27 @@ export function createServeServer(options: ServeOptions): Server {
     return got.length === expected.length && timingSafeEqual(got, expected);
   };
 
+  /** Logs a refused request without credential values, so a misconfigured client can be diagnosed. */
+  const refuse = (
+    req: IncomingMessage,
+    res: ServerResponse,
+    status: number,
+    reason: string,
+    headers: Record<string, string> = {},
+  ) => {
+    const auth = req.headers.authorization;
+    const authState = !auth ? "none" : auth.includes("${") ? "uninterpolated" : "mismatch";
+    process.stderr.write(
+      `[ops-serve] ${new Date().toISOString()} ${status} ${req.method} ${req.url} ${reason} host=${req.headers.host ?? ""} origin=${req.headers.origin ?? ""} auth=${authState}\n`,
+    );
+    send(res, status, { error: reason }, headers);
+  };
+
   return createServer(async (req, res) => {
     // Loopback Host names only (defeats DNS rebinding), and never a web page's request.
     const origin = req.headers.origin ?? "";
     if (!loopbackHost(req) || /^https?:/i.test(origin)) {
-      send(res, 403, { error: "forbidden" });
+      refuse(req, res, 403, "forbidden");
       return;
     }
     const path = new URL(req.url ?? "/", "http://127.0.0.1").pathname;
@@ -71,7 +92,7 @@ export function createServeServer(options: ServeOptions): Server {
       return;
     }
     if (!authorized(req)) {
-      send(res, 401, { error: "unauthorized" });
+      refuse(req, res, 401, "unauthorized");
       return;
     }
     if (req.method === "POST" && path === "/shutdown") {
@@ -81,12 +102,11 @@ export function createServeServer(options: ServeOptions): Server {
     }
     const handle = handlers.get(/^\/mcp\/([a-z0-9]+)$/.exec(path)?.[1] ?? "");
     if (!handle) {
-      send(res, 404, { error: "unknown server" });
+      refuse(req, res, 404, "unknown server");
       return;
     }
     if (req.method !== "POST") {
-      res.writeHead(405, { allow: "POST" });
-      res.end();
+      refuse(req, res, 405, "method not allowed", { allow: "POST" });
       return;
     }
     let body: unknown;
@@ -126,7 +146,11 @@ async function main(): Promise<void> {
     token,
     providers,
     head: gitHead(REPO_ROOT).head,
-    onShutdown: () => server.close(() => process.exit(0)),
+    onShutdown: () => {
+      // Clients such as Cursor hold keep-alive connections that would keep close() waiting.
+      server.close(() => process.exit(0));
+      server.closeAllConnections();
+    },
   });
   server.on("error", (err: NodeJS.ErrnoException) => {
     console.error(

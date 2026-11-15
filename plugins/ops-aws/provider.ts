@@ -780,6 +780,13 @@ const provider: Provider = {
       docs: "https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html",
     },
   ],
+  onboarding: {
+    whoami: "aws_whoami",
+    signIn: {
+      command: "aws configure sso",
+      note: "creates an SSO profile; select it per tier with `--profile` in providers.aws.credentials, and renew with `aws sso login --profile <name>`",
+    },
+  },
   baseArgs: ["--output", "json", "--no-cli-pager"],
   baseEnv: { AWS_PAGER: "", AWS_CLI_AUTO_PROMPT: "off" },
   instructions: {

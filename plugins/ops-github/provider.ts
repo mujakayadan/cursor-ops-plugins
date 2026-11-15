@@ -891,6 +891,13 @@ const provider: Provider = {
   version: "1.0.0",
   bin: "gh",
   setup: [{ bin: "gh", winget: "GitHub.cli", brew: "gh", docs: "https://cli.github.com" }],
+  onboarding: {
+    whoami: "github_whoami",
+    signIn: {
+      command: "gh auth login --web --git-protocol https --scopes project",
+      note: "opens the browser with a one-time code; `project` is for the project-board tools",
+    },
+  },
   baseEnv: { GH_PROMPT_DISABLED: "1", NO_COLOR: "1", GH_NO_UPDATE_NOTIFIER: "1" },
   instructions: {
     read: "Read-only GitHub access (repos, PRs, issues, Actions). Prefer these tools for investigation.",

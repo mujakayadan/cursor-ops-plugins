@@ -13,7 +13,7 @@ const USAGE = `ops — the ops plugin suite from the terminal
 
   ops status              loader, read server, plugins, review settings
   ops setup [options]     install the CLIs the enabled plugins need (ops setup --help)
-  ops doctor              check CLIs, loader, config and sign-in per tier
+  ops doctor [--json]     check CLIs, loader, config and sign-in per tier, with a fix for each failure
   ops serve [--background|--stop|--restart]
                           the shared read-tier MCP server (foreground by default)
   ops agent [args...]     the Cursor CLI agent with every enabled suite plugin
@@ -68,16 +68,22 @@ async function status(): Promise<number> {
   return 0;
 }
 
+async function stop(): Promise<boolean> {
+  const stopped = await stopServer();
+  if (!stopped) console.error(`the read server did not stop; see ${serveLogPath()}`);
+  return stopped;
+}
+
 async function serve(args: string[]): Promise<number> {
   const [mode] = args;
   switch (mode) {
     case undefined:
       return script("serve.ts", []);
     case "--stop":
-      return (await stopServer()) ? 0 : 1;
+      return (await stop()) ? 0 : 1;
     case "--restart":
     case "--background": {
-      if (mode === "--restart" && !(await stopServer())) return 1;
+      if (mode === "--restart" && !(await stop())) return 1;
       const health = await ensureServer();
       console.log(
         health ? `read server pid ${health.pid}` : `did not start; see ${serveLogPath()}`,

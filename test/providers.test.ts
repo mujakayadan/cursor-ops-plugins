@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { describe, it } from "vitest";
 import aws, { hideEnvValues } from "../plugins/ops-aws/provider.ts";
 import control from "../plugins/ops-control/provider.ts";
@@ -17,6 +19,7 @@ import msgraph, {
 } from "../plugins/ops-msgraph/provider.ts";
 import scaffold from "../plugins/ops-scaffold/provider.ts";
 import vercel from "../plugins/ops-vercel/provider.ts";
+import { PLUGINS_DIR } from "../scripts/lib.ts";
 
 const providers = [github, digitalocean, vercel, aws, scaffold, msgraph, mermaid, latex, control];
 
@@ -36,6 +39,17 @@ describe("provider catalogs", () => {
       const recipes = new Set((p.setup ?? []).map((s) => s.bin));
       for (const bin of [p.bin, ...(p.requires ?? [])].filter((b) => b !== "node")) {
         assert.ok(recipes.has(bin), bin);
+      }
+    });
+    it(`${p.id}: onboarding names read tools, a sign-in for credentials, and its own skill`, () => {
+      const { whoami, status, signIn, skill } = p.onboarding ?? {};
+      const reads = new Set(p.tools.filter((t) => t.tier === "read").map((t) => t.name));
+      for (const name of [whoami, status].filter((n) => n !== undefined)) {
+        assert.ok(reads.has(name), name);
+      }
+      if (whoami) assert.ok(signIn?.command, "whoami needs signIn");
+      if (skill) {
+        assert.ok(existsSync(join(PLUGINS_DIR, `ops-${p.id}`, "skills", skill, "SKILL.md")), skill);
       }
     });
     it(`${p.id}: has at least one read and one write tool`, () => {

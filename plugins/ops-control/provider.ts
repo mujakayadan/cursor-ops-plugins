@@ -117,7 +117,7 @@ const tools = [
           command: loader,
           ...(loaderError ? { error: loaderError } : {}),
           ...(loader === null
-            ? { fix: "Run `pnpm run install-local` in the suite checkout." }
+            ? { fix: "Run `node scripts/ops.ts install` in the suite checkout." }
             : {}),
         },
         config: { path: configPath(), exists: existsSync(configPath()) },
