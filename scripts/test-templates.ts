@@ -19,6 +19,11 @@ interface Case {
   present: string[];
   absent: string[];
   json?: Record<string, (j: { mcpServers: Record<string, unknown> }) => boolean>;
+  /** Substrings a rendered file must (`true`) or must not (`false`) contain. */
+  contains?: Record<string, Record<string, boolean>>;
+  /** Run before the checks outside CI mode, like the Copier tasks on a developer machine. */
+  setup?: string[];
+  env?: Record<string, string>;
   checks: Toolchain;
 }
 
@@ -86,7 +91,10 @@ const CASES: Case[] = [
       ".cursor/rules/backend.mdc",
       "Dockerfile",
       ".github/workflows/image.yml",
+      ".github/workflows/api-compat.yml",
+      "tests/test_openapi.py",
     ],
+    contains: { ".gitattributes": { "filter=lfs": false } },
     checks: "python",
   },
   {
@@ -97,6 +105,7 @@ const CASES: Case[] = [
       license: "Apache-2.0",
       agents: ["cursor"],
       mcp_servers: ["context7", "github"],
+      git_lfs: true,
     },
     present: [
       "alembic.ini",
@@ -110,9 +119,18 @@ const CASES: Case[] = [
       ".cursor/rules/backend.mdc",
       "LICENSE",
       ".github/workflows/image.yml",
+      ".github/workflows/api-compat.yml",
+      "tests/test_openapi.py",
     ],
     absent: ["CLAUDE.md", ".claude", ".mcp.json", "src/scaffold_check/py.typed"],
     json: { ".cursor/mcp.json": (j) => Object.keys(j.mcpServers).join() === "context7,github" },
+    contains: {
+      ".gitattributes": { "*.psd filter=lfs diff=lfs merge=lfs -text": true },
+      ".github/workflows/ci.yml": { "lfs: true": true },
+      ".github/workflows/image.yml": { "lfs: true": true },
+      ".github/workflows/api-compat.yml": { "tufin/oasdiff:v": true },
+    },
+    setup: ["uv sync", "uv run pytest tests/test_openapi.py -q --no-cov"],
     checks: "python",
   },
   {
@@ -169,7 +187,8 @@ const CASES: Case[] = [
       ".claude/skills/verify/SKILL.md",
       ".vscode/extensions.json",
     ],
-    absent: [".cursor/mcp.json", ".mcp.json", ".cursor/skills"],
+    absent: [".cursor/mcp.json", ".mcp.json", ".cursor/skills", ".github/workflows/api-compat.yml"],
+    contains: { ".github/workflows/ci.yml": { "lfs: true": false } },
     checks: "typescript",
   },
   {
@@ -204,6 +223,7 @@ const CASES: Case[] = [
       ".cursor",
       "Dockerfile",
       ".github/workflows/image.yml",
+      ".github/workflows/api-compat.yml",
     ],
     checks: "java",
   },
@@ -225,11 +245,17 @@ const CASES: Case[] = [
       "src/test/java/com/example/scaffoldcheck/web/GreetingControllerTest.java",
       "src/test/java/com/example/scaffoldcheck/ApplicationIntegrationTest.java",
       ".cursor/rules/spring.mdc",
+      ".github/workflows/api-compat.yml",
     ],
     absent: [
       "src/main/java/com/example/scaffoldcheck/App.java",
       "src/main/java/com/example/scaffoldcheck/Greeter.java",
     ],
+    contains: {
+      "src/main/resources/application.yaml": { "writer-with-order-by-keys: true": true },
+    },
+    // The spec test runs on Testcontainers (skipped without Docker) and writes openapi.json.
+    env: { UPDATE_OPENAPI: "1" },
     checks: "java",
   },
   {
@@ -282,16 +308,21 @@ const CHECKS: Record<Toolchain, string[]> = {
     "uvx prek run --all-files",
   ],
 };
-const EXTRA_CHECKS: Partial<Record<string, string[]>> = { "python/library": ["uv build"] };
+const HAS_DOCKER = spawnSync("docker", ["info"], { stdio: "ignore" }).status === 0;
+const SPEC_WRITTEN = `node -e "process.exit(require('node:fs').statSync('openapi.json').size > 0 ? 0 : 1)"`;
+const EXTRA_CHECKS: Partial<Record<string, string[]>> = {
+  "python/library": ["uv build"],
+  // The Java spec test only runs with Docker (Testcontainers).
+  "java/backend": HAS_DOCKER ? [SPEC_WRITTEN] : [],
+};
 
-function run(cmd: string, cwd: string): { ok: boolean; output: string; secs: string } {
+function run(
+  cmd: string,
+  cwd: string,
+  env: NodeJS.ProcessEnv,
+): { ok: boolean; output: string; secs: string } {
   const started = Date.now();
-  const proc = spawnSync(cmd, {
-    cwd,
-    shell: true,
-    encoding: "utf8",
-    env: { ...process.env, CI: "1", NO_COLOR: "1" },
-  });
+  const proc = spawnSync(cmd, { cwd, shell: true, encoding: "utf8", env });
   return {
     ok: proc.status === 0,
     output: `${proc.stdout ?? ""}${proc.stderr ?? ""}`,
@@ -335,6 +366,12 @@ for (const c of CASES) {
     ...Object.entries(c.json ?? {})
       .filter(([p, pred]) => !pred(JSON.parse(readFileSync(join(dst, p), "utf8"))))
       .map(([p]) => `bad content ${p}`),
+    ...Object.entries(c.contains ?? {}).flatMap(([p, expected]) => {
+      const text = existsSync(join(dst, p)) ? readFileSync(join(dst, p), "utf8") : "";
+      return Object.entries(expected)
+        .filter(([needle, want]) => text.includes(needle) !== want)
+        .map(([needle, want]) => `${p} ${want ? "lacks" : "contains"} "${needle}"`);
+    }),
   ];
   if (problems.length) failures.push(`${c.id}: ${problems.join(", ")}`);
   console.log(
@@ -342,8 +379,16 @@ for (const c of CASES) {
   );
   if (renderOnly || problems.length) continue;
 
-  for (const cmd of [...CHECKS[c.checks], ...(EXTRA_CHECKS[c.id] ?? [])]) {
-    const r = run(cmd, dst);
+  const { CI: _ci, ...local } = process.env;
+  const steps = [
+    ...(c.setup ?? []).map((cmd) => ({ cmd, env: { ...local, NO_COLOR: "1" } })),
+    ...[...CHECKS[c.checks], ...(EXTRA_CHECKS[c.id] ?? [])].map((cmd) => ({
+      cmd,
+      env: { ...process.env, ...c.env, CI: "1", NO_COLOR: "1" },
+    })),
+  ];
+  for (const { cmd, env } of steps) {
+    const r = run(cmd, dst, env);
     console.log(`${r.ok ? "PASS" : "FAIL"}  ${c.id} \`${cmd}\` (${r.secs}s)`);
     if (!r.ok) {
       failures.push(`${c.id}: \`${cmd}\` failed\n${r.output.slice(-4000)}`);

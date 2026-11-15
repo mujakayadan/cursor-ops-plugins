@@ -25,7 +25,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.version || github.sha }}
+          ref: ${{ inputs.version || github.sha }}{% endraw %}{% if git_lfs %}
+          lfs: true{% endif %}{% raw %}
       - name: Image name
         id: name
         run: echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"

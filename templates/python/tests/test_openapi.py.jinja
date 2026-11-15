@@ -1,0 +1,21 @@
+"""openapi.json is the API contract; CI diffs it against the base branch (oasdiff)."""
+
+import json
+import os
+from pathlib import Path
+
+from {{ package_name }}.main import app
+
+SPEC = Path(__file__).resolve().parents[1] / "openapi.json"
+
+
+def test_openapi_spec_is_current() -> None:
+    current = json.dumps(app.openapi(), indent=2, ensure_ascii=False) + "\n"
+    missing = not SPEC.exists()
+    if os.environ.get("UPDATE_OPENAPI") == "1" or (missing and "CI" not in os.environ):
+        SPEC.write_text(current, encoding="utf-8", newline="\n")
+        return
+    assert not missing, "openapi.json is missing: run the tests locally and commit it"
+    assert SPEC.read_text(encoding="utf-8") == current, (
+        "openapi.json is stale: rerun the tests with UPDATE_OPENAPI=1 and commit it"
+    )

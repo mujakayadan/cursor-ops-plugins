@@ -23,3 +23,7 @@ management:
 
 server:
   shutdown: graceful
+
+# Serves the OpenAPI spec at /v3/api-docs; openapi.json in the repo is checked against it.
+springdoc:
+  writer-with-order-by-keys: true

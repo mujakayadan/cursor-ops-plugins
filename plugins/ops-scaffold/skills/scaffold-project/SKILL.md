@@ -24,6 +24,7 @@ Ask only what the request leaves open. Use one AskQuestion form where available:
 | Package or group id | user states one | derived from the slug; Java group `com.example` |
 | GitHub repo and its visibility | always, unless the user already said; publishing is optional | none; offer `public`, `private`, or "no GitHub repo yet" |
 | Extra environment branches | only if the user mentions QA or staging | none; `main` and `dev` always |
+| Git LFS (`git_lfs`) | the project will hold media, models, datasets or other large binaries | `false`; needs `git-lfs` (`gitLfsAvailable`) |
 
 Runtime versions are fixed by the standard (Python 3.13, Node 24, Java 25) and are not options. If the user asks for a different one, say it is the team standard and that changing it is a template change (`scaffold-template-authoring`).
 
@@ -50,10 +51,12 @@ Open the generated `AGENTS.md` and run the verification sequence it lists from t
 - TypeScript: `pnpm run check && pnpm build`
 - Java: `./gradlew build` (`gradlew.bat build` on Windows; the first run downloads Gradle and the JDK)
 
+Backend profiles commit `openapi.json` as the API contract. For `python/backend`, the template writes it before the initial commit when dependencies are installed. For `java/backend`, the first `./gradlew build` with Docker running writes it; commit it on the first feature branch.
+
 With `initialize_git` the template makes the initial commit on `main` before installing hooks. From then on, `main` and `dev` change only through pull requests.
 
 ## 5. Publish (when the user chose a visibility)
-Follow the `gitops-workflow` skill (ops-github): `github_repo_create` with the chosen `visibility` and `source` set to the project path pushes `main`. Then `github_repo_bootstrap` creates `dev` (plus any qa/staging the user asked for), the merge settings, labels and rulesets. Pass the CI job names as `requiredChecks` (`verify` for these templates). Report the `gitopsToken` hint from its result to the user.
+Follow the `gitops-workflow` skill (ops-github): `github_repo_create` with the chosen `visibility` and `source` set to the project path pushes `main`. Then `github_repo_bootstrap` creates `dev` (plus any qa/staging the user asked for), the merge settings, labels and rulesets. Pass the CI job names as `requiredChecks`: `verify`, plus `api-compat` for backend profiles. Report the `gitopsToken` hint from its result to the user.
 
 ## 6. Report
 Report the path, language and profile, what was installed, verification results, and the next commands from the tool result. Mention that `scaffold_update` (or `uvx copier update --trust`) pulls in future template improvements. Start the first change with `git switch -c <github-user>/feat/<name> dev` once `dev` exists.

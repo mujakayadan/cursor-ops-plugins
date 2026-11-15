@@ -25,7 +25,9 @@ _exclude:
   - "{% if not docker %}/Dockerfile{% endif %}"
   - "{% if not docker %}/.github/workflows/image.yml{% endif %}"
   - "{% if not docker %}/.dockerignore{% endif %}"
+  - "{% if not api_spec %}/.github/workflows/api-compat.yml{% endif %}"
   # python
+  - "{% if language == 'python' and profile != 'backend' %}/tests/test_openapi.py{% endif %}"
   - "{% if language == 'python' and profile != 'backend' %}/.env.example{% endif %}"
   - "{% if language == 'python' and profile != 'backend' %}/alembic.ini{% endif %}"
   - "{% if language == 'python' and profile != 'backend' %}/alembic{% endif %}"
@@ -57,6 +59,11 @@ _tasks:
     when: "{{ language == 'python' and install_deps }}"
   - command: [pnpm, install]
     when: "{{ language == 'typescript' and install_deps }}"
+  # Writes openapi.json, the API contract CI diffs against the base branch.
+  - command: [uv, run, pytest, tests/test_openapi.py, -q, --no-cov]
+    when: "{{ language == 'python' and api_spec and install_deps }}"
+  - command: [git, lfs, install, --local]
+    when: "{{ git_lfs and initialize_git and _copier_operation == 'copy' }}"
   # The initial commit lands on main before the hooks exist; afterwards main only changes via PRs.
   - command: 'git add -A && git commit -q -m "chore: initial commit from template" || echo Skipped the initial commit. Set git user.name and user.email, then commit on main before installing hooks.'
     when: "{{ initialize_git and _copier_operation == 'copy' }}"
@@ -215,10 +222,20 @@ docker:
   when: "{{ profile in ['backend', 'next'] }}"
   default: "{{ profile in ['backend', 'next'] }}"
 
+api_spec:
+  type: bool
+  when: false
+  default: "{{ language in ['python', 'java'] and profile == 'backend' }}"
+
 github_ci:
   type: bool
   help: Add GitHub Actions CI
   default: true
+
+git_lfs:
+  type: bool
+  help: Track large binaries (media, models, datasets) with Git LFS (needs git-lfs installed)
+  default: false
 
 initialize_git:
   type: bool
