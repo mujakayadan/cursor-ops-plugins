@@ -4,11 +4,18 @@ import { describe, it } from "vitest";
 import { assertWorkBranch, worktreePath } from "../scripts/worktree.ts";
 
 describe("ops worktree paths", () => {
-  it("places linked checkouts under <repo>-wt/<kebab>", () => {
-    const root = join("D:", "Codes", "cursor-ops-plugins");
+  it("places linked checkouts under <repo>-wt/<user>/<type>/<kebab>", () => {
+    const root = join("C:", "code", "app");
     assert.equal(
       worktreePath(root, "octocat/feat/health-check"),
-      join(dirname(root), `${basename(root)}-wt`, "health-check"),
+      join(dirname(root), `${basename(root)}-wt`, "octocat", "feat", "health-check"),
+    );
+  });
+  it("keeps distinct users from colliding on the same kebab name", () => {
+    const root = join("C:", "code", "app");
+    assert.notEqual(
+      worktreePath(root, "octocat/feat/health-check"),
+      worktreePath(root, "alice/feat/health-check"),
     );
   });
   it("accepts GitOps work branch names and rejects the rest", () => {

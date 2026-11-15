@@ -1,40 +1,29 @@
 #!/usr/bin/env node
-// Linked worktrees for concurrent agents: one branch per directory beside the primary checkout.
+// Linked worktrees for concurrent agents on this suite checkout.
 import { spawnSync } from "node:child_process";
 import { basename, dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { BRANCH_TYPES } from "../plugins/ops-core/hooks/guardrails.ts";
+import { assertWorkBranch } from "../plugins/ops-core/hooks/guardrails.ts";
 import { REPO_ROOT } from "./lib.ts";
 
-const TYPES = BRANCH_TYPES.join("|");
-const BRANCH_RE = new RegExp(`^([A-Za-z0-9][A-Za-z0-9-]*)/(?:${TYPES})/[a-z0-9][a-z0-9._-]*$`);
+const USAGE = `ops worktree — linked checkouts for concurrent agents on this suite
 
-const USAGE = `ops worktree — linked checkouts for concurrent agents
-
-  ops worktree add <user>/<type>/<kebab-name>   create from origin/dev
+  ops worktree add <user>/<type>/<kebab-name>   create from origin/dev under <repo>-wt/<user>/<type>/<kebab>
   ops worktree list                             show linked worktrees
   ops worktree remove <user>/<type>/<kebab-name>
                                                 remove the linked checkout for that branch`;
 
-export function assertWorkBranch(branch: string): void {
-  if (!BRANCH_RE.test(branch)) {
-    throw new Error(
-      `Branch '${branch}' must be <github-user>/<type>/<kebab-name> with type one of: ${BRANCH_TYPES.join(", ")}.`,
-    );
-  }
-}
+export { assertWorkBranch };
 
-/** Sibling directory `<repo>-wt/<kebab>` for a work branch. */
+/** Sibling directory `<repo>-wt/<user>/<type>/<kebab>` for a work branch. */
 export function worktreePath(repoRoot: string, branch: string): string {
   assertWorkBranch(branch);
-  const kebab = branch.split("/").pop();
-  if (!kebab) throw new Error(`Branch '${branch}' has no name segment.`);
-  return join(dirname(repoRoot), `${basename(repoRoot)}-wt`, kebab);
+  return join(dirname(repoRoot), `${basename(repoRoot)}-wt`, ...branch.split("/"));
 }
 
-function git(args: string[], opts: { cwd?: string } = {}): string {
+function git(args: string[]): string {
   const r = spawnSync("git", args, {
-    cwd: opts.cwd ?? REPO_ROOT,
+    cwd: REPO_ROOT,
     encoding: "utf8",
     windowsHide: true,
   });
