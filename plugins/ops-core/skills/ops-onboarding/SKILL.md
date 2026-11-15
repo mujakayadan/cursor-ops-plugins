@@ -28,9 +28,10 @@ Also set scope guards: `github.scope.owners`, `vercel.scope.teamId`, `aws.scope.
 Privileged actions are disabled by default. To enable them for one provider, set `providers.<p>.allowPrivileged: true`. For a temporary break-glass session, set `OPS_ALLOW_PRIVILEGED=1` in Cursor's environment. Both are audited. After changing either, restart the MCP servers (Settings → MCP, toggle the server off and on).
 
 ## Verify
-From the plugins repo, run `pnpm run doctor`. It checks CLIs, installed plugins, the config file, and the identity behind each tier. Fix every FAIL before using the write tools.
+Run `ops doctor`. It checks CLIs, the suite loader, the plugins, the config file, and the identity behind each tier. Fix every FAIL before using the write tools.
 
 ## Troubleshooting
-- **Tool says the CLI is not on PATH:** install the CLI, then restart Cursor so the MCP process inherits the new PATH.
+- **Tool says a CLI was not found:** run `ops setup` (add the plugin name to limit it, `--optional` for feature-only tools). The servers find new installs on the next call.
+- **`ops` itself is not found:** run `pnpm run install-local` in the suite checkout and open a new terminal.
 - **The read tier shows the same identity as the write tier:** the per-tier credentials aren't configured, so both tiers use the default login.
 - **Audit records** are in `~/.ops/audit/YYYY-MM-DD.jsonl`, with secrets redacted.

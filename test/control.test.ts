@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, it } from "vitest";
@@ -53,12 +53,14 @@ describe("suite loader", () => {
       join(dir, "cursor", "hooks.json"),
       JSON.stringify({ version: 1, hooks: { workspaceOpen: [{ command: "node other.js" }] } }),
     );
-    node("install-local.ts");
-    node("install-local.ts");
+    node("install-local.ts", "--no-path");
+    node("install-local.ts", "--no-path");
     const hooks = JSON.parse(readFileSync(join(dir, "cursor", "hooks.json"), "utf8"));
     assert.equal(hooks.hooks.workspaceOpen.length, 2);
     assert.ok(loaderCommand()?.includes(LOADER_SCRIPT));
-    node("install-local.ts", "--uninstall");
+    assert.ok(existsSync(join(dir, "bin", "ops.cmd")));
+    node("install-local.ts", "--uninstall", "--no-path");
+    assert.ok(!existsSync(join(dir, "bin", "ops.cmd")));
     assert.equal(loaderCommand(), undefined);
     assert.equal(
       JSON.parse(readFileSync(join(dir, "cursor", "hooks.json"), "utf8")).hooks.workspaceOpen

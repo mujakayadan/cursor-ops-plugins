@@ -179,7 +179,7 @@ Both plugins render locally and show the agent its own output: preview tools wri
 | Use for | flowcharts, sequence, state, class, ER, Gantt, git graphs, mind maps | documents, papers, equations, and complex figures in TikZ/PGFPlots |
 | Read (auto-allowed) | `mermaid_status`, `mermaid_preview` (inline source, a `.mmd` file, or every ```` ```mermaid ```` block in a Markdown file) | `latex_status`, `latex_preview` (a `.tex` file or a TikZ snippet) |
 | Write (always approved) | `mermaid_render` to `.svg`, `.png` or `.pdf` | `latex_render` to `.pdf`, `.svg` or `.png` |
-| Needs | `pnpm add -g @mermaid-js/mermaid-cli` plus Chrome, Chromium or Edge | MiKTeX or TeX Live (`pdftocairo` from Poppler, or `dvisvgm`, for images) |
+| Needs (`ops setup`) | mermaid-cli plus Chrome, Chromium or Edge | MiKTeX or TeX Live (`pdftocairo` from Poppler, or `dvisvgm`, for images; `ops setup --optional`) |
 
 **Routing.** The shared `diagram-routing` rule decides by complexity, not by topic. Mermaid gets diagrams that its automatic layout handles well. LaTeX/TikZ gets complicated ones: figures that need precise placement, nested or repeated groups, untangled parallel and skip paths, math labels, 3D blocks or publication quality. Deep-learning architectures are typical, as are detailed block diagrams, circuits and commutative diagrams. `mermaid_preview` and `mermaid_render` add an `advice` field when a Mermaid source shows such signs (math, subgraphs nested three deep, more than 40 edges, spacer links fighting the layout). The `latex-diagrams` skill covers how to design these figures from scratch: layout, styles, routing, grouping, 3D blocks, math annotations and a review checklist.
 
@@ -232,16 +232,31 @@ The template source defaults to this repo's GitHub URL. Set `providers.scaffold.
 
 ## Setup (any machine)
 
-Requirements: Node 24, pnpm (`corepack enable pnpm`), and whichever CLIs you use (`gh`, `doctl`, `aws`, `vercel`, `m365` from `npm install -g @pnp/cli-microsoft365`).
+Requirements: Node 24 and pnpm (`corepack enable pnpm`). `ops setup` installs the provider CLIs.
 
 ```powershell
 git clone https://github.com/mujakayadan/cursor-ops-plugins.git D:\Codes\cursor-ops-plugins
 cd D:\Codes\cursor-ops-plugins
-pnpm run install-local   # registers the suite loader in ~/.cursor/hooks.json, creates ~/.ops/config.json
-pnpm run doctor          # CLIs, loader, plugins, config, identity per tier
+pnpm run install-local   # suite loader for Cursor, the `ops` command, ~/.ops/config.json
+ops setup                # install the CLIs the enabled plugins need
+ops doctor               # CLIs, loader, plugins, config, identity per tier
 ```
 
-`install-local` adds a user-level `workspaceOpen` hook that runs `scripts/workspace-plugins.ts`. When any workspace opens, it returns the paths of every enabled plugin in this checkout, so every project gets the whole suite and `git pull` updates it in place. (Cursor skips links in `~/.cursor/plugins/local` that point elsewhere, so the suite keeps none there.) `pnpm run uninstall-local` removes the hook.
+`install-local` does three things:
+- adds a user-level `workspaceOpen` hook that runs `scripts/workspace-plugins.ts`. When any workspace opens, it returns the paths of every enabled plugin in this checkout, so every project gets the whole suite and `git pull` updates it in place. (Cursor skips links in `~/.cursor/plugins/local` that point elsewhere, so the suite keeps none there.)
+- writes the `ops` launcher to `~/.ops/bin` and adds that folder to your user PATH (Windows; elsewhere it prints the line for your shell profile; `--no-path` skips this).
+- creates `~/.ops/config.json` from `config.example.json` if it doesn't exist.
+
+`pnpm run uninstall-local` (or `ops uninstall`) removes the hook, the launcher and the PATH entry.
+
+| Command | What it does |
+|---|---|
+| `ops status` | Checkout, loader, plugins and review settings |
+| `ops setup [--optional] [--yes] [--dry-run] [plugin...]` | Installs missing CLIs for the enabled plugins. Each provider declares its recipes in `provider.ts` (`setup`). npm-based CLIs go into `~/.ops/tools` with pnpm (no admin rights, no PATH change); others use winget on Windows or Homebrew elsewhere. `--optional` adds feature-only tools such as Poppler and a JDK |
+| `ops doctor` | The checks above, plus sign-in per credential tier |
+| `ops install` / `ops uninstall` | Same as `install-local` / `uninstall-local` |
+
+The MCP servers look for CLIs in `~/.ops/tools` first, then PATH, then (Windows) the PATH stored in the registry, so tools installed while Cursor is running are found on the next call without a restart.
 
 Then run **Developer: Reload Window** in Cursor, and again after each `git pull`. The plugins appear under Customize → Plugins, and the eighteen MCP servers under Settings → MCP.
 

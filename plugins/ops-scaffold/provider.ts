@@ -528,6 +528,22 @@ const provider: Provider = {
   baseArgs: ["--from", `copier==${COPIER_VERSION}`, "copier"],
   baseEnv: { NO_COLOR: "1" },
   requires: ["uvx", "git"],
+  setup: [
+    {
+      bin: "uvx",
+      winget: "astral-sh.uv",
+      brew: "uv",
+      docs: "https://docs.astral.sh/uv/getting-started/installation/",
+    },
+    { bin: "git", winget: "Git.Git", brew: "git", docs: "https://git-scm.com/downloads" },
+    {
+      bin: "java",
+      winget: "EclipseAdoptium.Temurin.25.JDK",
+      brew: "--cask temurin@25",
+      docs: "https://adoptium.net",
+      optional: "Java projects",
+    },
+  ],
   instructions: {
     read: "Read-only scaffolder access: supported templates and generated-project state.",
     write: "Creates and updates projects from Copier templates. Every call needs user approval.",

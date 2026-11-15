@@ -422,6 +422,14 @@ const provider: Provider = {
   displayName: "DigitalOcean",
   version: "1.0.0",
   bin: "doctl",
+  setup: [
+    {
+      bin: "doctl",
+      winget: "DigitalOcean.Doctl",
+      brew: "doctl",
+      docs: "https://docs.digitalocean.com/reference/doctl/how-to/install/",
+    },
+  ],
   baseArgs: ["--output", "json"],
   baseEnv: { NO_COLOR: "1" },
   instructions: {

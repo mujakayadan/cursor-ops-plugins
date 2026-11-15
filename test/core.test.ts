@@ -103,6 +103,9 @@ describe("cli", () => {
     assert.equal(r.stdout, "a; echo pwned && $(x)");
   });
   it("throws a helpful error for missing binaries", () => {
-    assert.throws(() => resolveBinary("definitely-not-a-real-cli-xyz"), /not found on PATH/);
+    assert.throws(
+      () => resolveBinary("definitely-not-a-real-cli-xyz"),
+      /not found\. Run `ops setup`/,
+    );
   });
 });
