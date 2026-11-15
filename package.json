@@ -21,8 +21,6 @@
     "evals": "node evals/run.ts policy contract",
     "evals:agent": "node evals/run.ts agent",
     "ci": "pnpm run check && pnpm test && pnpm run evals",
-    "install-local": "node scripts/sync-core.ts && node scripts/install-local.ts",
-    "uninstall-local": "node scripts/install-local.ts --uninstall",
     "doctor": "node scripts/doctor.ts",
     "smoke": "node scripts/smoke.ts",
     "new-plugin": "node scripts/new-plugin.ts",

@@ -67,20 +67,20 @@ describe("config errors", () => {
 });
 
 describe("suite loader", () => {
-  it("install-local registers one loader entry and keeps other workspaceOpen hooks", () => {
+  it("ops install registers one loader entry and keeps other workspaceOpen hooks", () => {
     mkdirSync(join(dir, "cursor"), { recursive: true });
     writeFileSync(
       join(dir, "cursor", "hooks.json"),
       JSON.stringify({ version: 1, hooks: { workspaceOpen: [{ command: "node other.js" }] } }),
     );
-    node("install-local.ts", "--no-user-env");
-    node("install-local.ts", "--no-user-env");
+    node("install.ts", "--no-user-env");
+    node("install.ts", "--no-user-env");
     assert.ok(existsSync(join(dir, "serve.token")));
     const hooks = JSON.parse(readFileSync(join(dir, "cursor", "hooks.json"), "utf8"));
     assert.equal(hooks.hooks.workspaceOpen.length, 2);
     assert.ok(loaderCommand()?.includes(LOADER_SCRIPT));
     assert.ok(existsSync(join(dir, "bin", "ops.cmd")));
-    node("install-local.ts", "--uninstall", "--no-user-env");
+    node("install.ts", "--uninstall", "--no-user-env");
     assert.ok(!existsSync(join(dir, "bin", "ops.cmd")));
     assert.ok(!existsSync(join(dir, "serve.token")));
     assert.equal(loaderCommand(), undefined);

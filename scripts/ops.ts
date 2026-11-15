@@ -23,8 +23,8 @@ const USAGE = `ops — the ops plugin suite from the terminal
 const SCRIPTS = {
   setup: "setup.ts",
   doctor: "doctor.ts",
-  install: "install-local.ts",
-  uninstall: "install-local.ts",
+  install: "install.ts",
+  uninstall: "install.ts",
 } as const;
 
 type Command = keyof typeof SCRIPTS | "status" | "serve" | "agent";

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { request, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import { afterAll, beforeAll, describe, it } from "vitest";
+import { afterAll, beforeAll, describe, it, vi } from "vitest";
 import control from "../plugins/ops-control/provider.ts";
 import github from "../plugins/ops-github/provider.ts";
 import { createServeServer } from "../scripts/serve.ts";
@@ -46,6 +46,26 @@ describe("shared read server", () => {
     const body = { jsonrpc: "2.0", id: 1, method: "tools/list" };
     assert.equal((await post("/mcp/github", body, { authorization: "" })).status, 401);
     assert.equal((await post("/mcp/github", body, { authorization: "Bearer nope" })).status, 401);
+  });
+
+  it("logs a burst of identical refusals once, without the token", async () => {
+    const lines: string[] = [];
+    const spy = vi.spyOn(process.stderr, "write").mockImplementation((chunk) => {
+      lines.push(String(chunk));
+      return true;
+    });
+    try {
+      for (let i = 0; i < 5; i++) {
+        const res = await post("/mcp/nope", { jsonrpc: "2.0", id: 1, method: "tools/list" });
+        assert.equal(res.status, 404);
+      }
+    } finally {
+      spy.mockRestore();
+    }
+    const refused = lines.filter((l) => l.includes("unknown server"));
+    assert.equal(refused.length, 1);
+    assert.match(refused[0] ?? "", /auth=ok/);
+    assert.ok(!refused[0]?.includes(TOKEN));
   });
 
   it("rejects web pages and rebound host names", async () => {

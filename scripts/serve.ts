@@ -10,6 +10,7 @@ import type { Provider } from "../packages/core/types.ts";
 import { PLUGINS_DIR, providerPlugins, REPO_ROOT } from "./lib.ts";
 
 const MAX_BODY = 1_000_000;
+const LOG_INTERVAL_MS = 1000;
 
 export interface ServeOptions {
   token: string;
@@ -63,6 +64,9 @@ export function createServeServer(options: ServeOptions): Server {
     return got.length === expected.length && timingSafeEqual(got, expected);
   };
 
+  /** One line per kind of refusal per interval, so a client retrying in a loop can't fill the disk. */
+  const lastLogged = new Map<string, { at: number; suppressed: number }>();
+
   /** Logs a refused request without credential values, so a misconfigured client can be diagnosed. */
   const refuse = (
     req: IncomingMessage,
@@ -79,11 +83,20 @@ export function createServeServer(options: ServeOptions): Server {
         : auth.includes("${")
           ? "uninterpolated"
           : "mismatch";
-    const field = (value: string | undefined) => JSON.stringify((value ?? "").slice(0, 200));
-    process.stderr.write(
-      `[ops-serve] ${new Date().toISOString()} ${status} ${req.method} ${field(req.url)} ${reason} host=${field(req.headers.host)} origin=${field(req.headers.origin)} auth=${authState}\n`,
-    );
     send(res, status, { error: reason }, headers);
+    const kind = `${status} ${reason} ${authState}`;
+    const last = lastLogged.get(kind);
+    const now = Date.now();
+    if (last && now - last.at < LOG_INTERVAL_MS) {
+      last.suppressed++;
+      return;
+    }
+    lastLogged.set(kind, { at: now, suppressed: 0 });
+    const field = (value: string | undefined) => JSON.stringify((value ?? "").slice(0, 200));
+    const repeats = last?.suppressed ? ` (+${last.suppressed} like it not logged)` : "";
+    process.stderr.write(
+      `[ops-serve] ${new Date(now).toISOString()} ${status} ${req.method} ${field(req.url)} ${reason} host=${field(req.headers.host)} origin=${field(req.headers.origin)} auth=${authState}${repeats}\n`,
+    );
   };
 
   return createServer(async (req, res) => {

@@ -45,10 +45,15 @@ if (unknown.length) {
 }
 
 const TIERS: ServerTier[] = ["read", "write"];
+/** Sign-in and toolchain probes; a CLI waiting for input fails the check instead of stalling. */
+const PROBE_TIMEOUT_MS = 20_000;
 const rows: Row[] = [];
-function row(area: string, check: string, ok: boolean | null, detail = "", fix?: string): void {
+function toRow(area: string, check: string, ok: boolean | null, detail = "", fix?: string): Row {
   const status: Status = ok === null ? "WARN" : ok ? "OK" : "FAIL";
-  rows.push({ area, check, status, detail, ...(status !== "OK" && fix ? { fix } : {}) });
+  return { area, check, status, detail, ...(status !== "OK" && fix ? { fix } : {}) };
+}
+function row(...args: Parameters<typeof toRow>): void {
+  rows.push(toRow(...args));
 }
 const message = (err: unknown) => (err instanceof Error ? err.message : String(err));
 const firstLine = (err: unknown) => (message(err).split("\n")[0] ?? "").slice(0, 120);
@@ -152,69 +157,78 @@ function signInFix(provider: Provider, tier: ServerTier): string {
   return `in your terminal: ${signIn.command}${signIn.note ? ` — ${signIn.note}` : ""}${skill}`;
 }
 
-for (const p of providerPlugins()) {
-  const module = (await import(pathToFileURL(join(PLUGINS_DIR, p, "provider.ts")).href)) as {
+const probeCfg: Config | undefined = cfg && {
+  ...cfg,
+  execution: { ...cfg.execution, timeoutMs: PROBE_TIMEOUT_MS },
+};
+
+async function checkProvider(plugin: string): Promise<Row[]> {
+  const module = (await import(pathToFileURL(join(PLUGINS_DIR, plugin, "provider.ts")).href)) as {
     default: Provider;
   };
   const provider = module.default;
-  const installFix = `ops setup ${p} --yes`;
+  const id = provider.id;
+  const installFix = `ops setup ${plugin} --yes`;
+  const out: Row[] = [];
   try {
     const bin = resolveBinary(provider.bin);
-    row(provider.id, `${provider.bin} on PATH`, true, bin.prefixArgs[0] ?? bin.command);
+    out.push(toRow(id, `${provider.bin} on PATH`, true, bin.prefixArgs[0] ?? bin.command));
   } catch (err) {
-    row(provider.id, `${provider.bin} on PATH`, false, firstLine(err), installFix);
-    continue;
+    return [toRow(id, `${provider.bin} on PATH`, false, firstLine(err), installFix)];
   }
   for (const extra of (provider.requires ?? []).filter((b) => b !== provider.bin)) {
     try {
       resolveBinary(extra);
-      row(provider.id, `${extra} on PATH`, true);
+      out.push(toRow(id, `${extra} on PATH`, true));
     } catch (err) {
-      row(provider.id, `${extra} on PATH`, false, firstLine(err), installFix);
+      out.push(toRow(id, `${extra} on PATH`, false, firstLine(err), installFix));
     }
   }
   const { status: statusTool, whoami } = provider.onboarding ?? {};
   const status = provider.tools.find((t) => t.name === statusTool);
   if (status) {
+    const fix = `${installFix} --optional`;
     try {
-      const out = (await status.run({}, makeContext(provider, status, cfg))) as Record<
+      const res = (await status.run({}, makeContext(provider, status, probeCfg))) as Record<
         string,
         unknown
       >;
-      const ready = out.ready ?? Object.values(out.engines ?? {}).some(Boolean);
-      const detail = String(out.distribution ?? out.mmdc ?? "");
-      row(
-        provider.id,
-        "toolchain",
-        ready === true || null,
-        detail.slice(0, 120),
-        `${installFix} --optional`,
-      );
+      const ready = res.ready ?? Object.values(res.engines ?? {}).some(Boolean);
+      const detail = String(res.distribution ?? res.mmdc ?? "").slice(0, 120);
+      out.push(toRow(id, "toolchain", ready === true || null, detail, fix));
     } catch (err) {
-      row(provider.id, "toolchain", false, firstLine(err), `${installFix} --optional`);
+      out.push(toRow(id, "toolchain", false, firstLine(err), fix));
     }
   }
   const probe = provider.tools.find((t) => t.name === whoami);
-  if (!probe) continue;
-  for (const tier of TIERS) {
-    try {
-      const out = await probe.run({}, makeContext(provider, { ...probe, tier }, cfg));
-      row(provider.id, `${tier} credentials`, true, identity(out).slice(0, 80));
-    } catch (err) {
-      row(provider.id, `${tier} credentials`, false, firstLine(err), signInFix(provider, tier));
-    }
-  }
-  const privileged = privilegedEnabled(provider.id, cfg);
-  row(
-    provider.id,
-    "privileged tools",
-    privileged ? null : true,
-    privileged ? "ENABLED" : "disabled (default)",
-    process.env.OPS_ALLOW_PRIVILEGED === "1"
-      ? "unset OPS_ALLOW_PRIVILEGED when you are done"
-      : `set providers.${provider.id}.allowPrivileged to false when you are done`,
+  if (!probe) return out;
+  const tiers = await Promise.all(
+    TIERS.map(async (tier) => {
+      try {
+        const res = await probe.run({}, makeContext(provider, { ...probe, tier }, probeCfg));
+        return toRow(id, `${tier} credentials`, true, identity(res).slice(0, 80));
+      } catch (err) {
+        return toRow(id, `${tier} credentials`, false, firstLine(err), signInFix(provider, tier));
+      }
+    }),
   );
+  const privileged = privilegedEnabled(id, cfg);
+  return [
+    ...out,
+    ...tiers,
+    toRow(
+      id,
+      "privileged tools",
+      privileged ? null : true,
+      privileged ? "ENABLED" : "disabled (default)",
+      process.env.OPS_ALLOW_PRIVILEGED === "1"
+        ? "unset OPS_ALLOW_PRIVILEGED when you are done"
+        : `set providers.${id}.allowPrivileged to false when you are done`,
+    ),
+  ];
 }
+
+rows.push(...(await Promise.all(providerPlugins().map(checkProvider))).flat());
 
 const ok = !rows.some((r) => r.status === "FAIL");
 if (args.includes("--json")) {
