@@ -1,7 +1,7 @@
 {
   "name": "ops-models",
   "displayName": "Ops: Models",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "description": "Chooses the Cursor model and effort per task from the signed-in plan and remaining included usage. Included Cursor models are the default; third-party models spend prepaid credit and are used only when the account lists them.",
   "author": {
     "name": "Muja Kayadan"
