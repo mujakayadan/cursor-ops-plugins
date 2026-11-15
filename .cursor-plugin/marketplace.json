@@ -63,6 +63,10 @@
     {
       "name": "ops-control",
       "source": "./plugins/ops-control"
+    },
+    {
+      "name": "ops-architecture",
+      "source": "./plugins/ops-architecture"
     }
   ]
 }

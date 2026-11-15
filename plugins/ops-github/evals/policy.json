@@ -1,4 +1,5 @@
 [
+  { "name": "plan import asks for approval", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-github-write", "tool_name": "github_issues_import", "tool_input": "{\"repo\":\"acme/app\",\"issues\":[{\"key\":\"T-001\",\"title\":\"x\",\"body\":\"y\"}]}" }, "expect": { "permission": "ask" } },
   { "name": "read tool allowed", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-github-read", "tool_name": "github_pr_list", "tool_input": "{\"repo\":\"acme/app\"}" }, "expect": { "permission": "allow" } },
   { "name": "write tool asks", "event": "beforeMCPExecution", "input": { "mcp_server_name": "ops-github-write", "tool_name": "github_pr_create", "tool_input": "{\"repo\":\"acme/app\",\"title\":\"x\",\"body\":\"y\",\"head\":\"f\"}" }, "expect": { "permission": "ask" } },
   { "name": "namespaced plugin server name recognised", "event": "beforeMCPExecution", "input": { "mcp_server_name": "plugin-ops-github-ops-github-write", "tool_name": "github_pr_comment", "tool_input": "{}" }, "expect": { "permission": "ask" } },

@@ -11,7 +11,7 @@ import {
   ToolError,
   tool,
 } from "./lib/core/schema-helpers.ts";
-import type { JsonObject, Provider, ProviderConfig, ShellRule } from "./lib/core/types.ts";
+import type { Cli, JsonObject, Provider, ProviderConfig, ShellRule } from "./lib/core/types.ts";
 
 const repo = str("Repository as OWNER/NAME.", { pattern: PATTERNS.githubRepo });
 const number = int("Pull request or issue number.", { minimum: 1 });
@@ -135,6 +135,149 @@ export function rulesetFor(branch: string, requiredChecks: string[]): JsonObject
 }
 
 const errorMessage = (e: unknown): string => (e instanceof Error ? e.message : String(e));
+
+const PLAN_KEY = "^[A-Z]{1,4}-\\d{1,4}$";
+const LABEL = "^[A-Za-z0-9][A-Za-z0-9 ._:/-]{0,49}$";
+const KEY_TOKEN = /\{\{([A-Z]{1,4}-\d{1,4})\}\}/g;
+
+interface PlanImport {
+  repo: string;
+  issues: { key: string; title: string; body: string; labels?: string[]; milestone?: string }[];
+  milestones?: { title: string; dueOn?: string; description?: string }[];
+  project?: { owner: string; number: number };
+}
+
+interface IssueRef {
+  key: string;
+  number: number;
+  url: string;
+}
+
+/** The plan key an issue title starts with (`T-012 Build the order API`). */
+export const planKeyOf = (title: string): string | undefined =>
+  /^([A-Z]{1,4}-\d{1,4})\s/.exec(title)?.[1];
+
+/** Replace `{{KEY}}` tokens with issue references for the keys that have an issue. */
+export function resolveKeys(
+  body: string,
+  refs: Map<string, IssueRef>,
+): { text: string; unresolved: string[] } {
+  const unresolved: string[] = [];
+  const text = body.replace(KEY_TOKEN, (token, key: string) => {
+    const ref = refs.get(key);
+    if (ref) return `#${ref.number}`;
+    unresolved.push(key);
+    return token;
+  });
+  return { text, unresolved };
+}
+
+const lines = (text: string): string[] => text.split(/\r?\n/).filter((l) => l.trim());
+
+async function importIssues(a: PlanImport, cli: Cli) {
+  const keys = a.issues.map((i) => i.key);
+  const duplicate = keys.find((k, i) => keys.indexOf(k) !== i);
+  if (duplicate) throw new ToolError(`key ${duplicate} appears twice`);
+  const post = <T>(path: string, payload: JsonObject, method = "POST") =>
+    cli<T>(["api", "-X", method, `repos/${a.repo}/${path}`, "--input", "-"], {
+      input: JSON.stringify(payload),
+      parse: "json",
+    });
+  const fetchLines = (path: string, jq: string) =>
+    cli(["api", `repos/${a.repo}/${path}`, "--paginate", "--jq", jq], { parse: "text" }).then(
+      lines,
+    );
+
+  const refs = new Map<string, IssueRef>();
+  const issueJq = ".[] | select(.pull_request == null) | {number, title, url: .html_url} | @json";
+  for (const line of await fetchLines("issues?state=all&per_page=100", issueJq)) {
+    const issue = JSON.parse(line) as { number: number; title: string; url: string };
+    const key = planKeyOf(issue.title);
+    if (key && !refs.has(key)) refs.set(key, { key, number: issue.number, url: issue.url });
+  }
+
+  const labels = new Set(
+    (await fetchLines("labels?per_page=100", ".[].name")).map((l) => l.toLowerCase()),
+  );
+  for (const label of new Set(a.issues.flatMap((i) => i.labels ?? []))) {
+    if (labels.has(label.toLowerCase())) continue;
+    await post("labels", { name: label });
+    labels.add(label.toLowerCase());
+  }
+
+  const milestones = new Map<string, number>();
+  for (const line of await fetchLines(
+    "milestones?state=all&per_page=100",
+    ".[] | {number, title} | @json",
+  )) {
+    const m = JSON.parse(line) as { number: number; title: string };
+    milestones.set(m.title, m.number);
+  }
+  const declared = new Map((a.milestones ?? []).map((m) => [m.title, m]));
+  const milestoneNumber = async (title: string): Promise<number> => {
+    const known = milestones.get(title);
+    if (known) return known;
+    const m = declared.get(title);
+    const created = await post<{ number: number }>("milestones", {
+      title,
+      ...(m?.description ? { description: m.description } : {}),
+      ...(m?.dueOn ? { due_on: `${m.dueOn}T23:59:59Z` } : {}),
+    });
+    milestones.set(title, created.number);
+    return created.number;
+  };
+  for (const m of a.milestones ?? []) await milestoneNumber(m.title);
+
+  const created: IssueRef[] = [];
+  const skipped: IssueRef[] = [];
+  const pending: { ref: IssueRef; body: string; text: string }[] = [];
+  for (const issue of a.issues) {
+    const existing = refs.get(issue.key);
+    if (existing) {
+      skipped.push(existing);
+      continue;
+    }
+    const { text, unresolved } = resolveKeys(issue.body, refs);
+    const res = await post<{ number: number; html_url: string }>("issues", {
+      title: `${issue.key} ${issue.title}`,
+      body: text,
+      ...(issue.labels?.length ? { labels: issue.labels } : {}),
+      ...(issue.milestone ? { milestone: await milestoneNumber(issue.milestone) } : {}),
+    });
+    const ref = { key: issue.key, number: res.number, url: res.html_url };
+    refs.set(issue.key, ref);
+    created.push(ref);
+    if (unresolved.length) pending.push({ ref, body: issue.body, text });
+    if (a.project) {
+      await cli(
+        [
+          "project",
+          "item-add",
+          String(a.project.number),
+          "--owner",
+          a.project.owner,
+          "--url",
+          ref.url,
+        ],
+        { parse: "text" },
+      );
+    }
+  }
+
+  const unresolved: string[] = [];
+  for (const p of pending) {
+    const resolved = resolveKeys(p.body, refs);
+    unresolved.push(...resolved.unresolved.map((k) => `${p.ref.key} → ${k}`));
+    if (resolved.text !== p.text)
+      await post(`issues/${p.ref.number}`, { body: resolved.text }, "PATCH");
+  }
+  return {
+    created,
+    skipped,
+    ...(unresolved.length ? { unresolved } : {}),
+    next: "Write each key's issue number into TODO.md (- **Issue:** #n).",
+  };
+}
 
 const PR_FIELDS =
   "number,title,author,state,isDraft,headRefName,baseRefName,reviewDecision,updatedAt,url";
@@ -471,6 +614,55 @@ const tools = [
       for (const l of a.labels ?? []) args.push(`--label=${l}`);
       return cli(args, { parse: "text" });
     },
+  }),
+  tool({
+    name: "github_issues_import",
+    title: "Import plan as issues",
+    tier: "write",
+    description:
+      "Create a plan's epics and tasks as issues in one approved call. Each issue title starts with its key (T-012 Build the order API); keys that already have an issue are skipped, so a re-run only creates what is missing. Missing labels and milestones are created. `{{KEY}}` in a body becomes that key's issue reference (#45) once it exists, so an epic can list its tasks. Optionally adds each new issue to a Project board (needs the `project` token scope). Up to 50 issues per call; import larger plans epic by epic.",
+    input: obj(
+      {
+        repo,
+        issues: list(
+          obj(
+            {
+              key: str("Plan key, such as T-012 or E-03.", { pattern: PLAN_KEY }),
+              title: str("Title without the key.", { minLength: 1, maxLength: 200 }),
+              body,
+              labels: list(str("Label.", { pattern: LABEL }), "Labels.", { maxItems: 10 }),
+              milestone: str("Milestone title.", { minLength: 1, maxLength: 100 }),
+            },
+            ["key", "title", "body"],
+          ),
+          "Issues in plan order.",
+          { minItems: 1, maxItems: 50 },
+        ),
+        milestones: list(
+          obj(
+            {
+              title: str("Milestone title.", { minLength: 1, maxLength: 100 }),
+              dueOn: str("Due date (YYYY-MM-DD).", { pattern: "^\\d{4}-\\d{2}-\\d{2}$" }),
+              description: str("Milestone description.", { maxLength: 2000 }),
+            },
+            ["title"],
+          ),
+          "Milestones to create when missing.",
+          { maxItems: 20 },
+        ),
+        project: obj({ owner, number: int("Project number.", { minimum: 1 }) }, [
+          "owner",
+          "number",
+        ]),
+      },
+      ["repo", "issues"],
+    ),
+    scope: ownerScope,
+    summarize: (a) =>
+      `${a.repo}: create missing issues for ${a.issues.map((i) => i.key).join(", ")}${
+        a.project ? ` and add them to project ${a.project.owner}#${a.project.number}` : ""
+      }`,
+    run: (a, { cli }) => importIssues(a, cli),
   }),
   tool({
     name: "github_issue_comment",

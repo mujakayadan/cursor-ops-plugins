@@ -1,5 +1,5 @@
 import { execFileSync, spawn } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync } from "node:fs";
 import { delimiter, dirname, join, resolve } from "node:path";
 import { toolsDir } from "./config.ts";
 
@@ -47,11 +47,21 @@ function shimTarget(shimPath: string): string | null {
   return null;
 }
 
+/** `existsSync` follows links, and Windows app execution aliases (winget.exe) can't be followed. */
+function present(path: string): boolean {
+  try {
+    lstatSync(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function findIn(dirs: string[], name: string): ResolvedBinary | undefined {
   for (const dir of dirs) {
     for (const file of candidates(name)) {
       const full = join(dir, file);
-      if (!existsSync(full)) continue;
+      if (!present(full)) continue;
       const lower = full.toLowerCase();
       if (SHIM_EXTENSIONS.some((e) => lower.endsWith(e))) {
         const target = shimTarget(full);
@@ -90,10 +100,20 @@ function registryPath(): string[] {
   return dirs;
 }
 
+/** Program Files folders of Windows installers that don't add their binaries to PATH. */
+const WINDOWS_INSTALL_DIRS: Record<string, string[]> = { dot: ["Graphviz\\bin"] };
+
+function windowsInstallDirs(name: string): string[] {
+  const roots = [process.env.ProgramFiles, process.env["ProgramFiles(x86)"]].filter(
+    (r): r is string => Boolean(r),
+  );
+  return (WINDOWS_INSTALL_DIRS[name] ?? []).flatMap((dir) => roots.map((root) => join(root, dir)));
+}
+
 /**
- * Resolve a binary from the suite's tools directory, then PATH, then (Windows) the PATH stored in
- * the registry. Commands never go through a shell, so .cmd/.ps1 shims are unwrapped into
- * `node <entry.js>`.
+ * Resolve a binary from the suite's tools directory, then PATH, then on Windows the PATH stored in
+ * the registry and the install folders of installers that skip PATH. Commands never go through a
+ * shell, so .cmd/.ps1 shims are unwrapped into `node <entry.js>`.
  */
 export function resolveBinary(name: string): ResolvedBinary {
   const cached = resolved.get(name);
@@ -106,7 +126,7 @@ export function resolveBinary(name: string): ResolvedBinary {
     findIn(searched, name) ??
     (IS_WINDOWS
       ? findIn(
-          registryPath().filter((d) => !searched.includes(d)),
+          [...registryPath().filter((d) => !searched.includes(d)), ...windowsInstallDirs(name)],
           name,
         )
       : undefined);
