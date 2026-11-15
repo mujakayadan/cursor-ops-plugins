@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.9.0](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.8.0...v1.9.0) (2026-11-15)
+
+
+### Features
+
+* route model and effort from the task and the Cursor plan ([#58](https://github.com/mujakayadan/cursor-ops-plugins/issues/58)) ([b9c8070](https://github.com/mujakayadan/cursor-ops-plugins/commit/b9c807059bfbf31b470e3abdefa9470b7063ca05))
+
+
+### Bug Fixes
+
+* **gitops:** tighten worktree paths and docs after review ([#57](https://github.com/mujakayadan/cursor-ops-plugins/issues/57)) ([493688c](https://github.com/mujakayadan/cursor-ops-plugins/commit/493688c298aa3ef153c2624fbfc8c5841027cdd3))
+
 ## [1.8.0](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.7.1...v1.8.0) (2026-11-15)
 
 
