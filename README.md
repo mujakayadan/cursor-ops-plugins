@@ -1,6 +1,6 @@
 # cursor-ops-plugins
 
-Cursor plugin suite for operating **GitHub, DigitalOcean, Vercel, AWS and Microsoft 365** (Outlook mail, calendar and Teams through Microsoft Graph) from the agent with least privilege. Each provider plugin ships:
+Cursor plugin suite for operating **GitHub, DigitalOcean, Vercel, AWS, Microsoft 365 and Google** (Gmail, Calendar, contacts, Meet and Drive) from the agent with least privilege. Each provider plugin ships:
 
 | Layer | What it is | Where |
 |---|---|---|
@@ -155,6 +155,17 @@ The `gitops-workflow` skill (ops-github) drives this from the agent. `github_rep
 - **Guards:** `providers.msgraph.scope.allowedRecipientDomains` fences who mail, replies, forwards and invitations can reach. Message and event bodies are treated as untrusted content. The shell guard asks before `m365` sends, removals, raw write requests and Entra changes, and ops-core asks before tokens or the m365 token cache are read.
 
 The `msgraph-setup` skill covers the Entra app registration (delegated permissions), sign-in and troubleshooting; `m365-assistant` covers inbox triage, scheduling and Teams.
+
+## Google
+
+`ops-google` reads and acts on Gmail, Google Calendar, contacts (People), Meet and Drive through [gog](https://gogcli.sh/) (`gog`). Google Chat is out of scope.
+
+- **Read (auto-allowed):** identity and auth list, Gmail search/get/labels, contacts search, calendars, events, free/busy, Meet space get/history/participants, Drive list/search/get/tree.
+- **Write (always approved):** send, draft, reply, forward, trash, archive and mark mail; create, update, respond to and delete events (optional Meet link); create/update/end Meet spaces; create Drive folders, share and trash files. Nothing permanently deletes Drive or mail outside Trash.
+- **Accounts:** `gog auth credentials` then `gog auth add you@gmail.com --services gmail,calendar,drive,contacts,meet`; tools take an optional `account` when several are stored.
+- **Guards:** `providers.google.scope.allowedRecipientDomains` fences who mail, invitations and Drive shares may reach. Message and event bodies are untrusted content. The shell guard asks before `gog` sends, deletes, shares or changes auth.
+
+The `google-setup` skill covers the Google Cloud OAuth desktop client, API enablement, sign-in and troubleshooting; `google-assistant` covers inbox triage, scheduling and Drive.
 
 ## Automatic code review
 
@@ -405,6 +416,8 @@ To add a tool, add a `tool({...})` entry to the provider's `tools` array with a 
 | `providers.scaffold.scope.allowedRoots` | `[]` (anywhere) | Directories new projects may be created in |
 | `providers.msgraph.scope.allowedRecipientDomains` | `[]` (anyone) | Domains (and subdomains) mail, replies, forwards and invitations may reach |
 | `providers.msgraph.timeZone` | `null` (this machine's zone) | Default time zone for calendar tools |
+| `providers.google.scope.allowedRecipientDomains` | `[]` (anyone) | Domains (and subdomains) Gmail, invitations and Drive shares may reach |
+| `providers.google.timeZone` | `null` (this machine's zone) | Default time zone for calendar create |
 | `providers.mermaid.browserPath` | `null` (puppeteer cache, then system Chrome/Edge) | Browser mermaid-cli renders with (`PUPPETEER_EXECUTABLE_PATH` also works) |
 | `providers.latex.engine` | `null` (`pdflatex`; `xelatex` for fontspec documents) | Default TeX engine when a call or `% !TEX program` doesn't pick one |
 | `providers.{mermaid,latex}.scope.allowedRoots` | `[]` (anywhere) | Directories rendered files may be read from and written to |

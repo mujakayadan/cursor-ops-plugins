@@ -102,6 +102,11 @@
           "type": "json",
           "path": "plugins/ops-models/.cursor-plugin/plugin.json",
           "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "plugins/ops-google/.cursor-plugin/plugin.json",
+          "jsonpath": "$.version"
         }
       ]
     }

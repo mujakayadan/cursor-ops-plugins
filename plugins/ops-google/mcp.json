@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "ops-google-read": {
+      "url": "http://127.0.0.1:47821/mcp/google",
+      "headers": {
+        "Authorization": "Bearer ${env:OPS_MCP_TOKEN}"
+      }
+    },
+    "ops-google-write": {
+      "command": "node",
+      "args": [
+        "${CURSOR_PLUGIN_ROOT}/lib/core/run-mcp.ts",
+        "--tier",
+        "write"
+      ]
+    }
+  }
+}
