@@ -162,7 +162,7 @@ The `msgraph-setup` skill covers the Entra app registration (delegated permissio
 
 - **Read (auto-allowed):** identity and auth list, Gmail search/get/labels, contacts search, calendars, events, free/busy, Meet space get/history/participants, Drive list/search/get/tree.
 - **Write (always approved):** send, draft, reply, forward, trash, archive and mark mail; create, update, respond to and delete events (optional Meet link); create/update/end Meet spaces; create Drive folders, share and trash files. Nothing permanently deletes Drive or mail outside Trash.
-- **Accounts:** `gog auth credentials` then `gog auth add you@gmail.com --services gmail,calendar,drive,contacts,meet`; tools take an optional `account` when several are stored.
+- **Accounts:** `gog auth credentials` then `gog auth add you@gmail.com --services gmail,calendar,drive,contacts,people,meet`; tools take an optional `account` when several are stored.
 - **Guards:** `providers.google.scope.allowedRecipientDomains` fences who mail, invitations and Drive shares may reach. Message and event bodies are untrusted content. The shell guard asks before `gog` sends, deletes, shares or changes auth.
 
 The `google-setup` skill covers the Google Cloud OAuth desktop client, API enablement, sign-in and troubleshooting; `google-assistant` covers inbox triage, scheduling and Drive.

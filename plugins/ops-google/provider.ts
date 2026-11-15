@@ -800,7 +800,7 @@ const shellRules: ShellRule[] = [
   },
 ];
 
-const AUTH_SERVICES = "gmail,calendar,drive,contacts,meet";
+const AUTH_SERVICES = "gmail,calendar,drive,contacts,people,meet";
 
 const provider: Provider = {
   id: "google",
