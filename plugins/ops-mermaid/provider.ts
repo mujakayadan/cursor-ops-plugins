@@ -22,28 +22,12 @@ const DIAGRAM_EXTENSIONS = new Set([".mmd", ".mermaid"]);
 const MARKDOWN_EXTENSIONS = new Set([".md", ".markdown", ".mdx"]);
 const OUTPUT_EXTENSIONS = new Set([".svg", ".png", ".pdf"]);
 
-/**
- * Vocabulary of neural-network architecture diagrams. Three or more distinct hits mean the
- * diagram belongs in TikZ (ops-latex), which handles stacked blocks, tensor shapes and math.
- */
-const ARCHITECTURE_TERMS: [string, RegExp][] = [
-  ["attention", /\b(multi[- ]?head|self[- ]?|cross[- ]?)?attention\b/i],
-  ["transformer", /\btransformers?\b/i],
-  ["encoder/decoder", /\b(encoder|decoder)s?\b/i],
-  ["normalization", /\b(layer ?norm|batch ?norm|rms ?norm|add ?& ?norm)\b/i],
-  ["softmax", /\bsoftmax\b/i],
-  ["embedding", /\b(embeddings?|positional encodings?)\b/i],
-  ["feed-forward", /\b(feed[- ]?forward|FFN|MLP)\b/i],
-  ["convolution", /\b(conv(olution(al)?)?[123]?d?|CNN|ResNet|U-?Net)\b/i],
-  ["residual", /\b(residual|skip connections?)\b/i],
-  ["pooling", /\b(max|avg|average|global)[- ]?pool(ing)?\b|\bpooling\b/i],
-  ["recurrent", /\b(LSTM|GRU|RNN)s?\b/i],
-  ["activation", /\b(ReLU|GELU|SiLU|SwiGLU|sigmoid|tanh)\b/i],
-  ["dropout", /\bdropout\b/i],
-  ["qkv", /\b(QKV|query|key|value)\b.*\b(proj(ection)?|linear)\b|\bQ\s*,\s*K\s*,\s*V\b/i],
-  ["logits", /\blogits\b/i],
-];
-const ARCHITECTURE_THRESHOLD = 3;
+const MATH =
+  /\$[^$\n]+\$|\\(frac|sum|prod|int|sqrt|partial|nabla|alpha|beta|gamma|theta|lambda|sigma|mu|mathbb|mathbf|mathcal|cdot|times|otimes|oplus)\b|[A-Za-z]_\{|\^\{/;
+const EDGE = /(--+>|==+>|-\.+->|--+[ox]\b|<--+>|~~~)/;
+const MAX_FLOW_EDGES = 40;
+const MAX_SUBGRAPH_DEPTH = 3;
+const MAX_SPACER_LINKS = 3;
 
 type Theme = (typeof THEMES)[number];
 
@@ -60,16 +44,34 @@ interface Diagram {
   source: string;
 }
 
-export function architectureTerms(source: string): string[] {
-  return ARCHITECTURE_TERMS.filter(([, re]) => re.test(source)).map(([name]) => name);
+/**
+ * Signs that a diagram has outgrown Mermaid's automatic layout and needs a hand-laid-out
+ * TikZ figure: math in labels, deep nesting, sheer size, or spacer links fighting the layout.
+ */
+export function complexitySignals(source: string): string[] {
+  const signals: string[] = [];
+  if (MATH.test(source)) signals.push("math notation in labels");
+  if (!/^\s*(flowchart|graph)\b/m.test(source)) return signals;
+  let depth = 0;
+  let maxDepth = 0;
+  let edges = 0;
+  let spacers = 0;
+  for (const line of source.split(/\r?\n/)) {
+    if (/^\s*subgraph\b/.test(line)) maxDepth = Math.max(maxDepth, ++depth);
+    else if (/^\s*end\s*$/.test(line)) depth = Math.max(0, depth - 1);
+    if (EDGE.test(line)) edges++;
+    spacers += (line.match(/~~~/g) ?? []).length;
+  }
+  if (maxDepth >= MAX_SUBGRAPH_DEPTH) signals.push(`subgraphs nested ${maxDepth} deep`);
+  if (edges > MAX_FLOW_EDGES) signals.push(`${edges} edge lines`);
+  if (spacers >= MAX_SPACER_LINKS) signals.push(`${spacers} invisible spacer links`);
+  return signals;
 }
 
-function guardArchitecture(source: string, force: boolean | undefined): void {
-  const hits = architectureTerms(source);
-  if (force || hits.length < ARCHITECTURE_THRESHOLD) return;
-  throw new ToolError(
-    `This looks like a neural-network architecture diagram (${hits.join(", ")}). Build it with TikZ instead: ops-latex \`latex_templates\` has transformer, attention, CNN and MLP starting points, \`latex_preview\` renders it. Pass force=true only if the user explicitly asked for Mermaid.`,
-  );
+function advice(source: string): string | undefined {
+  const signals = complexitySignals(source);
+  if (!signals.length) return undefined;
+  return `Complex for Mermaid (${signals.join(", ")}). Unless the user asked for Mermaid, draw it in LaTeX/TikZ with ops-latex (latex-diagrams skill), which gives exact placement, math labels, grouping and 3D blocks.`;
 }
 
 /** Mermaid fences in a Markdown document, with the 1-based line of their first source line. */
@@ -218,10 +220,6 @@ const fileInput = absPath(
   "Absolute path of a .mmd/.mermaid file, or a Markdown file whose ```mermaid blocks are rendered.",
 );
 const themeInput = oneOf(THEMES, "Mermaid theme.", "default");
-const forceInput = bool(
-  "Render even though the diagram looks like a neural-network architecture. Only when the user explicitly asked for Mermaid.",
-  false,
-);
 
 const tools = [
   tool({
@@ -241,7 +239,7 @@ const tools = [
         browser,
         ready: version?.code === 0 && browser.source !== "none found",
         routing:
-          "Mermaid for flowcharts, sequence, state, class, ER, Gantt, git graphs and mind maps. Neural-network architectures (transformers, attention, CNNs) go to ops-latex/TikZ.",
+          "Mermaid for flowcharts, sequence, state, class, ER, Gantt, git graphs and mind maps with automatic layout. Complicated diagrams that need precise placement, math, deep grouping or 3D blocks (deep-learning architectures, for example) go to ops-latex/TikZ.",
       };
     },
   }),
@@ -250,16 +248,14 @@ const tools = [
     title: "Preview Mermaid diagram",
     tier: "read",
     description:
-      "Validate and render Mermaid source, a .mmd file or every ```mermaid block in a Markdown file to throwaway PNGs. Returns each PNG path (read it to check the layout) or the parse error with its line. Writes nothing into the workspace.",
+      "Validate and render Mermaid source, a .mmd file or every ```mermaid block in a Markdown file to throwaway PNGs. Returns each PNG path (read it to check the layout) or the parse error with its line, plus advice when a diagram is too complex for Mermaid. Writes nothing into the workspace.",
     input: obj({
       source: sourceInput,
       file: fileInput,
       theme: themeInput,
-      force: forceInput,
     }),
     run: async (a, ctx) => {
       const diagrams = loadDiagrams(a, ctx.provider);
-      for (const d of diagrams) guardArchitecture(d.source, a.force);
       const dir = previewDir("mermaid");
       const results = [];
       for (const d of diagrams) {
@@ -270,11 +266,13 @@ const tools = [
           { theme: a.theme, background: "white", scale: 2 },
           ctx.provider,
         );
-        results.push(
-          res.ok
-            ? { index: d.index, line: d.line, ok: true, png }
-            : { index: d.index, line: d.line, ...res },
-        );
+        const tip = advice(d.source);
+        results.push({
+          index: d.index,
+          line: d.line,
+          ...(res.ok ? { ok: true, png } : res),
+          ...(tip ? { advice: tip } : {}),
+        });
       }
       return {
         ok: results.every((r) => r.ok),
@@ -302,7 +300,6 @@ const tools = [
         scale: int("Pixel scale for PNG output (1-4).", { minimum: 1, maximum: 4, default: 2 }),
         width: int("Page width in pixels.", { minimum: 100, maximum: 10000 }),
         overwrite: bool("Replace an existing output file.", false),
-        force: forceInput,
       },
       ["output"],
     ),
@@ -332,7 +329,6 @@ const tools = [
       }
       const [diagram] = loadDiagrams(a, ctx.provider);
       if (!diagram) throw new ToolError("no diagram to render");
-      guardArchitecture(diagram.source, a.force);
       const res = await render(
         diagram.source,
         output,
@@ -340,7 +336,8 @@ const tools = [
         ctx.provider,
       );
       if (!res.ok) throw new ToolError(res.error);
-      return { written: output, format: extname(output).slice(1) };
+      const tip = advice(diagram.source);
+      return { written: output, format: extname(output).slice(1), ...(tip ? { advice: tip } : {}) };
     },
   }),
 ];
@@ -352,7 +349,7 @@ const provider: Provider = {
   bin: "mmdc",
   baseEnv: { NO_COLOR: "1" },
   instructions: {
-    read: "Validates and previews Mermaid diagrams to throwaway PNGs. Neural-network architecture diagrams belong in ops-latex (TikZ).",
+    read: "Validates and previews Mermaid diagrams to throwaway PNGs. Complicated diagrams that need precise layout, math or 3D blocks belong in ops-latex (TikZ).",
     write:
       "Renders Mermaid diagrams to SVG, PNG or PDF files in the workspace. Every call needs user approval.",
   },

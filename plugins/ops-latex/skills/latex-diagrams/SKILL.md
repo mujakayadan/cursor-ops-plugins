@@ -1,51 +1,84 @@
 ---
 name: latex-diagrams
-description: Build complex technical diagrams in LaTeX/TikZ with the ops-latex tools, especially deep-learning architectures (transformers, attention, encoder-decoder, CNNs, RNNs, MLPs, U-Nets, diffusion pipelines) and figures that need math, tensor shapes or precise layout. Use whenever the user asks for a model architecture diagram or a publication-quality figure.
+description: Design and build complicated technical diagrams in LaTeX/TikZ with the ops-latex tools, meaning figures that need precise layout, grouping, parallel or skip paths, math labels, 3D blocks or publication quality (deep-learning architectures, block diagrams, detailed system figures, circuits, commutative diagrams). Use whenever a diagram is too complex for Mermaid's automatic layout.
 ---
 
 # LaTeX/TikZ diagrams
 
-Deep-learning and other complex diagrams are drawn in TikZ, not Mermaid: TikZ gives exact alignment, stacked and 3D blocks, math labels and vector output that works in papers and slides.
+TikZ is for diagrams where you decide the layout: exact alignment, nested groups, routed paths, math labels, 3D shapes and vector output for papers, slides and docs. Design each figure for the content in front of you. Don't force it into a stock shape.
 
 ## Workflow
 
-1. **Start from a template.** Call `latex_templates` to list them (`transformer`, `attention`, `cnn`, `mlp`), then `latex_templates` with `name` for the source. Templates are self-contained `standalone` documents that compile as-is.
-2. **Save it in the repo** where figures live (e.g. `figures/model.tex`) and adapt it: block names, layer counts, tensor shapes, colors.
-3. **Preview:** `latex_preview` with `file`. It compiles in a temporary directory and returns a PNG, or errors with `file:line`, missing packages and an install hint.
-4. **Read the PNG** and check it like a reviewer would: no overlapping text or blocks, arrows enter and leave the intended sides, residual and skip paths don't cross labels, consistent spacing and colors, and labels readable at the final size. Iterate until it's clean.
-5. **Export:** `latex_render` to `.pdf` (papers; vector, embed with `\includegraphics`), `.svg` (web and docs) or `.png` (`dpi` 300, `transparent` for slides). Commit the `.tex` source next to the export.
+1. **Understand the structure** before drawing. List the components, how they connect, what repeats, what is grouped, and what the reader must see first (the main flow). Sketch the grid in your head: which axis is the main flow (bottom-to-top, left-to-right) and which components share a row or column.
+2. **Write the source** where figures live (e.g. `figures/<name>.tex`) as a `standalone` document (see the skeleton below). For a quick sketch, pass `source` to `latex_preview` with just TikZ commands. It's wrapped in `standalone` with `arrows.meta`, `positioning`, `fit`, `backgrounds`, `calc`, `shapes`, `decorations.pathreplacing`, `matrix` and `shadows`. Single-line `\usepackage`, `\usetikzlibrary` and `\definecolor` lines are moved into the preamble.
+3. **Preview:** `latex_preview` with `file`. You get a PNG, or errors with `file:line`, missing packages and an install hint.
+4. **Read the PNG** and review it like a reader would. Check that:
+   - no text or blocks overlap;
+   - arrows enter and leave the intended sides, and skip paths don't cross labels;
+   - spacing and colors are consistent, and the main flow is obvious;
+   - labels are readable at the final size.
 
-For a one-off sketch, pass `source` with just a `tikzpicture` or bare TikZ commands. It's wrapped in a `standalone` document with `arrows.meta`, `positioning`, `fit`, `backgrounds`, `calc`, `shapes`, `decorations.pathreplacing`, `matrix` and `shadows`.
+   Iterate until it's clean. Complex figures usually take several rounds.
+5. **Export:** `latex_render` to `.pdf` (papers; embed with `\includegraphics`), `.svg` (web and docs) or `.png` (`dpi` 300, `transparent` for slides). Commit the `.tex` source next to the export.
 
-## Conventions
+## Skeleton
 
-- **Styles at the top.** Define `\tikzset{...}` styles per block kind (attention, feed-forward, norm, embedding, conv, pool, linear, softmax) and `\definecolor` a palette. Then each block is one `\node[attn] (name) {...};` line.
-- **Relative placement.** `above=6mm of x`, `right=of y`, `($(a)!0.5!(b)$)`. Use absolute coordinates only to anchor whole columns, such as encoder at `(0,0)` and decoder at `(64mm,0)`.
-- **Named anchors and coordinates** (`\coordinate (branch) at ...`) for branch points, so residual paths and Q/K/V splits stay aligned when blocks move.
-- **Repetition:** wrap a repeated block in a `fit` node (`fit=(first)(last)`, on the background layer) and label it `$N\times$`. Show parallel heads with `double copy shadow`.
-- **Paths:** `-{Stealth}` arrows. Draw orthogonal residuals as `(branch) -- ++(-22mm,0) |- (target.west)`, rounding corners with `rounded corners=4pt`. Dash optional paths (`dashed`).
-- **Shapes and math:** annotate tensors like `$B{\times}T{\times}d$`, write operators as circle nodes (`$+$`, `$\oplus$`, `$\otimes$`), and put equations in math mode under the figure.
-- **Fonts:** `every node/.style={font=\sffamily\small}` for a modern look; keep two sizes at most.
-- **3D feature maps:** reuse the `\fmap` cuboid macro from the `cnn` template (thickness = channels, face = spatial size).
-- **Plots** such as loss curves or attention heatmaps: `pgfplots` (`\usepackage{pgfplots}` and `\pgfplotsset{compat=1.18}`); heatmaps use `matrix plot*`.
+```latex
+\documentclass[tikz,border=8pt]{standalone}
+\usepackage{amsmath,amssymb}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc,shapes.geometric}
+\definecolor{blockA}{HTML}{DCE8F7}  % one fill per component kind
+\definecolor{blockB}{HTML}{FCE5CD}
+\begin{document}
+\begin{tikzpicture}[
+  font=\sffamily\small, node distance=6mm and 10mm, >={Stealth[length=2.2mm]},
+  box/.style={draw, rounded corners=2pt, minimum width=28mm, minimum height=7mm, align=center},
+  kindA/.style={box, fill=blockA}, kindB/.style={box, fill=blockB},
+  op/.style={draw, circle, inner sep=1pt},
+  group/.style={draw, dashed, rounded corners=4pt, inner sep=3mm},
+]
+  % nodes, then paths, then groups on the background layer
+\end{tikzpicture}
+\end{document}
+```
 
-## Architecture recipes
+## Techniques
 
-| Diagram | Base | Key pieces |
-| --- | --- | --- |
-| Transformer / BERT / GPT | `transformer` | Delete the decoder for encoder-only. For decoder-only (GPT), keep masked attention and drop cross-attention. Pre-norm: put the Norm before the sublayer. |
-| Vision Transformer | `transformer` encoder | Add patch tiles, a linear projection, a `[CLS]` token and position embeddings at the bottom, and an MLP head on top. |
-| Attention internals | `attention` | Scaled dot-product steps, `h` stacked heads, Concat and Linear. Add the equation. |
-| CNN / ResNet | `cnn` | Chain `\fmap` calls. Draw skip connections as arcs over blocks: `(a-out) to[out=60,in=120] (b-in)`. |
-| U-Net | `cnn` | Encoder going down, decoder going up, horizontal copy-and-crop arrows between levels. |
-| MLP / autoencoder | `mlp` | Change `\layers`. Mirror the layers for an autoencoder and highlight the bottleneck. |
-| RNN / LSTM | blank snippet | Unrolled cells in a row, `$h_{t-1} \to h_t$` arrows, gates as small labelled circles. |
-| Diffusion / pipelines | blank snippet | Stages as blocks, `decorate` braces for grouping, dashed for sampling loops. |
+- **Styles first.** Define one style per component kind and a small palette. Each component then takes one `\node[kindA] (id) {Label};` line, and a restyle is a one-line change.
+- **Relative placement.** Use `above=of a`, `right=12mm of b` and `below=of a.south west, anchor=north west`. Place midpoints with `calc` (`($(a)!0.5!(b)$)`). Anchor whole columns or lanes with absolute coordinates, such as `(0,0)` and `(70mm,0)`, and place everything else relative to them.
+- **Grids** of similar items (layers, timesteps, lanes, matrix cells): use `\foreach` with computed positions, or `matrix of nodes`.
+- **Branch points and routing.** Name branch points with `\coordinate`. Use `|-` and `-|` for orthogonal paths, `rounded corners` for clean bends, and `to[out=..,in=..]` for arcs over blocks. Route skip and feedback paths outside the main column so they never cross labels. Draw paths after all nodes so they sit on top of the layout you meant.
+- **Grouping and repetition.** Use `\begin{scope}[on background layer] \node[group, fit=(first)(last)] (g) {}; \end{scope}`, then label it (`$N\times$`, "Encoder", "Stage 2") at a corner with `anchor`. Show stacked or parallel copies with `double copy shadow`, and group spans with `decorate, decoration={brace}`.
+- **Operators and junctions:** small circle nodes with math (`$+$`, `$\times$`, `$\oplus$`, `$\Sigma$`).
+- **Math and annotations:** label edges and blocks with shapes, dimensions or symbols in math mode (`$B{\times}T{\times}d$`, `$h_{t-1}$`, `$H(s)$`). Use `\scriptsize` for secondary annotations, and keep to two font sizes at most.
+- **3D and volumetric blocks** (feature maps, tensors, stacked planes): draw a cuboid with a macro, then chain calls along x.
+
+  ```latex
+  \newcommand{\cuboid}[6]{% name, x, width, height, depth, color
+    \coordinate (#1-f) at (#2,0);
+    \fill[#6!35] (#2,-#4/2) rectangle ++(#3,#4);
+    \fill[#6!55] (#2,#4/2) -- ++(#5,#5*0.6) -- ++(#3,0) -- ++(-#5,-#5*0.6) -- cycle;
+    \fill[#6!20] (#2+#3,-#4/2) -- ++(#5,#5*0.6) -- ++(0,#4) -- ++(-#5,-#5*0.6) -- cycle;
+    \draw (#2,-#4/2) rectangle ++(#3,#4)
+          (#2,#4/2) -- ++(#5,#5*0.6) -- ++(#3,0) -- ++(0,-#4) -- ++(-#5,-#5*0.6)
+          (#2+#3,#4/2) -- ++(#5,#5*0.6);
+    \coordinate (#1-in) at (#2,0); \coordinate (#1-out) at (#2+#3+#5/2,#5*0.3);}
+  ```
+  Connect blocks with `\draw[->] (a-out) -- (b-in);`. `out` is the middle of the side face, so the arrow never crosses its own block.
+- **Plots inside diagrams** (curves, heatmaps, distributions): use `pgfplots` (`\usepackage{pgfplots}` and `\pgfplotsset{compat=1.18}`). Heatmaps use `matrix plot*`.
+- **Specialized packages** when they fit (check with `latex_status` `packages`): `tikz-cd` for commutative diagrams, `circuitikz` for circuits, `tikz-3dplot` for true 3D, and `pgf-umlsd` for formal UML sequences.
+
+## Readability
+
+- One main flow direction. Secondary paths (skips, feedback, optional) are visually quieter: thinner, dashed or gray.
+- Align what is parallel and make identical components identical in size. Leave at least 4–6 mm between neighbors.
+- Color encodes kind, not decoration. Use 3–5 fills plus a neutral, and avoid pure saturated colors.
+- If one figure tries to show both the overview and the internals, split it in two, or zoom the detail out to the side with dashed connector lines.
 
 ## Troubleshooting
 
 - **Missing package:** the result lists `missingFiles` and an `installHint`. Ask the user before installing; the guard asks too. Compiles never install packages on their own.
 - **`I do not know the key '/tikz/...'`:** a TikZ library is missing; add it to `\usetikzlibrary`.
 - **`Dimension too large`:** a coordinate or pgfmath value is huge. Check units (mm vs. cm) and divisions.
-- **Labels overlap:** increase node distances or `minimum width`, use `align=center` with `\\` line breaks, or move labels with `label={[font=\scriptsize]below:...}`.
+- **Labels overlap:** increase `node distance` or `minimum width`, use `align=center` with `\\` line breaks, or move labels with `label={[font=\scriptsize]below:...}`.
 - **Shell escape** is always off (no `\write18`, `minted` or `--shell-escape`). Use `listings` for code.

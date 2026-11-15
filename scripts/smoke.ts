@@ -34,10 +34,7 @@ const CALLS: Record<string, [string, Record<string, unknown>][]> = {
   ],
   scaffold: [["scaffold_list_templates", {}]],
   mermaid: [["mermaid_status", {}]],
-  latex: [
-    ["latex_status", {}],
-    ["latex_templates", {}],
-  ],
+  latex: [["latex_status", {}]],
   msgraph: [
     ["msgraph_whoami", {}],
     ["msgraph_mail_list", { top: 3 }],

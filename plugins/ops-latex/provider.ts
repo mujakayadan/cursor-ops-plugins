@@ -3,14 +3,12 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
-  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, delimiter, dirname, extname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { resolveBinary, runCommand } from "./lib/core/cli.ts";
 import { absPath, checkPath, previewDir } from "./lib/core/paths.ts";
 import { bool, int, list, obj, oneOf, str, ToolError, tool } from "./lib/core/schema-helpers.ts";
@@ -24,7 +22,6 @@ const CONVERT_TIMEOUT_MS = 60000;
 const MAX_RUNS = 4;
 const MAX_SOURCE = 200000;
 const OUTPUT_EXTENSIONS = new Set([".pdf", ".svg", ".png"]);
-const TEMPLATE_DIR = join(dirname(fileURLToPath(import.meta.url)), "assets", "diagrams");
 const DEFAULT_PACKAGES = ["tikz", "pgfplots", "standalone", "amsmath", "biblatex"];
 
 const SNIPPET_PREAMBLE = String.raw`\documentclass[tikz,border=8pt]{standalone}
@@ -350,30 +347,6 @@ function prepare(a: { source?: string; file?: string }, pcfg: ProviderConfig): P
   return { texPath, cwd: work, source, cleanup: work };
 }
 
-interface Template {
-  name: string;
-  title: string;
-  description: string;
-  path: string;
-}
-
-export function listTemplates(): Template[] {
-  if (!existsSync(TEMPLATE_DIR)) return [];
-  return readdirSync(TEMPLATE_DIR)
-    .filter((f) => f.endsWith(".tex"))
-    .sort()
-    .map((f) => {
-      const path = join(TEMPLATE_DIR, f);
-      const head = readFileSync(path, "utf8").slice(0, 1500);
-      return {
-        name: f.slice(0, -4),
-        title: head.match(/^% title: (.+)$/m)?.[1]?.trim() ?? f,
-        description: head.match(/^% description: (.+)$/m)?.[1]?.trim() ?? "",
-        path,
-      };
-    });
-}
-
 function summary(r: CompileResult) {
   const { logTail, rerun: _rerun, ...rest } = r;
   return r.ok || r.errors.length ? rest : { ...rest, logTail };
@@ -438,28 +411,6 @@ const tools = [
           "Compiles never use shell escape or latexmk/latexmkrc, and MiKTeX's on-the-fly package installer is disabled; install missing packages explicitly.",
         ],
       };
-    },
-  }),
-  tool({
-    name: "latex_templates",
-    title: "LaTeX diagram templates",
-    tier: "read",
-    description:
-      "List the verified TikZ templates for neural-network architecture diagrams (transformer, attention, CNN, MLP), or return one template's full source to adapt. Start complex diagrams from these.",
-    input: obj({
-      name: str("Template name to return in full (from the list).", {
-        pattern: "^[a-z0-9-]{1,40}$",
-      }),
-    }),
-    run: (a) => {
-      const templates = listTemplates();
-      if (!a.name) return { templates: templates.map(({ path: _p, ...t }) => t) };
-      const found = templates.find((t) => t.name === a.name);
-      if (!found)
-        throw new ToolError(
-          `unknown template ${a.name}; available: ${templates.map((t) => t.name).join(", ")}`,
-        );
-      return { name: found.name, title: found.title, source: readFileSync(found.path, "utf8") };
     },
   }),
   tool({
@@ -611,7 +562,7 @@ const provider: Provider = {
   bin: "pdflatex",
   baseEnv: { openout_any: "p" },
   instructions: {
-    read: "Compiles LaTeX and TikZ in throwaway directories and returns PNG previews, errors and warnings. Use it for neural-network architecture and other complex diagrams.",
+    read: "Compiles LaTeX and TikZ in throwaway directories and returns PNG previews, errors and warnings. Use it for complex diagrams that need precise layout, math, grouping or 3D shapes.",
     write:
       "Writes compiled PDF, SVG or PNG output into the workspace. Every call needs user approval.",
   },
