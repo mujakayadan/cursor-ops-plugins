@@ -1,0 +1,62 @@
+[
+  {
+    "name": "search is a read",
+    "event": "beforeMCPExecution",
+    "input": {
+      "mcp_server_name": "ops-research-read",
+      "tool_name": "research_search",
+      "tool_input": "{\"query\":\"attention transformers\"}"
+    },
+    "expect": { "permission": "allow" }
+  },
+  {
+    "name": "paper lookup is a read",
+    "event": "beforeMCPExecution",
+    "input": {
+      "mcp_server_name": "ops-research-read",
+      "tool_name": "research_paper",
+      "tool_input": "{\"id\":\"10.5555/3295222.3295349\"}"
+    },
+    "expect": { "permission": "allow" }
+  },
+  {
+    "name": "related is a read",
+    "event": "beforeMCPExecution",
+    "input": {
+      "mcp_server_name": "ops-research-read",
+      "tool_name": "research_related",
+      "tool_input": "{\"id\":\"1706.03762\"}"
+    },
+    "expect": { "permission": "allow" }
+  },
+  {
+    "name": "save asks",
+    "event": "beforeMCPExecution",
+    "input": {
+      "mcp_server_name": "ops-research-write",
+      "tool_name": "research_save",
+      "tool_input": "{\"file\":\"C:\\\\code\\\\paper\\\\refs.bib\",\"ids\":[\"10.5555/3295222.3295349\"]}"
+    },
+    "expect": { "permission": "ask" }
+  },
+  {
+    "name": "save on the read server denied",
+    "event": "beforeMCPExecution",
+    "input": {
+      "mcp_server_name": "ops-research-read",
+      "tool_name": "research_save",
+      "tool_input": "{}"
+    },
+    "expect": { "permission": "deny" }
+  },
+  {
+    "name": "unknown research tool denied",
+    "event": "beforeMCPExecution",
+    "input": {
+      "mcp_server_name": "ops-research-write",
+      "tool_name": "research_shell",
+      "tool_input": "{}"
+    },
+    "expect": { "permission": "deny" }
+  }
+]

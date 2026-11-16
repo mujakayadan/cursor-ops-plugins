@@ -29,6 +29,7 @@ import msgraph, {
   stripHtml,
 } from "../plugins/ops-msgraph/provider.ts";
 import oss from "../plugins/ops-oss/provider.ts";
+import research from "../plugins/ops-research/provider.ts";
 import scaffold from "../plugins/ops-scaffold/provider.ts";
 import vercel from "../plugins/ops-vercel/provider.ts";
 import { PLUGINS_DIR, providerPlugins } from "../scripts/lib.ts";
@@ -48,6 +49,7 @@ const providers = [
   memory,
   oss,
   models,
+  research,
 ];
 
 describe("provider list", () => {

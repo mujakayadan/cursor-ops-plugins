@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "ops-research-read": {
+      "url": "http://127.0.0.1:47821/mcp/research",
+      "headers": {
+        "Authorization": "Bearer ${env:OPS_MCP_TOKEN}"
+      }
+    },
+    "ops-research-write": {
+      "command": "node",
+      "args": [
+        "${CURSOR_PLUGIN_ROOT}/lib/core/run-mcp.ts",
+        "--tier",
+        "write"
+      ]
+    }
+  }
+}

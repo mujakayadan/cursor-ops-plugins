@@ -1,0 +1,37 @@
+[
+  {
+    "name": "search rejects an unknown source",
+    "server": "read",
+    "tool": "research_search",
+    "arguments": { "query": "transformers", "sources": ["pubmed"] },
+    "expectError": "must be one of"
+  },
+  {
+    "name": "search rejects a short query",
+    "server": "read",
+    "tool": "research_search",
+    "arguments": { "query": "a" },
+    "expectError": "too short"
+  },
+  {
+    "name": "paper rejects a bare title",
+    "server": "read",
+    "tool": "research_paper",
+    "arguments": { "id": "not an identifier" },
+    "expectError": "no record|must be a DOI"
+  },
+  {
+    "name": "save rejects a relative path",
+    "server": "write",
+    "tool": "research_save",
+    "arguments": { "file": "refs.bib", "ids": ["10.5555/3295222.3295349"] },
+    "expectError": "invalid format"
+  },
+  {
+    "name": "save rejects parent traversal",
+    "server": "write",
+    "tool": "research_save",
+    "arguments": { "file": "/tmp/../etc/refs.bib", "ids": ["10.5555/3295222.3295349"] },
+    "expectError": "must not contain '..'"
+  }
+]
