@@ -152,6 +152,31 @@ describe("review scanner", () => {
     assert.deepEqual(rules("const total = items.reduce((a, b) => a + b, 0);"), []);
   });
 
+  it("flags floating actions, images and npm ranges, and accepts pins", () => {
+    const rules = (text: string, path: string) =>
+      scanEdit("security", path, [{ new_string: text }]).map((h) => h.rule);
+    const wf = ".github/workflows/ci.yml";
+    const pinned = "3d3c42e5aac5ba805825da76410c181273ba90b1";
+    const digest = "116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5";
+    assert.deepEqual(rules("      - uses: actions/checkout@v7", wf), ["security/floating-action"]);
+    assert.deepEqual(rules(`      - uses: actions/checkout@${pinned} # v7.0.1`, wf), []);
+    assert.deepEqual(rules("    runs-on: ubuntu-latest", wf), []);
+    assert.deepEqual(rules("    uses: ./.github/workflows/image.yml", wf), []);
+    assert.deepEqual(rules("FROM node:24-alpine", "Dockerfile"), ["security/floating-image"]);
+    assert.deepEqual(rules(`FROM node:24-alpine@sha256:${digest}`, "Dockerfile"), []);
+    assert.deepEqual(rules("FROM scratch", "Dockerfile"), []);
+    assert.deepEqual(rules("FROM base AS deps", "Dockerfile"), []);
+    assert.deepEqual(
+      rules(`FROM node:{{ node_version }}-alpine@sha256:${digest} AS base`, "Dockerfile.jinja"),
+      [],
+    );
+    assert.deepEqual(rules('    "@types/node": "^24.19.2",', "package.json"), [
+      "security/floating-range",
+    ]);
+    assert.deepEqual(rules('    "@types/node": "24.19.2",', "package.json"), []);
+    assert.deepEqual(rules('    "node": ">=24"', "package.json"), []);
+  });
+
   it("flags performance smells but leaves concurrent code alone", () => {
     const rules = (text: string) =>
       scanEdit("performance", "src/x.ts", [{ new_string: text }]).map((h) => h.rule);

@@ -27,8 +27,8 @@ Review the **changes** first: the files and hints in the request, or `git diff` 
 | SSRF & network | Server-side fetches of user-supplied URLs without an allowlist; TLS verification disabled; plaintext protocols |
 | Crypto | MD5/SHA-1 for security, ECB, static IVs, home-made crypto; `Math.random`/`random` for tokens; passwords not hashed with bcrypt/scrypt/argon2 |
 | Deserialization & parsing | `pickle`, `yaml.load`, Java serialization, XML external entities on untrusted input |
-| Dependencies | New packages: maintained, popular, correctly spelled (typosquats), pinned via lockfile; no `curl \| sh` installs |
-| CI/CD & infra | `pull_request_target` plus a checkout of PR code; `${{ github.event.* }}` interpolated into `run:`; `permissions: write-all`; unpinned third-party actions; containers running privileged or as root; world-writable files; public buckets or `0.0.0.0/0` ingress |
+| Dependencies | New packages: maintained, popular, correctly spelled (typosquats); exact version, a version from a pinned bill of materials, or a Python lower bound plus `uv.lock`; no `latest`, branch, snapshot or npm range; no `curl \| sh` installs |
+| CI/CD & infra | `pull_request_target` plus a checkout of PR code; `${{ github.event.* }}` interpolated into `run:`; `permissions: write-all`; an action on a moving tag instead of a commit SHA; a base image without a digest; containers running privileged or as root; world-writable files; public buckets or `0.0.0.0/0` ingress |
 | Errors & limits | Stack traces to clients; fail-open error handling around auth; missing rate limits or size limits on expensive or auth endpoints |
 
 ## Severity
