@@ -8,6 +8,7 @@ import type { ResearchClient } from "../plugins/ops-research/client.ts";
 import provider, { appendBib } from "../plugins/ops-research/provider.ts";
 import {
   abstractFromIndex,
+  arxivId,
   citeKey,
   dedupe,
   escapeBib,
@@ -243,6 +244,23 @@ describe("BibTeX", () => {
     assert.match(bib, /title = \{On the loss\\_of a 100\\% match\}/);
   });
 
+  it("keeps a hostile DOI, arXiv id or URL inside its BibTeX field", () => {
+    const work: Work = {
+      title: "Safe title",
+      authors: ["Ada Lovelace"],
+      year: 2024,
+      doi: "10.1000/abc}, note={x",
+      arxiv: "2401.00001",
+      url: "https://example.com/a#frag}, note={y",
+    };
+    const bib = toBibtex(work, "lovelace2024safe");
+    assert.equal(bib.match(/^@/gm)?.length, 1);
+    assert.match(bib, /doi = \{10\.1000\/abc, note=x\},/);
+    assert.match(bib, /url = \{https:\/\/example.com\/a\\#frag, note=y\},/);
+    assert.equal(arxivId("2401.00001}, note={x"), undefined);
+    assert.equal(arxivId("2401.00001v3"), "2401.00001");
+  });
+
   it("skips a DOI or cite key already in the file and appends the rest", () => {
     const existing = toBibtex(attention, citeKey(attention));
     const preprint: Work = {
@@ -273,6 +291,20 @@ describe("BibTeX", () => {
     const text = readFileSync(file, "utf8");
     assert.match(text, /vaswani2017attention/);
     assert.match(text, /hopper2024fresh/);
+  });
+
+  it("refuses a bibliography over 1 MB", () => {
+    const dir = mkdtempSync(join(tmpdir(), "ops-research-"));
+    const file = join(dir, "refs.bib");
+    writeFileSync(file, "x".repeat(1_000_001));
+    const preprint: Work = {
+      title: "A fresh preprint on routing",
+      authors: ["Grace Hopper"],
+      year: 2024,
+      arxiv: "2401.00001",
+    };
+    assert.throws(() => appendBib(file, [preprint]), /over 1 MB/);
+    assert.equal(readFileSync(file, "utf8").length, 1_000_001);
   });
 });
 

@@ -1,5 +1,5 @@
-import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { dirname, extname } from "node:path";
+import { existsSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
+import { basename, dirname, extname, join } from "node:path";
 import { absPath, checkPath } from "./lib/core/paths.ts";
 import { int, list, obj, oneOf, str, ToolError, tool } from "./lib/core/schema-helpers.ts";
 import type { Provider, ToolContext } from "./lib/core/types.ts";
@@ -30,12 +30,21 @@ const paperId = str(
 function bibPath(file: string, roots: string[] | undefined): string {
   const path = checkPath(file, roots, "research");
   if (extname(path).toLowerCase() !== ".bib") throw new ToolError("file must end in .bib");
-  return path;
+  const parent = dirname(path);
+  if (!existsSync(parent)) throw new ToolError(`${parent} does not exist`);
+  const realParent = checkPath(realpathSync(parent), roots, "research");
+  const target = join(realParent, basename(path));
+  if (!existsSync(target)) return target;
+  const real = checkPath(realpathSync(target), roots, "research");
+  if (extname(real).toLowerCase() !== ".bib") throw new ToolError("file must end in .bib");
+  return real;
 }
 
 export function appendBib(path: string, works: Work[]): BibMerge & { bytes: number } {
+  if (existsSync(path) && statSync(path).size > MAX_BIB_CHARS) {
+    throw new ToolError(`${path} is over 1 MB`);
+  }
   const existing = existsSync(path) ? readFileSync(path, "utf8") : "";
-  if (existing.length > MAX_BIB_CHARS) throw new ToolError(`${path} is over 1 MB`);
   const merged = mergeBib(existing, dedupe(works));
   if (merged.text.length > MAX_BIB_CHARS) {
     throw new ToolError("appending these works would make the file larger than 1 MB");
@@ -69,7 +78,7 @@ const tools = [
     title: "Search the literature",
     tier: "read",
     description:
-      "Search OpenAlex, arXiv and Semantic Scholar for real works. Results are deduplicated on DOI, then arXiv id, then title. An open-access PDF link is included only when the source API returned one. Abstracts are truncated. An empty list means the indexes returned nothing; never invent a paper to fill it.",
+      "Search OpenAlex, arXiv and Semantic Scholar for real works. Results are deduplicated on DOI, then arXiv id, then title. OpenAlex and Semantic Scholar include an open-access PDF link only when that API returned one. An arXiv record includes https://arxiv.org/pdf/<id>. Abstracts are truncated. An empty list means the indexes returned nothing; never invent a paper to fill it.",
     input: obj(
       {
         query,
@@ -90,7 +99,7 @@ const tools = [
     title: "Resolve one work",
     tier: "read",
     description:
-      "Resolve one work by DOI, arXiv id, OpenAlex id or Semantic Scholar id. Returns only fields the index provided. Fails with no record when every index misses it.",
+      "Resolve one work by DOI, arXiv id, OpenAlex id or Semantic Scholar id. Returns the fields that index provided. An arXiv record also includes https://arxiv.org/abs/<id> and https://arxiv.org/pdf/<id>. Fails with no record when every index misses it.",
     input: obj({ id: paperId }, ["id"]),
     run: (a) => getWork(a.id),
   }),
@@ -138,7 +147,6 @@ const tools = [
     },
     run: async (a, ctx: ToolContext) => {
       const path = bibPath(a.file, ctx.provider.scope.allowedRoots);
-      if (!existsSync(dirname(path))) throw new ToolError(`${dirname(path)} does not exist`);
       const { works, failed } = await resolveAll(a.ids);
       if (works.length === 0) {
         throw new ToolError(
