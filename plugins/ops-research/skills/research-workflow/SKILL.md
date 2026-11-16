@@ -17,7 +17,7 @@ Read the `warnings` list. A rate limit on one index is not a reason to drop the 
 
 ## 2. Resolve
 
-Call `research_paper` on the DOI or arXiv id the user wants, or on the id from a search hit, before quoting details that search did not include. Use only the fields in the result. Include `pdf` only when the result has one; that link is an open-access URL the API returned.
+Call `research_paper` on the DOI or arXiv id the user wants, or on the id from a search hit, before quoting details that search did not include. Use only the fields in the result. Include `pdf` only when the result has one. For OpenAlex and Semantic Scholar that URL is one the API returned. For arXiv it is `https://arxiv.org/pdf/<id>`.
 
 ## 3. One hop
 

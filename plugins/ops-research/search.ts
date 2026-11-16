@@ -8,8 +8,10 @@ import {
 import { ToolError } from "./lib/core/schema-helpers.ts";
 import {
   abstractFromIndex,
+  arxivId,
   clip,
   dedupe,
+  doiOf,
   httpsUrl,
   parseId,
   type Work,
@@ -74,14 +76,6 @@ function yearOf(value: unknown): number | undefined {
   return typeof value === "number" && Number.isInteger(value) && value >= 1000 ? value : undefined;
 }
 
-function doiOf(value: unknown): string | undefined {
-  if (typeof value !== "string") return undefined;
-  return value
-    .match(/10\.\d{4,9}\/[^\s?#]+/i)?.[0]
-    .replace(/[.,;)]+$/, "")
-    .toLowerCase();
-}
-
 function openAlexId(value: string | undefined): string | undefined {
   return value?.match(/W\d{5,}/)?.[0];
 }
@@ -122,7 +116,7 @@ function fromS2(row: S2Paper): Work | undefined {
   const title = row.title?.trim();
   if (!title) return undefined;
   const doi = doiOf(row.externalIds?.DOI);
-  const arxiv = row.externalIds?.ArXiv?.replace(/v\d+$/i, "").toLowerCase();
+  const arxiv = arxivId(row.externalIds?.ArXiv);
   const year = yearOf(row.year);
   const pdf = httpsUrl(row.openAccessPdf?.url);
   const url = pageUrl(row.url, doi);

@@ -8,7 +8,7 @@ export interface Work {
   arxiv?: string;
   openAlex?: string;
   url?: string;
-  /** Open-access PDF the source API itself returned. */
+  /** Open-access PDF from the source API, or `https://arxiv.org/pdf/<id>` for an arXiv id. */
   pdf?: string;
   abstract?: string;
   citations?: number;
@@ -53,6 +53,22 @@ export function abstractFromIndex(
   return clip(words.map(([, word]) => word).join(" "));
 }
 
+/** Bare DOI (`10.xxxx/...`) from a string or a DOI URL. */
+export function doiOf(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const match = value.match(DOI_IN_TEXT)?.[0];
+  return match?.replace(/[.,;)]+$/, "").toLowerCase();
+}
+
+const ARXIV_ID = /^(?:[a-z-]+(?:\.[a-z]{2})?\/\d{7}|\d{4}\.\d{4,5})$/i;
+
+/** arXiv id without a version suffix. Anything else is dropped. */
+export function arxivId(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const bare = value.trim().replace(/v\d+$/i, "");
+  return ARXIV_ID.test(bare) ? bare.toLowerCase() : undefined;
+}
+
 export function httpsUrl(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
   try {
@@ -64,7 +80,7 @@ export function httpsUrl(value: unknown): string | undefined {
   }
 }
 
-export function normTitle(title: string): string {
+function normTitle(title: string): string {
   return title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
@@ -82,8 +98,8 @@ export function parseId(raw: string): ParsedId | undefined {
   if (openAlex && (/openalex/i.test(text) || /^W\d{5,}$/.test(text))) {
     return { kind: "openalex", value: openAlex };
   }
-  const doi = text.match(DOI_IN_TEXT)?.[0].replace(/[.,;)]+$/, "");
-  if (doi) return { kind: "doi", value: doi.toLowerCase() };
+  const doi = doiOf(text);
+  if (doi) return { kind: "doi", value: doi };
   if (S2.test(text)) return { kind: "s2", value: text.toLowerCase() };
   return undefined;
 }
@@ -135,10 +151,10 @@ export function worksFromArxiv(xml: string): Work[] {
     const title = xmlValues(entry, "title")[0];
     if (!title) continue;
     const id = xmlValues(entry, "id")[0] ?? "";
-    const arxiv = id.match(ARXIV_IN_TEXT)?.[1]?.toLowerCase();
+    const arxiv = arxivId(id.match(ARXIV_IN_TEXT)?.[1]);
     const published = xmlValues(entry, "published")[0];
     const year = published ? Number(published.slice(0, 4)) : undefined;
-    const doi = xmlValues(entry, "doi")[0]?.toLowerCase();
+    const doi = doiOf(xmlValues(entry, "doi")[0]);
     const venue = xmlValues(entry, "journal_ref")[0];
     const url = arxiv ? `https://arxiv.org/abs/${arxiv}` : httpsUrl(id);
     const pdf = arxiv ? `https://arxiv.org/pdf/${arxiv}` : undefined;
@@ -158,8 +174,17 @@ export function worksFromArxiv(xml: string): Work[] {
   return works;
 }
 
+function oneLine(value: string): string {
+  let out = "";
+  for (const char of value) {
+    const code = char.codePointAt(0) ?? 0;
+    out += code < 32 ? " " : char;
+  }
+  return out;
+}
+
 export function escapeBib(value: string): string {
-  return value
+  return oneLine(value)
     .replace(/[\\&%$#_]/g, (char) => `\\${char}`)
     .replace(/~/g, "\\~{}")
     .replace(/\^/g, "\\^{}")
@@ -195,10 +220,10 @@ export function toBibtex(work: Work, key: string): string {
     `  title = {${escapeBib(work.title)}},`,
     work.year ? `  year = {${work.year}},` : undefined,
     work.venue ? `  journal = {${escapeBib(work.venue)}},` : undefined,
-    work.doi ? `  doi = {${work.doi}},` : undefined,
-    work.arxiv ? `  eprint = {${work.arxiv}},` : undefined,
+    work.doi ? `  doi = {${escapeBib(work.doi)}},` : undefined,
+    work.arxiv ? `  eprint = {${escapeBib(work.arxiv)}},` : undefined,
     work.arxiv ? "  archiveprefix = {arXiv}," : undefined,
-    work.url ? `  url = {${work.url}},` : undefined,
+    work.url ? `  url = {${escapeBib(work.url)}},` : undefined,
   ].filter((line) => line !== undefined);
   return `@${kind}{${key},\n${fields.join("\n")}\n}\n`;
 }

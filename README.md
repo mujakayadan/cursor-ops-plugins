@@ -238,7 +238,7 @@ The `oss-research` skill runs when a project starts (the architecture blueprint 
 
 ## Literature
 
-`ops-research` finds real works and writes citations. It queries [OpenAlex](https://openalex.org), [arXiv](https://arxiv.org) and [Semantic Scholar](https://www.semanticscholar.org), deduplicates on DOI, then arXiv id, then title, and returns an open-access PDF link only when the API itself returned one. An empty result means the indexes had nothing. The plugin does not invent a paper, and it does not store abstracts or PDFs in the knowledge graph.
+`ops-research` finds real works and writes citations. It queries [OpenAlex](https://openalex.org), [arXiv](https://arxiv.org) and [Semantic Scholar](https://www.semanticscholar.org), deduplicates on DOI, then arXiv id, then title. OpenAlex and Semantic Scholar include an open-access PDF link only when that API returned one. An arXiv record includes `https://arxiv.org/pdf/<id>`. An empty result means the indexes had nothing. The plugin does not invent a paper, and it does not store abstracts or PDFs in the knowledge graph.
 
 | Tool | Tier | What it does |
 |---|---|---|
