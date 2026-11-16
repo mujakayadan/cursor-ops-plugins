@@ -173,16 +173,16 @@ async function main(): Promise<void> {
     },
   });
   server.on("error", (err: NodeJS.ErrnoException) => {
-    console.error(
+    const detail =
       err.code === "EADDRINUSE"
-        ? `Port ${SERVE_PORT} is in use; is another \`ops serve\` running? (\`ops serve --stop\`)`
-        : err.message,
-    );
+        ? `port ${SERVE_PORT} is in use; is another \`ops serve\` running? (\`ops serve --stop\`)`
+        : err.message;
+    console.error(`[ops-serve] ${new Date().toISOString()} error ${detail}`);
     process.exit(1);
   });
   server.listen(SERVE_PORT, "127.0.0.1", () => {
     console.error(
-      `[ops-serve] ${new Date().toISOString()} pid ${process.pid} on 127.0.0.1:${SERVE_PORT}: ${providers.map((p) => p.id).join(", ")}`,
+      `[ops-serve] ${new Date().toISOString()} info pid ${process.pid} listening on 127.0.0.1:${SERVE_PORT}: ${providers.map((p) => p.id).join(", ")}`,
     );
   });
 }

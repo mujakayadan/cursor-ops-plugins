@@ -22,7 +22,7 @@ Cursor plugin suite for operating **GitHub, DigitalOcean, Vercel, AWS, Microsoft
 
 `ops-control` is the suite's control plane (see [Suite control](#suite-control)): the agent can report what is installed and enabled, query the audit log and review activity, and, with your approval, change review settings, which plugins load and your user profile.
 
-The agent knows who it works with (see [User profile and memory](#user-profile-and-memory)): your expertise level and lasting preferences set how it communicates and what it asks, and `ops-memory` keeps a knowledge graph of projects, decisions and vetted components across conversations. `ops-oss` vets open source from public data (license, OpenSSF Scorecard, advisories, vulnerable dependencies, provenance), and its `oss-research` skill finds exemplar systems and reusable components when a project starts (see [Open-source research](#open-source-research)).
+The agent knows who it works with (see [User profile and memory](#user-profile-and-memory)): your expertise level and lasting preferences set how it communicates and what it asks, and `ops-memory` keeps a knowledge graph of projects, decisions and vetted components across conversations. `ops-oss` vets open source from public data (license, OpenSSF Scorecard, advisories, vulnerable dependencies, provenance), and its `oss-research` skill finds exemplar systems and reusable components when a project starts (see [Open-source research](#open-source-research)). `ops-research` searches the literature and writes BibTeX; `ops-latex` compiles the paper (see [Literature](#literature)).
 
 ## Get started
 
@@ -89,6 +89,7 @@ plugins/
   ops-control/                    # suite status, audit and review queries, review and plugin toggles, user profile
   ops-memory/                     # knowledge graph of entities, relations and observations
   ops-oss/                        # open-source vetting from deps.dev, OSV and OpenSSF Scorecard, research skill
+  ops-research/                   # literature search (OpenAlex, arXiv, Semantic Scholar) and BibTeX append
   ops-models/                     # per-task model and effort from the Cursor plan and included usage
 AGENTS.md                         # agent guide: setting up a machine, changing the suite
 copier.yml                        # scaffold questions; selects templates/<language>
@@ -235,6 +236,19 @@ The chat model is the picker. The route selects a subagent model when the sessio
 
 The `oss-research` skill runs when a project starts (the architecture blueprint calls it after the interview) or before a significant dependency is added. It frames the capability areas, discovers candidates on GitHub, registries and curated lists, vets each against license compatibility, maintenance, Scorecard, advisories, supply chain and fit, and studies one to three exemplar systems read-only. Each candidate gets Adopt, Trial or Reject; the verdicts fill section 16 of `ARCHITECTURE.md`, which `architecture_check` requires, and the knowledge graph, so a later project reuses recent verdicts.
 
+## Literature
+
+`ops-research` finds real works and writes citations. It queries [OpenAlex](https://openalex.org), [arXiv](https://arxiv.org) and [Semantic Scholar](https://www.semanticscholar.org), deduplicates on DOI, then arXiv id, then title. OpenAlex and Semantic Scholar include an open-access PDF link only when that API returned one. An arXiv record includes `https://arxiv.org/pdf/<id>`. An empty result means the indexes had nothing. The plugin does not invent a paper, and it does not store abstracts or PDFs in the knowledge graph.
+
+| Tool | Tier | What it does |
+|---|---|---|
+| `research_search` | read | Search one or more indexes. Computer science uses all three; other fields use OpenAlex and Semantic Scholar, plus arXiv where that field circulates preprints |
+| `research_paper` | read | Resolve one DOI, arXiv id, OpenAlex id or Semantic Scholar id |
+| `research_related` | read | One hop of references, citations, or both, capped at 15 per direction |
+| `research_save` | write | Re-resolve ids and append BibTeX to a `.bib` file. Skips a DOI or cite key already present. Needs approval |
+
+`research_save` builds the BibTeX itself. A model-written entry is not an argument. Optional environment variables raise quotas and are never logged: `OPENALEX_MAILTO` (an email in the OpenAlex polite pool) and `SEMANTIC_SCHOLAR_API_KEY`. The `research-workflow` skill runs the sequence, then the agent drafts and `ops-latex` compiles.
+
 ## Authoring (Mermaid and LaTeX)
 
 Both plugins render locally and show the agent its own output: preview tools write PNGs to a temp folder, and the agent reads them to check the layout before it finishes.
@@ -301,7 +315,7 @@ Once you approve the plan, `github_issues_import` (ops-github) creates the miles
 | TypeScript | `next` (Next.js 16 App Router, Turbopack) | Node 24 | pnpm, Biome, TypeScript 7, Vitest + Testing Library, prek |
 | Java | `simple`, `backend` (Spring Boot 4, JDBC, Flyway, Postgres, Testcontainers), `library` | 25 | Gradle 9 wrapper (Kotlin DSL, version catalog, foojay toolchains), Spotless/palantir-java-format, Error Prone + NullAway (JSpecify), JUnit 6, prek |
 
-The stack is a standard, not a menu: one package manager and one runtime version per language. This repo follows the same standard: it is a strict TypeScript 7 project on Node 24 with pnpm, Biome, Vitest and prek. Hooks and MCP servers are `.ts` files that Node runs directly (built-in type stripping), so there is no build step and nothing to install at runtime. Bumping a runtime is a template change, and `copier update` rolls it out to existing projects.
+The stack is a standard, not a menu: one package manager and one runtime version per language. This repo follows the same standard: it is a strict TypeScript 7 project on Node 24 with pnpm, Biome, Vitest and prek. Hooks and MCP servers are `.ts` files that Node runs directly (built-in type stripping), so there is no build step and nothing to install at runtime. Bumping a runtime is a template change, and `copier update` rolls it out to existing projects. Packages, actions and base images are pinned to an exact version, a commit SHA or an image digest, and Dependabot opens the bumps. Python keeps a lower bound beside `uv.lock`. Runner images stay on `ubuntu-latest`.
 
 Every project gets the same set of shared files:
 - `AGENTS.md`, including the suite's engineering standards (clean code and current state only, docs matching the code, secure by default, performance aware). It includes the same text the review plugins enforce, so a project states the standard even where the plugins aren't installed.
