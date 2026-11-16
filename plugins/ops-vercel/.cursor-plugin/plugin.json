@@ -1,7 +1,7 @@
 {
   "name": "ops-vercel",
   "displayName": "Ops: Vercel",
-  "version": "1.9.1",
+  "version": "1.10.0",
   "description": "Vercel operations (projects, deployments, build logs, promotion/rollback) with separate read and write MCP servers and vercel CLI guardrails.",
   "author": {
     "name": "Muja Kayadan"

@@ -1,7 +1,7 @@
 {
   "name": "ops-scaffold",
   "displayName": "Ops: Scaffold",
-  "version": "1.9.1",
+  "version": "1.10.0",
   "description": "Project scaffolders for Python (uv, Ruff, ty), TypeScript (Next.js, pnpm, Biome) and Java (Gradle, Spring Boot) built on updatable Copier templates, with toolchain guardrails.",
   "author": {
     "name": "Muja Kayadan"
