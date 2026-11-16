@@ -23,3 +23,12 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+{% if docker %}
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+      include: scope
+{% endif %}

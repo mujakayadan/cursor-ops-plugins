@@ -29,6 +29,7 @@ Review the **changes**: the files and hints in the request, or `git diff` (plus 
 | Compatibility | Aliases for old names, re-exports kept "for compatibility", optional parameters that only serve old callers, fallbacks that read old config keys or file formats, `legacy`/`old`/`v1` duplicates, `@deprecated` code the repo itself still owns |
 | Dead code | Unused exports, functions, parameters, options, branches, feature flags, files, assets, config entries or dependencies; commented-out code; unreachable code after a refactor |
 | Leftovers | TODO/FIXME/HACK markers, debug output, `debugger`, scratch files, suppressions without a reason |
+| Logging | `print` or `console.log` used as a diagnostic in a library, server, hook or tool. A program's result on stdout, and a usage error on stderr, are the interface |
 | Portability | Paths, user names, emails, account or tenant IDs or time zones of one person or machine in code, docs, tests or examples; derive them at runtime (home directory, environment, config) or use placeholders such as `~/code/app`, `<account-id>` and `example.com` |
 | Clarity | Vague names (`data`, `tmp`, `handle2`), misleading names after a behavior change, functions doing several things, deep nesting, magic numbers without a named constant |
 | Duplication | Copy-pasted logic, parallel lists that must be kept in sync by hand, repeated literals |

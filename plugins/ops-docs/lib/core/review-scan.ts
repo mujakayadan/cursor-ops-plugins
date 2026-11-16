@@ -25,7 +25,9 @@ interface LoopRule {
 
 const CODE =
   /\.(c|cc|cpp|cs|go|java|js|jsx|kt|kts|mjs|cjs|php|py|rb|rs|scala|swift|ts|tsx|vue|svelte)$/i;
-const WORKFLOW = /(^|\/)\.github\/workflows\/[^/]+\.ya?ml$/i;
+const WORKFLOW = /(^|\/)\.github\/workflows\/[^/]+\.ya?ml(?:\.jinja)?$/i;
+const IMAGE =
+  /(?:(^|\/)\.github\/workflows\/[^/]+\.ya?ml(?:\.jinja)?$|(^|\/)Dockerfile(?:\.jinja)?$)/i;
 export const DOC = /\.(md|mdx|markdown|mdc|rst|adoc)$/i;
 /** Generated or intentional history files, where past tense is the content. */
 export const HISTORY_FILE = /(^|\/)(CHANGELOG|HISTORY|RELEASES?|RELEASE_NOTES)(\.\w+)?$/i;
@@ -102,6 +104,27 @@ const SECURITY_RULES: LineRule[] = [
     id: "security/permissive-runtime",
     re: /\bprivileged:\s*true|\bchmod\s+(?:-R\s+)?0?777\b|\bcurl\b[^|\n]*\|\s*(?:sudo\s+)?(?:ba|z)?sh\b|--no-verify\b/,
     message: "overly permissive runtime, permissions or unverified script execution",
+  },
+  {
+    id: "security/floating-action",
+    re: /(?:^|\s)uses:\s+\S+@(?![0-9a-f]{40}(?:\s|#|$))/,
+    message:
+      "action pinned to a moving tag; pin the full commit SHA and keep the version in a trailing comment",
+    files: WORKFLOW,
+  },
+  {
+    id: "security/floating-image",
+    re: /(?:(?:^|\s)(?:FROM|image:)\s+(?=[^\s:]+:[^\s@]+)|# syntax=docker\/dockerfile:)(?!.*@sha256:[0-9a-f]{64}\b).+/,
+    message:
+      "container image without a digest; pin @sha256 and keep the version tag in front of it",
+    files: IMAGE,
+  },
+  {
+    id: "security/floating-range",
+    re: /"\s*:\s*"[\^~*]/,
+    message:
+      "dependency range; pin an exact version (a runtime floor such as engines may stay a lower bound)",
+    files: /package\.json(?:\.jinja)?$/i,
   },
 ];
 

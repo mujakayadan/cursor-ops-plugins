@@ -18,8 +18,8 @@ Templates live in the `cursor-ops-plugins` repo:
 - Generated code must pass the project's own formatter as rendered. Keep lines that interpolate user input (names, descriptions) on their own lines or behind a magic trailing comma.
 - Wrapper files that end with an `{% include %}` must not have a trailing newline. Keep all template files LF.
 - The templates are a standard, not a menu. Don't add questions for tool or runtime choices. Every project uses one package manager per language (uv, pnpm, the Gradle wrapper) and one runtime version.
-- Runtime versions (`python_version`, `node_version`, `java_version`) are computed `when: false` values in `copier.yml`. To bump one, change its default and the matching `runtime` entry in `plugins/ops-scaffold/provider.ts` `CATALOG`. `copier update` then rolls it out to existing projects.
-- Pin exact tool versions (`package.json` and the Gradle catalog) or lower bounds (Python).
+- Runtime versions (`python_version`, `node_version`, `java_version`) are computed `when: false` values in `copier.yml`. To bump one, change its default, the matching `runtime` entry in `plugins/ops-scaffold/provider.ts` `CATALOG`, and the image digest in that language's `Dockerfile.jinja`. For Node, also set `@types/node` to an exact release of that major. `copier update` then rolls it out to existing projects.
+- Pin exact npm and Gradle versions. Python states a lower bound and commits `uv.lock`; CI installs with `uv sync --locked`. Actions are full commit SHAs with the version in a trailing comment. Base images are `name:tag@sha256:…`.
 - A new profile needs a choice in `copier.yml`, an entry in `CATALOG`, a case in `scripts/test-templates.ts`, and a policy or contract eval if the tool surface changes.
 
 ## Prove it
