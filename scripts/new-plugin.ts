@@ -60,7 +60,7 @@ const files: Record<string, string> = {
     null,
     2,
   ),
-  "provider.ts": `import { obj, str, tool } from "./lib/core/schema-helpers.ts";
+  "provider.ts": `import { tool } from "./lib/core/schema-helpers.ts";
 import type { Provider, ShellRule } from "./lib/core/types.ts";
 
 const tools = [
@@ -70,17 +70,6 @@ const tools = [
     tier: "read",
     description: "Return the authenticated ${displayName} identity for this tier's credentials.",
     run: (_a, { cli }) => cli(["whoami"], { parse: "auto" }),
-  }),
-  tool({
-    name: "${id}_example_write",
-    title: "Example write",
-    tier: "write",
-    description: "Replace with a real, narrowly scoped write operation.",
-    input: obj({ target: str("Resource identifier.", { pattern: "^[A-Za-z0-9_.-]{1,100}$" }) }, [
-      "target",
-    ]),
-    summarize: (a) => \`example write on \${a.target}\`,
-    run: (a, { cli }) => cli(["example", a.target], { parse: "text" }),
   }),
 ];
 
@@ -122,16 +111,6 @@ export default provider;
         event: "beforeMCPExecution",
         input: { mcp_server_name: `ops-${id}-read`, tool_name: `${id}_whoami`, tool_input: "{}" },
         expect: { permission: "allow" },
-      },
-      {
-        name: "write tool asks",
-        event: "beforeMCPExecution",
-        input: {
-          mcp_server_name: `ops-${id}-write`,
-          tool_name: `${id}_example_write`,
-          tool_input: '{"target":"x"}',
-        },
-        expect: { permission: "ask" },
       },
     ],
     null,
