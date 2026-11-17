@@ -29,9 +29,10 @@ Ask only what the request leaves open. Use one AskQuestion form where available:
 Runtime versions are fixed by the standard (Python 3.13, Node 24, Java 25) and are not options. If the user asks for a different one, say it is the team standard and that changing it is a template change (`scaffold-template-authoring`).
 
 Map intent to profiles:
-- CLI tool or script: `python/simple` or `java/simple`
+- Python program (script, command, library, job): `python/package`. The project adds `__main__.py` or a `[project.scripts]` entry when it needs a process or a command name.
+- Java command-line program: `java/simple`
 - REST API, service, backend: `python/backend` (FastAPI) or `java/backend` (Spring Boot)
-- Reusable package or SDK: `python/library` or `java/library`
+- Reusable Java package or SDK: `java/library`
 - Web app, website, dashboard, frontend: `typescript/next`
 
 If `missingTools` lists something needed, tell the user first. Either they install it, or you generate with `install_deps: false` and tell them which install command to run later.
@@ -59,7 +60,7 @@ With `initialize_git` the template makes the initial commit on `main` before ins
 Follow the `gitops-workflow` skill (ops-github): `github_repo_create` with the chosen `visibility` and `source` set to the project path pushes `main`. Then `github_repo_bootstrap` creates `dev` (plus any qa/staging the user asked for), the merge settings, labels and rulesets. Pass the CI job names as `requiredChecks`: `verify`, plus `api-compat` for backend profiles. Report the `gitopsToken` hint from its result to the user.
 
 ## 6. Architecture and plan
-For applications and services (`python/backend`, `java/backend`, `typescript/next`), continue with the `architecture-blueprint` skill (ops-architecture). It interviews the user, researches and vets open source for exemplars and reusable components (`oss-research`, ops-oss), then writes `ARCHITECTURE.md`, the ADRs, the runbook and `TODO.md`, and syncs the plan to GitHub issues. Offer it for CLI tools and libraries too; there the deployment section describes distribution rather than infrastructure. Skip it only when the user declines.
+For applications and services (`python/backend`, `java/backend`, `typescript/next`), continue with the `architecture-blueprint` skill (ops-architecture). It interviews the user, researches and vets open source for exemplars and reusable components (`oss-research`, ops-oss), then writes `ARCHITECTURE.md`, the ADRs, the runbook and `TODO.md`, and syncs the plan to GitHub issues. Offer it for Python packages and for Java programs and libraries too; there the deployment section describes distribution rather than infrastructure. Skip it only when the user declines.
 
 ## 7. Report
 Report the path, language and profile, what was installed, verification results, the architecture pull request and issue sync, and the next commands from the tool result. Mention that `scaffold_update` (or `uvx copier update --trust`) pulls in future template improvements. The first change, which is the first task in `TODO.md` when there is one, starts with `git switch -c <github-user>/feat/<name> dev`.

@@ -10,12 +10,12 @@ Requires [uv](https://docs.astral.sh/uv/).
 uv sync
 uv run prek install
 uv run pytest
-{%- if profile == "simple" %}
-uv run {{ project_slug }} --name Ada
-{%- elif profile == "backend" %}
+{%- if profile == "backend" %}
 cp .env.example .env
 uv run alembic upgrade head
 uv run uvicorn {{ package_name }}.main:app --reload
+{%- else %}
+uv build
 {%- endif %}
 ```
 

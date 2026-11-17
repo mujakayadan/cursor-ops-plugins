@@ -33,8 +33,8 @@ _exclude:
   - "{% if language == 'python' and profile != 'backend' %}/alembic{% endif %}"
   - "{% if language == 'python' and profile != 'backend' %}/src/{{ package_name }}/config.py{% endif %}"
   - "{% if language == 'python' and profile != 'backend' %}/src/{{ package_name }}/database.py{% endif %}"
-  - "{% if language == 'python' and profile == 'library' %}/src/{{ package_name }}/main.py{% endif %}"
-  - "{% if language == 'python' and profile != 'library' %}/src/{{ package_name }}/py.typed{% endif %}"
+  - "{% if language == 'python' and profile != 'backend' %}/src/{{ package_name }}/main.py{% endif %}"
+  - "{% if language == 'python' and profile == 'backend' %}/src/{{ package_name }}/py.typed{% endif %}"
   - "{% if language == 'python' and profile != 'backend' %}/.cursor/rules/backend.mdc{% endif %}"
   - "{% if language == 'python' and profile != 'backend' %}/.claude/rules/backend.md{% endif %}"
   # java
@@ -92,10 +92,9 @@ python_profile:
   help: Python profile
   when: "{{ language == 'python' }}"
   choices:
-    Simple application (CLI entry point): simple
+    Typed package (src layout): package
     FastAPI backend (SQLModel, Alembic): backend
-    Library (typed, publishable): library
-  default: simple
+  default: package
 
 typescript_profile:
   type: str
