@@ -18,7 +18,12 @@
 
 - `src/main/java/{{ java_package_path }}/`: production code (`{{ java_package }}`)
 - `src/test/java/{{ java_package_path }}/`: tests
-{%- if profile == "backend" %}
+{%- if profile == "simple" %}
+- The program is `App.main` in that package.
+{%- elif profile == "library" %}
+- Published types go in that package. The tree starts with `package-info.java`.
+{%- elif profile == "backend" %}
+- HTTP handlers go in `{{ java_package_path }}/web`.
 - `src/main/resources/application.yaml`: configuration
 - `src/main/resources/db/migration/`: Flyway migrations (`V<n>__description.sql`)
 {%- endif %}
@@ -30,9 +35,8 @@ Use `./gradlew` (macOS/Linux) or `gradlew.bat` (Windows).
 ```shell
 ./gradlew build                 # compile + Error Prone/NullAway + spotlessCheck + tests
 ./gradlew spotlessApply         # format
-./gradlew test --tests '*GreeterTest'
 {%- if profile == "simple" %}
-./gradlew run --args="Ada"
+./gradlew run
 {%- elif profile == "backend" %}
 ./gradlew bootRun               # starts compose.yaml Postgres automatically (needs Docker)
 {%- endif %}
