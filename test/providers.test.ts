@@ -32,6 +32,7 @@ import oss from "../plugins/ops-oss/provider.ts";
 import research from "../plugins/ops-research/provider.ts";
 import scaffold from "../plugins/ops-scaffold/provider.ts";
 import vercel from "../plugins/ops-vercel/provider.ts";
+import yarba from "../plugins/ops-yarba/provider.ts";
 import { PLUGINS_DIR, providerPlugins } from "../scripts/lib.ts";
 
 const providers = [
@@ -50,6 +51,7 @@ const providers = [
   oss,
   models,
   research,
+  yarba,
 ];
 
 describe("provider list", () => {

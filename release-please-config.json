@@ -112,6 +112,11 @@
           "type": "json",
           "path": "plugins/ops-research/.cursor-plugin/plugin.json",
           "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "plugins/ops-yarba/.cursor-plugin/plugin.json",
+          "jsonpath": "$.version"
         }
       ]
     }

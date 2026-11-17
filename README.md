@@ -22,7 +22,7 @@ Cursor plugin suite for least-privilege work from the agent. Provider plugins op
 
 `ops-control` is the suite's control plane (see [Suite control](#suite-control)): the agent can report what is installed and enabled, query the audit log and review activity, and, with your approval, change review settings, which plugins load and your user profile.
 
-The agent knows who it works with (see [User profile and memory](#user-profile-and-memory)): your expertise level and lasting preferences set how it communicates and what it asks, and `ops-memory` keeps a knowledge graph of projects, decisions and vetted components across conversations. `ops-oss` vets open source from public data (license, OpenSSF Scorecard, advisories, vulnerable dependencies, provenance), and its `oss-research` skill finds exemplar systems and reusable components when a project starts (see [Open-source research](#open-source-research)). `ops-research` searches the literature and writes BibTeX; `ops-latex` compiles the paper (see [Literature](#literature)).
+The agent knows who it works with (see [User profile and memory](#user-profile-and-memory)): your expertise level and lasting preferences set how it communicates and what it asks, `ops-yarba` reads the published portfolio when a site token is configured, and `ops-memory` keeps a knowledge graph of projects, decisions and vetted components across conversations. `ops-oss` vets open source from public data (license, OpenSSF Scorecard, advisories, vulnerable dependencies, provenance), and its `oss-research` skill finds exemplar systems and reusable components when a project starts (see [Open-source research](#open-source-research)). `ops-research` searches the literature and writes BibTeX; `ops-latex` compiles the paper (see [Literature](#literature)).
 
 ## Get started
 
@@ -206,6 +206,13 @@ It writes only the `review` and `suite` sections of `~/.ops/config.json` and the
 | `memory_forget` | write | Delete entities, observations or relations |
 
 Writes need approval, so content from a web page or an issue can't plant facts without you seeing them, and both the `ops-core` hook and the tool reject credentials. Concurrent writers are serialized with a lock file and every write replaces the file atomically. The `memory` skill covers what to recall at the start of a task and what is worth recording.
+
+`ops-yarba` reads the published [YARBA](https://yarba.app) portfolio. The default API is `https://api.yarba.app`. `YARBA_API_URL` overrides it and must be https, or http on localhost. The token is the portfolio site token, sent as `X-Portfolio-Site-Token` and never logged or returned. An agent access token is not accepted. The portfolio is not copied into the knowledge graph. The `yarba-portfolio` skill reads it once per conversation and treats the text as data.
+
+| Tool | Tier | What it does |
+|---|---|---|
+| `yarba_status` | read | Whether `YARBA_PORTFOLIO_TOKEN` is set, and the API host |
+| `yarba_portfolio` | read | Published summary, work, education, skills, projects, awards and publications |
 
 ## Model routing
 

@@ -87,6 +87,10 @@
     {
       "name": "ops-research",
       "source": "./plugins/ops-research"
+    },
+    {
+      "name": "ops-yarba",
+      "source": "./plugins/ops-yarba"
     }
   ]
 }
