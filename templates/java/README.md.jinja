@@ -10,7 +10,7 @@ Requires a JDK 17+ to launch Gradle; the build downloads Java {{ java_version }}
 ```shell
 ./gradlew build
 {%- if profile == "simple" %}
-./gradlew run --args="Ada"
+./gradlew run
 {%- elif profile == "backend" %}
 ./gradlew bootRun
 {%- endif %}

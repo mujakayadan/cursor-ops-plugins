@@ -30,9 +30,9 @@ Runtime versions are fixed by the standard (Python 3.13, Node 24, Java 25) and a
 
 Map intent to profiles:
 - Python program (script, command, library, job): `python/package`. The project adds `__main__.py` or a `[project.scripts]` entry when it needs a process or a command name.
-- Java command-line program: `java/simple`
+- Java command-line program: `java/simple`. The program is `App.main`.
 - REST API, service, backend: `python/backend` (FastAPI) or `java/backend` (Spring Boot)
-- Reusable Java package or SDK: `java/library`
+- Reusable Java package or SDK: `java/library`. Add types under the package. The tree starts with `package-info.java`.
 - Web app, website, dashboard, frontend: `typescript/next`
 
 If `missingTools` lists something needed, tell the user first. Either they install it, or you generate with `install_deps: false` and tell them which install command to run later.
