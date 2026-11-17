@@ -1,26 +1,4 @@
-{% if profile == "simple" -%}
-import pytest
-
-from {{ package_name }}.main import main
-
-
-def test_main_greets_by_name(capsys: pytest.CaptureFixture[str]) -> None:
-    assert main(["--name", "Ada"]) == 0
-    assert capsys.readouterr().out == "Hello, Ada!\n"
-{%- elif profile == "library" -%}
-import pytest
-
-from {{ package_name }} import greet
-
-
-def test_greet() -> None:
-    assert greet("Ada") == "Hello, Ada!"
-
-
-def test_greet_rejects_blank_name() -> None:
-    with pytest.raises(ValueError, match="blank"):
-        greet("  ")
-{%- else -%}
+{% if profile == "backend" -%}
 from collections.abc import Iterator
 
 import pytest
@@ -58,4 +36,10 @@ def test_health_db(client: TestClient) -> None:
     response = client.get("/health/db")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+{%- else -%}
+import {{ package_name }}
+
+
+def test_package_imports() -> None:
+    assert {{ package_name }}.__name__ == "{{ package_name }}"
 {%- endif %}

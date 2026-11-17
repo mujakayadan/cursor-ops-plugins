@@ -301,7 +301,7 @@ Once you approve the plan, `github_issues_import` (ops-github) creates the miles
 
 | Language | Profiles | Runtime | Toolchain |
 |---|---|---|---|
-| Python | `simple` (CLI), `backend` (FastAPI, SQLModel, Alembic), `library` | 3.13 | uv, Ruff, ty, pytest, prek, uv_build |
+| Python | `package` (typed src layout), `backend` (FastAPI, SQLModel, Alembic) | 3.13 | uv, Ruff, ty, pytest, prek, uv_build |
 | TypeScript | `next` (Next.js 16 App Router, Turbopack) | Node 24 | pnpm, Biome, TypeScript 7, Vitest + Testing Library, prek |
 | Java | `simple`, `backend` (Spring Boot 4, JDBC, Flyway, Postgres, Testcontainers), `library` | 25 | Gradle 9 wrapper (Kotlin DSL, version catalog, foojay toolchains), Spotless/palantir-java-format, Error Prone + NullAway (JSpecify), JUnit 6, prek |
 

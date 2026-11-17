@@ -30,6 +30,3 @@ jobs:
         env:
           SKIP: no-commit-to-branch
       - run: uv run pytest
-{%- if profile == "library" %}
-      - run: uv build
-{%- endif %}

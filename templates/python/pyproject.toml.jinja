@@ -11,7 +11,7 @@ license-files = ["LICENSE"]
 authors = [
     { name = {{ author_name | tojson }}{% if author_email %}, email = {{ author_email | tojson }}{% endif %} },
 ]
-{%- if profile == "library" %}
+{%- if profile != "backend" %}
 classifiers = [
     "Programming Language :: Python :: 3",
     "Typing :: Typed",
@@ -26,11 +26,6 @@ dependencies = [
     "uvicorn[standard]>=0.54.0",
 {%- endif %}
 ]
-{%- if profile == "simple" %}
-
-[project.scripts]
-{{ project_slug }} = "{{ package_name }}.main:main"
-{%- endif %}
 
 [dependency-groups]
 dev = [

@@ -9,16 +9,21 @@
 - **prek** for git hooks (`.pre-commit-config.yaml`)
 {%- if profile == "backend" %}
 - **FastAPI**, **SQLModel**, **Alembic**, typed settings via **pydantic-settings**
-{%- elif profile == "library" %}
-- Typed library (`py.typed`) built with `uv build`
+{%- else %}
+- Typed package (`py.typed`); `uv build` produces a wheel
 {%- endif %}
 
 ## Layout
 
-- `src/{{ package_name }}/`: application code (src layout, installed in editable mode by `uv sync`)
+- `src/{{ package_name }}/`: the importable package (src layout, installed editable by `uv sync`)
 - `tests/`: pytest suite
 {%- if profile == "backend" %}
 - `alembic/`: migrations; `alembic/env.py` reads the database URL from settings
+- `src/{{ package_name }}/main.py`: the FastAPI app
+{%- else %}
+- `src/{{ package_name }}/py.typed` marks the package as typed
+- A process is `src/{{ package_name }}/__main__.py`: it calls a function and exits with that function's status. Run it with `uv run python -m {{ package_name }}`
+- A command name is a `[project.scripts]` entry in `pyproject.toml` pointing at that function
 {%- endif %}
 
 ## Commands
@@ -30,14 +35,12 @@ uv run ruff check --fix .        # lint
 uv run ty check                  # type check
 uv run pytest                    # tests with coverage
 uv run prek run --all-files      # every git hook
-{%- if profile == "simple" %}
-uv run {{ project_slug }} --name Ada
-{%- elif profile == "backend" %}
+{%- if profile == "backend" %}
 uv run uvicorn {{ package_name }}.main:app --reload
 uv run alembic revision --autogenerate -m "describe change"
 uv run alembic upgrade head
-{%- elif profile == "library" %}
-uv build
+{%- else %}
+uv build                         # wheel and sdist
 {%- endif %}
 ```
 

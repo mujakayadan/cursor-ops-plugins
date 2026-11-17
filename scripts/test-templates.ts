@@ -58,17 +58,18 @@ const GITOPS_FILES = [
 
 const CASES: Case[] = [
   {
-    id: "python/simple",
+    id: "python/package",
     data: {
       language: "python",
-      python_profile: "simple",
+      python_profile: "package",
       license: "MIT",
       agents: ["cursor", "claude"],
       mcp_servers: ["context7"],
     },
     present: [
       "pyproject.toml",
-      "src/scaffold_check/main.py",
+      "src/scaffold_check/__init__.py",
+      "src/scaffold_check/py.typed",
       "tests/test_smoke.py",
       "LICENSE",
       "AGENTS.md",
@@ -86,7 +87,7 @@ const CASES: Case[] = [
     absent: [
       "alembic.ini",
       "src/scaffold_check/config.py",
-      "src/scaffold_check/py.typed",
+      "src/scaffold_check/main.py",
       ".cursor/skills",
       ".cursor/rules/backend.mdc",
       "Dockerfile",
@@ -94,7 +95,11 @@ const CASES: Case[] = [
       ".github/workflows/api-compat.yml",
       "tests/test_openapi.py",
     ],
-    contains: { ".gitattributes": { "filter=lfs": false } },
+    contains: {
+      ".gitattributes": { "filter=lfs": false },
+      "AGENTS.md": { "__main__.py": true, "[project.scripts]": true, "def main": false },
+      "pyproject.toml": { "[project.scripts]": false },
+    },
     checks: "python",
   },
   {
@@ -113,6 +118,7 @@ const CASES: Case[] = [
       "alembic/script.py.mako",
       "src/scaffold_check/config.py",
       "src/scaffold_check/database.py",
+      "src/scaffold_check/main.py",
       ".env.example",
       "Dockerfile",
       ".cursor/skills/verify/SKILL.md",
@@ -140,10 +146,10 @@ const CASES: Case[] = [
     checks: "python",
   },
   {
-    id: "python/library",
+    id: "python/no-ci",
     data: {
       language: "python",
-      python_profile: "library",
+      python_profile: "package",
       license: "none",
       agents: [],
       github_ci: false,
@@ -317,7 +323,7 @@ const CHECKS: Record<Toolchain, string[]> = {
 const HAS_DOCKER = spawnSync("docker", ["info"], { stdio: "ignore" }).status === 0;
 const SPEC_WRITTEN = `node -e "process.exit(require('node:fs').statSync('openapi.json').size > 0 ? 0 : 1)"`;
 const EXTRA_CHECKS: Partial<Record<string, string[]>> = {
-  "python/library": ["uv build"],
+  "python/package": ["uv build"],
   // The Java spec test only runs with Docker (Testcontainers).
   "java/backend": HAS_DOCKER ? [SPEC_WRITTEN] : [],
 };
