@@ -89,11 +89,17 @@ const compact = (id: string) => id.toLowerCase().replace(/[^a-z0-9]+/g, "");
 
 function matchSlug(prefer: string, available: string[]): string | null {
   const needle = compact(prefer);
+  if (needle.length === 0) return null;
   const hits = available.filter((id) => {
     const hay = compact(id);
-    return hay.includes(needle) || needle.includes(hay);
+    return hay.length > 0 && (hay.includes(needle) || needle.includes(hay));
   });
-  return hits.find((id) => !/fast/i.test(id)) ?? hits[0] ?? null;
+  hits.sort((a, b) => {
+    const byLength = compact(b).length - compact(a).length;
+    if (byLength !== 0) return byLength;
+    return Number(/fast/i.test(a)) - Number(/fast/i.test(b));
+  });
+  return hits[0] ?? null;
 }
 
 /** High effort only. Prefers a high id that is not fast, then the high-fast id when that is the only one. */
@@ -135,7 +141,7 @@ function includedRoute(
 /** Pick the model, effort and subagent id for one task given this account. */
 export function route(input: RouteInput): Route {
   const planCaps = caps(input.account.plan);
-  const third = input.account.thirdParty === null ? planCaps.third : input.account.thirdParty;
+  const listed = input.account.thirdParty === true;
   const fallback = includedRoute(
     input.task,
     input.account,
@@ -144,11 +150,15 @@ export function route(input: RouteInput): Route {
   );
 
   if (input.prefer && !includedFamily(input.prefer)) {
-    if (!third || pressure(input.account.includedRemaining) === "low") {
+    if (!listed || pressure(input.account.includedRemaining) === "low") {
+      const why =
+        input.account.thirdParty === null
+          ? "The model list is missing, so this stays"
+          : "This account stays";
       return {
         ...fallback,
         billing: "blocked",
-        reason: `${input.prefer} is a third-party model. This account stays on ${fallback.model}, which the subscription includes.`,
+        reason: `${input.prefer} is a third-party model. ${why} on ${fallback.model}, which the subscription includes.`,
       };
     }
     return {
@@ -185,14 +195,18 @@ export function route(input: RouteInput): Route {
       };
     }
     const high = planCaps.high && level === "ok";
+    const reason =
+      input.account.thirdParty === null
+        ? "The model list is missing, so this stays on Grok 4.7."
+        : input.account.thirdParty
+          ? "No third-party model was named, so this stays on Grok 4.7. Name one to spend prepaid credit."
+          : "Third-party models are not on this plan. Grok 4.7 is the included model for hard work.";
     return {
       ...fallback,
       model: "grok-4.7",
       effort: high ? "high" : "medium",
       taskModel: high ? highSlug("grok-4.7", input.subagents) : null,
-      reason: third
-        ? "No third-party model was named, so this stays on Grok 4.7. Name one to spend prepaid credit."
-        : "Third-party models are not on this plan. Grok 4.7 is the included model for hard work.",
+      reason,
     };
   }
 
