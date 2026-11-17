@@ -28,7 +28,7 @@ Then:
 - Pass `taskModel` to a subagent only when it is non-null. Otherwise omit `model` so the subagent inherits the chat model. A non-null high-fast id means that was the only high-effort id in the allowlist; pass it, and do not invent one when `taskModel` is null.
 - Launch a subagent for `parallel` work or for a `hard` task whose `taskModel` is set. Do the `routine` and `implementation` work in this chat.
 - When `billing` is `blocked`, do not call the third-party model. The `reason` says what to use instead.
-- When `billing` is `credit`, use the named model for that task only. The route returns credit when the CLI lists any third-party model, and also when the model list is missing on Premium and above.
+- When `billing` is `credit`, use the named model for that task only. The route returns credit only when the CLI lists a third-party model. A missing model list stays on an included model.
 
 ## 3. Effort
 
