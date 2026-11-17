@@ -10,7 +10,7 @@
 - Use the Context7 MCP server when you need current library or API documentation.
 {%- endif %}
 {%- if agents and "github" in mcp_servers %}
-- The GitHub MCP server can write. Confirm consequential write operations (merges, releases, settings) with the user first.
+- Squash-merge a green work pull request into `dev`, `qa`, or `staging` yourself. A pull request into `main` merges only when the user approves that merge or merges it. Confirm releases and repository settings with the user first.
 {%- endif %}
 
 ## Engineering standards
@@ -37,7 +37,7 @@ These are the standards of the [ops plugin suite](https://github.com/mujakayadan
 
 - `main` is production and `dev` is integration{% if github_ci %}; both change only through pull requests, and `pr-policy` CI enforces the rules below{% endif %}. Never commit or push to `main`, `dev`, `qa` or `staging` directly; the git hooks refuse it.
 - Work on `<github-user>/<type>/<kebab-name>` branches cut from `dev`, with type one of `feat`, `fix`, `chore`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `style`, `revert`, `hotfix`. Example: `octocat/feat/health-check`. Concurrent agents use separate checkouts (linked git worktrees) so they do not share a working tree.
-- Feature PRs target `dev` and are squash-merged. `main` accepts PRs only from `dev` (or `qa`/`staging`), Dependabot and release-please, merged with a merge commit. One concern per PR; leave unrelated dirty files out of the commit.
+- Feature PRs target `dev`. The agent squash-merges them when checks are green. `main` accepts PRs only from `dev` (or `qa`/`staging`), Dependabot and release-please, with a merge commit. The user approves that merge or merges it. One concern per PR; leave unrelated dirty files out of the commit.
 - PR titles and commit messages follow Conventional Commits (`feat(api): add health check`); release-please turns them into the changelog, the version bump and the GitHub release. Local push hooks run lint and tests; never `--no-verify`.
 - Link issues in the PR body (`Closes #12`).
 {%- if api_spec %}
