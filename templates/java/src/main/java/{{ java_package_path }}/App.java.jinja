@@ -1,12 +1,9 @@
 package {{ java_package }};
 
-/** Command-line entry point. */
+/** Command-line entry point. The program goes in {@code main}. */
 public final class App {
 
     private App() {}
 
-    public static void main(String[] args) {
-        String name = args.length > 0 ? args[0] : "world";
-        System.out.println(Greeter.greet(name));
-    }
+    public static void main(String[] args) {}
 }

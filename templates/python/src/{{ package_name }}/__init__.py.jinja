@@ -1,14 +1,1 @@
-{% if profile == "library" -%}
-"""Public API of {{ package_name }}."""
-
-__all__ = ["greet"]
-
-
-def greet(name: str) -> str:
-    """Return a greeting for ``name``."""
-    if not name.strip():
-        raise ValueError("name must not be blank")
-    return f"Hello, {name}!"
-{%- else -%}
 """{{ package_name }} package."""
-{%- endif %}

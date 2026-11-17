@@ -58,17 +58,18 @@ const GITOPS_FILES = [
 
 const CASES: Case[] = [
   {
-    id: "python/simple",
+    id: "python/package",
     data: {
       language: "python",
-      python_profile: "simple",
+      python_profile: "package",
       license: "MIT",
       agents: ["cursor", "claude"],
       mcp_servers: ["context7"],
     },
     present: [
       "pyproject.toml",
-      "src/scaffold_check/main.py",
+      "src/scaffold_check/__init__.py",
+      "src/scaffold_check/py.typed",
       "tests/test_smoke.py",
       "LICENSE",
       "AGENTS.md",
@@ -86,7 +87,7 @@ const CASES: Case[] = [
     absent: [
       "alembic.ini",
       "src/scaffold_check/config.py",
-      "src/scaffold_check/py.typed",
+      "src/scaffold_check/main.py",
       ".cursor/skills",
       ".cursor/rules/backend.mdc",
       "Dockerfile",
@@ -94,7 +95,11 @@ const CASES: Case[] = [
       ".github/workflows/api-compat.yml",
       "tests/test_openapi.py",
     ],
-    contains: { ".gitattributes": { "filter=lfs": false } },
+    contains: {
+      ".gitattributes": { "filter=lfs": false },
+      "AGENTS.md": { "__main__.py": true, "[project.scripts]": true, "def main": false },
+      "pyproject.toml": { "[project.scripts]": false },
+    },
     checks: "python",
   },
   {
@@ -113,6 +118,7 @@ const CASES: Case[] = [
       "alembic/script.py.mako",
       "src/scaffold_check/config.py",
       "src/scaffold_check/database.py",
+      "src/scaffold_check/main.py",
       ".env.example",
       "Dockerfile",
       ".cursor/skills/verify/SKILL.md",
@@ -140,10 +146,10 @@ const CASES: Case[] = [
     checks: "python",
   },
   {
-    id: "python/library",
+    id: "python/no-ci",
     data: {
       language: "python",
-      python_profile: "library",
+      python_profile: "package",
       license: "none",
       agents: [],
       github_ci: false,
@@ -214,17 +220,21 @@ const CASES: Case[] = [
       "gradlew.bat",
       "gradle/wrapper/gradle-wrapper.jar",
       "src/main/java/com/example/scaffoldcheck/App.java",
-      "src/main/java/com/example/scaffoldcheck/Greeter.java",
-      "src/test/java/com/example/scaffoldcheck/GreeterTest.java",
+      "src/test/java/com/example/scaffoldcheck/AppTest.java",
       ".claude/rules/java.md",
       ".vscode/extensions.json",
       ...GITOPS_FILES,
     ],
+    contains: {
+      "src/main/java/com/example/scaffoldcheck/App.java": { Hello: false },
+      "AGENTS.md": { Greeter: false, "App.main": true },
+    },
     absent: [
       "compose.yaml",
       "src/main/resources",
       "src/main/java/com/example/scaffoldcheck/Application.java",
       "src/main/java/com/example/scaffoldcheck/web",
+      "src/main/java/com/example/scaffoldcheck/Greeter.java",
       ".claude/rules/spring.md",
       ".cursor",
       "Dockerfile",
@@ -247,18 +257,19 @@ const CASES: Case[] = [
       "Dockerfile",
       "src/main/resources/application.yaml",
       "src/main/java/com/example/scaffoldcheck/Application.java",
-      "src/main/java/com/example/scaffoldcheck/web/GreetingController.java",
-      "src/test/java/com/example/scaffoldcheck/web/GreetingControllerTest.java",
+      "src/main/java/com/example/scaffoldcheck/web/package-info.java",
       "src/test/java/com/example/scaffoldcheck/ApplicationIntegrationTest.java",
       ".cursor/rules/spring.mdc",
       ".github/workflows/api-compat.yml",
     ],
     absent: [
       "src/main/java/com/example/scaffoldcheck/App.java",
-      "src/main/java/com/example/scaffoldcheck/Greeter.java",
+      "src/test/java/com/example/scaffoldcheck/AppTest.java",
+      "src/main/java/com/example/scaffoldcheck/web/GreetingController.java",
     ],
     contains: {
       "src/main/resources/application.yaml": { "writer-with-order-by-keys: true": true },
+      "AGENTS.md": { Greeter: false, "/web": true },
     },
     // The spec test runs on Testcontainers (skipped without Docker) and writes openapi.json.
     env: { UPDATE_OPENAPI: "1" },
@@ -273,16 +284,16 @@ const CASES: Case[] = [
       agents: ["cursor"],
       mcp_servers: [],
     },
-    present: [
-      "src/main/java/com/example/scaffoldcheck/Greeter.java",
-      "src/main/java/com/example/scaffoldcheck/package-info.java",
-    ],
+    present: ["src/main/java/com/example/scaffoldcheck/package-info.java"],
     absent: [
       "src/main/java/com/example/scaffoldcheck/App.java",
+      "src/test/java/com/example/scaffoldcheck/AppTest.java",
+      "src/main/java/com/example/scaffoldcheck/Greeter.java",
       "src/main/resources",
       "compose.yaml",
       ".cursor/mcp.json",
     ],
+    contains: { "AGENTS.md": { Greeter: false, "package-info.java": true } },
     checks: "java",
   },
 ];
@@ -317,7 +328,7 @@ const CHECKS: Record<Toolchain, string[]> = {
 const HAS_DOCKER = spawnSync("docker", ["info"], { stdio: "ignore" }).status === 0;
 const SPEC_WRITTEN = `node -e "process.exit(require('node:fs').statSync('openapi.json').size > 0 ? 0 : 1)"`;
 const EXTRA_CHECKS: Partial<Record<string, string[]>> = {
-  "python/library": ["uv build"],
+  "python/package": ["uv build"],
   // The Java spec test only runs with Docker (Testcontainers).
   "java/backend": HAS_DOCKER ? [SPEC_WRITTEN] : [],
 };

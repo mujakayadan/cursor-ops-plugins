@@ -118,7 +118,7 @@ Every repository, this one included, follows one branch and release flow:
 
 | Branch | Role | Receives | Merge method |
 |---|---|---|---|
-| `main` | production | PRs from `dev` (or `qa`/`staging`), Dependabot, release-please | merge commit (user merges promote and release-please) |
+| `main` | production | PRs from `dev` (or `qa`/`staging`), Dependabot, release-please | merge commit (user approves `github_pr_merge`, or merges it) |
 | `dev` | integration | PRs from `<github-user>/<type>/<kebab-name>` branches; the automatic `main → dev` sync | squash (agent merges features), merge commit (agent merges sync) |
 | `qa`, `staging` | optional, only when asked | promotions | merge commit |
 
@@ -134,7 +134,7 @@ Releases use [release-please](https://github.com/googleapis/release-please). Con
 
 Workflows on PRs opened with the default `GITHUB_TOKEN` (the release and sync PRs) don't run on their own: GitHub holds them as *action required* until a maintainer clicks **Approve and run**. To skip that step, add a fine-grained token with Contents and Pull requests read/write on the repo as the `GITOPS_TOKEN` Actions secret. The workflows use it when present.
 
-The `gitops-workflow` skill (ops-github) drives this from the agent. Agents squash-merge their own work PRs into `dev` once checks are green, open the `dev` → `main` promote PR when the suite should ship, and leave promote / release-please merges to the user. `github_repo_create` always asks for the visibility. `github_repo_bootstrap` creates `dev` and any extra environments, sets the merge settings, labels and rulesets, lets Actions open PRs, links a project board, and reports whether `GITOPS_TOKEN` is set. `github_release_list`, `github_project_list` and `github_project_item_add` cover releases and boards. `github_issues_import` creates a delivery plan's epics and tasks as issues in one approved call (see [Architecture and delivery plans](#architecture-and-delivery-plans)). The project tools need the `project` token scope (`gh auth refresh -s project`).
+The `gitops-workflow` skill (ops-github) drives this from the agent. Agents squash-merge their own work PRs into `dev` once checks are green, and open the `dev` → `main` promote PR when the suite should ship. A pull request into `main` merges when the user approves `github_pr_merge`, or when the user merges it. The agent does not merge those with `gh pr merge`. `github_repo_create` always asks for the visibility. `github_repo_bootstrap` creates `dev` and any extra environments, sets the merge settings, labels and rulesets, lets Actions open PRs, links a project board, and reports whether `GITOPS_TOKEN` is set. `github_release_list`, `github_project_list` and `github_project_item_add` cover releases and boards. `github_issues_import` creates a delivery plan's epics and tasks as issues in one approved call (see [Architecture and delivery plans](#architecture-and-delivery-plans)). The project tools need the `project` token scope (`gh auth refresh -s project`).
 
 ## Microsoft 365
 
@@ -301,9 +301,9 @@ Once you approve the plan, `github_issues_import` (ops-github) creates the miles
 
 | Language | Profiles | Runtime | Toolchain |
 |---|---|---|---|
-| Python | `simple` (CLI), `backend` (FastAPI, SQLModel, Alembic), `library` | 3.13 | uv, Ruff, ty, pytest, prek, uv_build |
+| Python | `package` (typed src layout), `backend` (FastAPI, SQLModel, Alembic) | 3.13 | uv, Ruff, ty, pytest, prek, uv_build |
 | TypeScript | `next` (Next.js 16 App Router, Turbopack) | Node 24 | pnpm, Biome, TypeScript 7, Vitest + Testing Library, prek |
-| Java | `simple`, `backend` (Spring Boot 4, JDBC, Flyway, Postgres, Testcontainers), `library` | 25 | Gradle 9 wrapper (Kotlin DSL, version catalog, foojay toolchains), Spotless/palantir-java-format, Error Prone + NullAway (JSpecify), JUnit 6, prek |
+| Java | `simple` (main class), `backend` (Spring Boot 4, JDBC, Flyway, Postgres, Testcontainers), `library` (package tree) | 25 | Gradle 9 wrapper (Kotlin DSL, version catalog, foojay toolchains), Spotless/palantir-java-format, Error Prone + NullAway (JSpecify), JUnit 6, prek |
 
 The stack is a standard, not a menu: one package manager and one runtime version per language. This repo follows the same standard: it is a strict TypeScript 7 project on Node 24 with pnpm, Biome, Vitest and prek. Hooks and MCP servers are `.ts` files that Node runs directly (built-in type stripping), so there is no build step and nothing to install at runtime. Bumping a runtime is a template change, and `copier update` rolls it out to existing projects. Packages, actions and base images are pinned to an exact version, a commit SHA or an image digest, and Dependabot opens the bumps. Python keeps a lower bound beside `uv.lock`. Runner images stay on `ubuntu-latest`.
 

@@ -102,6 +102,20 @@ describe("model routing", () => {
     });
     assert.equal(named.billing, "credit");
     assert.equal(named.taskModel, "claude-opus-5-5-medium");
+    const longest = route({
+      task: "frontier",
+      prefer: "claude-opus-5-5",
+      account: account({ plan: "premium", thirdParty: true, includedRemaining: 70 }),
+      subagents: ["claude", "model-fastx", "model-alpha", "claude-opus-5-5-medium-fast"],
+    });
+    assert.equal(longest.taskModel, "claude-opus-5-5-medium-fast");
+    const tie = route({
+      task: "frontier",
+      prefer: "model",
+      account: account({ plan: "premium", thirdParty: true, includedRemaining: 70 }),
+      subagents: ["model-fastx", "model-alpha"],
+    });
+    assert.equal(tie.taskModel, "model-alpha");
     const blocked = route({
       task: "frontier",
       prefer: "gpt-5.6-sol",
@@ -123,13 +137,22 @@ describe("model routing", () => {
     assert.equal(routeResult.billing, "included");
   });
 
-  it("allows credit on Premium when the model list is missing", () => {
+  it("stays on an included model when the model list is missing", () => {
     const named = route({
       task: "frontier",
       prefer: "claude-opus-5-5",
       account: account({ plan: "premium", thirdParty: null, models: [], includedRemaining: 70 }),
       subagents: SUBAGENTS,
     });
-    assert.equal(named.billing, "credit");
+    assert.equal(named.billing, "blocked");
+    assert.equal(named.model, "grok-4.7");
+    const unnamed = route({
+      task: "frontier",
+      account: account({ plan: "premium", thirdParty: null, models: [], includedRemaining: 70 }),
+      subagents: SUBAGENTS,
+    });
+    assert.equal(unnamed.billing, "included");
+    assert.equal(unnamed.model, "grok-4.7");
+    assert.match(unnamed.reason, /model list is missing/);
   });
 });

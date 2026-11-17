@@ -42,9 +42,8 @@ export interface LanguageSpec {
 export const CATALOG: Record<Language, LanguageSpec> = {
   python: {
     profiles: {
-      simple: "CLI application with an argparse entry point",
+      package: "Typed importable package (src layout, py.typed)",
       backend: "FastAPI backend with typed settings, SQLModel and Alembic",
-      library: "Typed, publishable library (py.typed, uv build)",
     },
     toolchain: "uv, Ruff, ty, pytest, prek",
     requires: ["uv"],

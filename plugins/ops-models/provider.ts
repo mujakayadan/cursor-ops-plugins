@@ -30,7 +30,7 @@ const tools = [
     title: "Choose model and effort",
     tier: "read",
     description:
-      "Choose the model, effort and subagent id for one task from the account's plan and remaining included usage. routine and parallel work use Composer 2.5. Implementation uses Grok 4.7 at medium effort. Hard work, and frontier work that stays on Grok, raise effort only on Premium and above while more than 40% of the included pool remains. Fast mode is always off; a high-effort subagent id may still be the high-fast slug when that is the only high id allowed. A named third-party model bills from credit when the CLI lists any third-party model, or when the model list is missing and the plan is Premium or above. `taskModel` is null when the subagent should inherit the chat model. Pass the session's subagent allowlist as `subagents`. Reuses the account read for 30 seconds.",
+      "Choose the model, effort and subagent id for one task from the account's plan and remaining included usage. routine and parallel work use Composer 2.5. Implementation uses Grok 4.7 at medium effort. Hard work, and frontier work that stays on Grok, raise effort only on Premium and above while more than 40% of the included pool remains. Fast mode is always off; a high-effort subagent id may still be the high-fast slug when that is the only high id allowed. A named third-party model bills from credit only when the CLI lists a third-party model. A missing model list stays on an included model. `taskModel` is null when the subagent should inherit the chat model. Pass the session's subagent allowlist as `subagents`. Reuses the account read for 30 seconds.",
     input: obj(
       {
         task: oneOf(TASKS, "How heavy the work is."),
