@@ -1,7 +1,7 @@
 {
   "name": "ops-yarba",
   "displayName": "Ops: YARBA",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "description": "Read the published YARBA portfolio (work, education, skills, projects) with the portfolio site token. The portfolio is not copied into the knowledge graph.",
   "author": {
     "name": "Muja Kayadan"
