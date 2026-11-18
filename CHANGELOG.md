@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.11.0](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.10.0...v1.11.0) (2026-11-17)
+
+
+### Features
+
+* **scaffold:** generate a Java tree instead of a greeting ([#90](https://github.com/mujakayadan/cursor-ops-plugins/issues/90)) ([8c81c48](https://github.com/mujakayadan/cursor-ops-plugins/commit/8c81c4896a9d653a986d8b732dd615c82a480ad5))
+* **scaffold:** generate a typed Python package instead of a sample program ([#84](https://github.com/mujakayadan/cursor-ops-plugins/issues/84)) ([662b20f](https://github.com/mujakayadan/cursor-ops-plugins/commit/662b20f97d7008c98e53748b6058d8894a045e81))
+
+
+### Bug Fixes
+
+* **models:** match the longest slug and stay included when the model list is missing ([#88](https://github.com/mujakayadan/cursor-ops-plugins/issues/88)) ([5766c5a](https://github.com/mujakayadan/cursor-ops-plugins/commit/5766c5a9a5a81ac4cd6419fa0d0c4a563d7a67df))
+* **scaffold:** start a new plugin as a read identity ([#89](https://github.com/mujakayadan/cursor-ops-plugins/issues/89)) ([69207b0](https://github.com/mujakayadan/cursor-ops-plugins/commit/69207b0709159297af3283f8e09d514f99482de0))
+
 ## [1.10.0](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.9.1...v1.10.0) (2026-11-15)
 
 

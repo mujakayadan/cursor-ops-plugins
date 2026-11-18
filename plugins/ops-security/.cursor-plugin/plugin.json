@@ -1,7 +1,7 @@
 {
   "name": "ops-security",
   "displayName": "Ops: Security Review",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "description": "Reviews every agent turn that changes code for security: static hints on each edit, then an automatic follow-up review of injection, authz, secrets, crypto, supply chain and insecure defaults.",
   "author": {
     "name": "Muja Kayadan"
