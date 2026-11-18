@@ -91,5 +91,18 @@ describe("yarba portfolio", () => {
         return true;
       },
     );
+    const body = "ABCDEFGHIJ";
+    await assert.rejects(
+      () =>
+        fetchPortfolio(
+          { YARBA_PORTFOLIO_TOKEN: TOKEN },
+          async () => new Response(body, { status: 200 }),
+        ),
+      (err: Error) => {
+        assert.match(err.message, /invalid JSON/);
+        assert.equal(err.message.includes(body), false);
+        return true;
+      },
+    );
   });
 });

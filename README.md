@@ -212,7 +212,7 @@ Writes need approval, so content from a web page or an issue can't plant facts w
 | Tool | Tier | What it does |
 |---|---|---|
 | `yarba_status` | read | Whether `YARBA_PORTFOLIO_TOKEN` is set, and the API host |
-| `yarba_portfolio` | read | Published summary, work, education, skills, projects, awards and publications |
+| `yarba_portfolio` | read | Published personal details, summary, life story, work, education, skills, projects, awards and publications |
 
 ## Model routing
 

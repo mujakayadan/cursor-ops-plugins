@@ -135,12 +135,12 @@ export function parsePortfolio(body: unknown): PortfolioContent {
     workExperience: rows(
       root.work_experience,
       LIST,
-      (item, flag) => ({
+      (item, truncated) => ({
         jobTitle: clip(item.job_title, SHORT),
         company: clip(item.company, SHORT),
         location: clip(item.location, SHORT),
         time: clip(item.time, SHORT),
-        responsibilities: texts(item.responsibilities, BULLETS, BULLET, flag),
+        responsibilities: texts(item.responsibilities, BULLETS, BULLET, truncated),
       }),
       truncated,
     ),
@@ -159,18 +159,18 @@ export function parsePortfolio(body: unknown): PortfolioContent {
     skills: rows(
       root.skills,
       LIST,
-      (item, flag) => ({
+      (item, truncated) => ({
         category: clip(item.category, SHORT),
-        skills: texts(item.skills, LIST, SHORT, flag),
+        skills: texts(item.skills, LIST, SHORT, truncated),
       }),
       truncated,
     ),
     projects: rows(
       root.projects,
       LIST,
-      (item, flag) => ({
+      (item, truncated) => ({
         name: clip(item.name, SHORT),
-        bulletPoints: texts(item.bullet_points, BULLETS, BULLET, flag),
+        bulletPoints: texts(item.bullet_points, BULLETS, BULLET, truncated),
         date: clip(item.date, SHORT),
         link: optional(item.link, SHORT),
       }),
@@ -200,7 +200,7 @@ export function parsePortfolio(body: unknown): PortfolioContent {
   };
 }
 
-export function portfolioEndpoint(env: NodeJS.ProcessEnv = process.env): Endpoint | null {
+function portfolioEndpoint(env: NodeJS.ProcessEnv = process.env): Endpoint | null {
   const token = env.YARBA_PORTFOLIO_TOKEN?.trim() ?? "";
   if (!token) return null;
   let url: URL;
@@ -252,5 +252,11 @@ export async function fetchPortfolio(
     throw new ToolError(`${endpoint.host} rejected the portfolio site token`);
   }
   if (!res.ok) throw new ToolError(`${endpoint.host} returned ${res.status}`);
-  return parsePortfolio(await res.json());
+  let body: unknown;
+  try {
+    body = await res.json();
+  } catch {
+    throw new ToolError(`${endpoint.host} returned invalid JSON`);
+  }
+  return parsePortfolio(body);
 }
