@@ -22,7 +22,7 @@ When checks are green, merge. Check with read tools first:
 - `github_pr_view`: not draft, `mergeable` is `MERGEABLE`, `reviewDecision` is not `CHANGES_REQUESTED`. Solo repos need no approving review.
 - `github_pr_checks`: every check passes.
 
-A work pull request into `dev`, `qa`, or `staging` is squash-merged by the agent (`github_pr_merge` method `auto`, or `gh pr merge --squash`). Do not wait for the user. Then remove the linked worktree and the local work branch (`gitops-workflow`). A sync between those branches uses a merge commit, and the agent merges that too. Environment branches stay.
+A work pull request into `dev`, `qa`, or `staging` is squash-merged by the agent (`github_pr_merge` method `auto`, or `gh pr merge --squash`). Do not wait for the user. Then remove a linked worktree you created, and delete the local work branch (`gitops-workflow`). A sync between those branches uses a merge commit, and the agent merges that too. Environment branches stay.
 
 A pull request into `main`, including promote and release-please, merges only when the user approves `github_pr_merge` (method `auto`) or merges it themselves. Never `gh pr merge` a pull request into `main`.
 
