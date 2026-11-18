@@ -122,7 +122,7 @@ Every repository, this one included, follows one branch and release flow:
 | `dev` | integration | PRs from `<github-user>/<type>/<kebab-name>` branches; the automatic `main → dev` sync | squash (agent merges features), merge commit (agent merges sync) |
 | `qa`, `staging` | optional, only when asked | promotions | merge commit |
 
-Work branch types are `feat`, `fix`, `chore`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `style`, `revert` and `hotfix`. PR titles follow Conventional Commits. Each PR covers one concern; leave unrelated dirty files out of the commit. Concurrent agents use linked git worktrees so they do not share a working tree. In this suite, that is `ops worktree add <user>/<type>/<name>` (creates `<repo>-wt/<user>/<type>/<kebab>` beside the primary checkout); other repos use plain `git worktree add`. This suite's shared read server tracks git HEAD and refreshes on `ops status`, `ops doctor` and workspace open.
+Work branch types are `feat`, `fix`, `chore`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `style`, `revert` and `hotfix`. PR titles follow Conventional Commits. Each PR covers one concern; leave unrelated dirty files out of the commit. Concurrent agents use linked git worktrees so they do not share a working tree. In this suite, that is `ops worktree add <user>/<type>/<name>` (creates `<repo>-wt/<user>/<type>/<kebab>` beside the primary checkout); other repos use plain `git worktree add`. After the pull request merges, the agent removes that worktree and deletes the local work branch. Environment branches stay. This suite's shared read server tracks git HEAD and refreshes on `ops status`, `ops doctor` and workspace open.
 
 The flow is enforced in layers that all work on GitHub Free:
 - **CI:** the `pr-policy` workflow checks the target, the branch name (its user part must match the PR author) and the title.
@@ -212,7 +212,7 @@ Writes need approval, so content from a web page or an issue can't plant facts w
 | Tool | Tier | What it does |
 |---|---|---|
 | `yarba_status` | read | Whether `YARBA_PORTFOLIO_TOKEN` is set, and the API host |
-| `yarba_portfolio` | read | Published summary, work, education, skills, projects, awards and publications |
+| `yarba_portfolio` | read | Published personal details, summary, life story, work, education, skills, projects, awards and publications |
 
 ## Model routing
 
