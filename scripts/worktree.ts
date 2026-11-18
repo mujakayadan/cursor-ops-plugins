@@ -11,7 +11,7 @@ const USAGE = `ops worktree — linked checkouts for concurrent agents on this s
   ops worktree add <user>/<type>/<kebab-name>   create from origin/dev under <repo>-wt/<user>/<type>/<kebab>
   ops worktree list                             show linked worktrees
   ops worktree remove <user>/<type>/<kebab-name>
-                                                remove the linked checkout for that branch`;
+                                                remove the linked checkout and delete the local branch when it is merged into HEAD`;
 
 export { assertWorkBranch };
 
@@ -52,7 +52,19 @@ function remove(branch: string): number {
   assertWorkBranch(branch);
   const path = resolve(worktreePath(REPO_ROOT, branch));
   git(["worktree", "remove", path]);
+  const deleted = spawnSync("git", ["branch", "-d", branch], {
+    cwd: REPO_ROOT,
+    encoding: "utf8",
+    windowsHide: true,
+  });
+  if (deleted.status === 0) {
+    console.log(`removed ${path} and deleted local branch ${branch}`);
+    return 0;
+  }
   console.log(`removed ${path}`);
+  console.log(
+    `local branch ${branch} remains. Delete it with git branch -D only after its squash is on the target branch and the remote branch is gone. Never delete main, dev, qa, or staging.`,
+  );
   return 0;
 }
 
