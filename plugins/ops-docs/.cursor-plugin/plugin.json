@@ -1,7 +1,7 @@
 {
   "name": "ops-docs",
   "displayName": "Ops: Docs Freshness",
-  "version": "1.11.0",
+  "version": "1.11.1",
   "description": "Keeps documentation in step with the code: flags docs that still mention removed identifiers, broken links and missing paths on each edit, then reviews the docs affected by every turn that changes code or docs.",
   "author": {
     "name": "Muja Kayadan"
