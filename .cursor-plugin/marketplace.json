@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Cursor plugin suite for least-privilege agent operations. Plugins expose tiered read/write MCP servers or local tools, with guardrail hooks, skills and evals. This file is the list of plugins.",
-    "version": "1.11.0"
+    "version": "1.11.1"
   },
   "plugins": [
     {

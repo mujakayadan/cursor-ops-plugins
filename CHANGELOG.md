@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.1](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.11.0...v1.11.1) (2026-11-18)
+
+
+### Bug Fixes
+
+* **yarba:** describe the portfolio fields and hide non-JSON bodies ([#97](https://github.com/mujakayadan/cursor-ops-plugins/issues/97)) ([1f42e25](https://github.com/mujakayadan/cursor-ops-plugins/commit/1f42e25ba14acf293bc4f28f991a42af7d13b2e1))
+
 ## [1.11.0](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.10.0...v1.11.0) (2026-11-17)
 
 
