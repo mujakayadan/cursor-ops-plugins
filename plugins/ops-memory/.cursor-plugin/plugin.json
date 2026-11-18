@@ -1,7 +1,7 @@
 {
   "name": "ops-memory",
   "displayName": "Ops: Memory",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "description": "Local knowledge graph shared across workspaces: entities, observations and relations about the user, projects, decisions, conventions and vetted open-source projects, with approval-gated writes and credential rejection.",
   "author": {
     "name": "Muja Kayadan"
