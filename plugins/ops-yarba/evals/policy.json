@@ -1,0 +1,32 @@
+[
+  {
+    "name": "status is a read",
+    "event": "beforeMCPExecution",
+    "input": {
+      "mcp_server_name": "ops-yarba-read",
+      "tool_name": "yarba_status",
+      "tool_input": "{}"
+    },
+    "expect": { "permission": "allow" }
+  },
+  {
+    "name": "portfolio is a read",
+    "event": "beforeMCPExecution",
+    "input": {
+      "mcp_server_name": "ops-yarba-read",
+      "tool_name": "yarba_portfolio",
+      "tool_input": "{}"
+    },
+    "expect": { "permission": "allow" }
+  },
+  {
+    "name": "unknown yarba tool denied",
+    "event": "beforeMCPExecution",
+    "input": {
+      "mcp_server_name": "ops-yarba-read",
+      "tool_name": "yarba_shell",
+      "tool_input": "{}"
+    },
+    "expect": { "permission": "deny" }
+  }
+]
