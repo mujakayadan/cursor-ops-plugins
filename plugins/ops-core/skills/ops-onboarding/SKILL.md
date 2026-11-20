@@ -53,4 +53,4 @@ Privileged actions are disabled by default. To enable them for one provider, set
 
 ## Sessions
 
-Each topic is its own folder, opened as its own window, because chat stays with that workspace. Follow `workspace-sessions` when the user wants one. The loader runs for every workspace, so the enabled plugins come with the folder.
+One folder is the workspace, opened once. A topic is a folder inside it, and that folder is the session. Follow `workspace-sessions`. The loader runs for every workspace, so the enabled plugins come with it.

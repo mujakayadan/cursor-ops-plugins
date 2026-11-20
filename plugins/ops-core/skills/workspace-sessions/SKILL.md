@@ -1,39 +1,20 @@
 ---
 name: workspace-sessions
-description: Give each topic its own Cursor session by opening one folder, or one saved multi-root workspace, per topic. Use when the user wants a workspace, a session per topic or project, separate chats per subject, or a setup guide other people can follow.
+description: Set up one Cursor workspace as a chatpot, with one folder per topic session. Use when the user wants a workspace, a session per topic, separate chats per subject, or a setup guide other people can follow.
 ---
 
 # Workspace sessions
 
-Cursor keeps agent chat with the workspace that is open. One topic is one session. A second topic is a second folder, opened in its own window. Chats do not cross between them.
+One folder is the workspace. Open it once. That window is the chatpot: every topic chat lives there.
 
-## One folder, one session
+A topic is a folder inside that workspace. Start the agent on that folder from the same window. The chat stays with the folder. A new topic is a new folder. Leave the path where it is; moving or renaming the folder starts a new workspace, and the existing chats stay on the old path.
 
-1. Pick a stable folder for the topic. Put that topic's repositories in it, or leave them where they are and point a workspace file at them.
-2. Open that folder: File → Open Folder, or Agents Window → Open Folder. That open is the session.
-3. Leave the path where it is. Moving or renaming the folder starts a new workspace, and the old chats stay on the old path.
-
-Do not put every topic in one window. A multi-root workspace is one session that spans several folders, for a change that has to touch them together.
-
-## Several repositories, one topic
-
-Save a workspace file inside the topic folder:
-
-```json
-{
-  "folders": [
-    { "name": "api", "path": "api" },
-    { "name": "web", "path": "web" }
-  ]
-}
-```
-
-Paths are relative to the file. Open it from the editor with File → Open Workspace from File. The Agents Window folder picker accepts folders, not workspace files. After the editor has opened the file once, that workspace shows up as an agent target. Turning a single-folder window into a multi-root workspace creates a new identity, and the chat that was open stays on the original folder.
+Open the Agents Window on the workspace (Command Palette → Open Agents Window). Pick the topic folder as that agent's target. Stay in that one window. A topic the user did not name is not a folder you add, and it is not a window you open.
 
 ## With this suite
 
-The loader runs on every workspace open, so each topic session gets the enabled plugins. Nothing is copied per topic.
+The loader runs on every workspace open, so the enabled plugins are in the chatpot. Nothing is copied per topic.
 
-Two agents in one checkout use `ops worktree add` so they do not share a working tree. A topic in its own folder has no worktree.
+Two agents in one checkout use `ops worktree add` so they do not share a working tree. A topic folder has no worktree of its own.
 
-When you create the folders for the user, open each one. Keep machine paths out of a public repository; the guide stays portable, and the workspace files stay on their machine.
+Keep machine paths out of a public repository. The workspace stays on the user's machine.

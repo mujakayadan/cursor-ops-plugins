@@ -138,22 +138,11 @@ The `gitops-workflow` skill (ops-github) drives this from the agent. Agents squa
 
 ## Sessions
 
-Cursor keeps agent chat with the workspace you open. One topic is one folder, opened as its own window, and that window's chats stay with that folder. A second topic is a second folder. Open it with File → Open Folder, or Agents Window → Open Folder. Keep the path stable: a move or rename is a new workspace, and the old chats stay on the old path.
+One folder is the workspace. Open it once, then open the Agents Window on it (Command Palette → Open Agents Window). That window is where the chats live.
 
-A multi-root workspace is one session across several folders, for a change that has to touch them together. Save it inside the topic folder as `<topic>.code-workspace`. Paths are relative to that file:
+A topic is a folder inside that workspace. Start the agent on that folder from the same window. The chat stays with the folder. A new topic is a new folder, not a new window. Leave the path where it is: a move or rename is a new workspace, and the existing chats stay on the old path.
 
-```json
-{
-  "folders": [
-    { "name": "api", "path": "api" },
-    { "name": "web", "path": "web" }
-  ]
-}
-```
-
-Open that file from the editor (File → Open Workspace from File). The Agents Window folder picker accepts folders, not workspace files; after the editor has opened the file, the workspace shows up as an agent target. Turning a single-folder window into a multi-root workspace creates a new identity, and the current chat stays on the original folder.
-
-The suite loader runs for every workspace that opens, so each topic session gets the enabled plugins. Two agents in one checkout use `ops worktree add` (see [GitOps](#gitops)). The `workspace-sessions` skill (ops-core) is this same setup for the agent.
+The suite loader runs for every workspace that opens, so the chatpot gets the enabled plugins. Two agents in one checkout use `ops worktree add` (see [GitOps](#gitops)). The `workspace-sessions` skill (ops-core) is this same setup for the agent.
 
 ## Microsoft 365
 
