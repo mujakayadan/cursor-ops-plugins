@@ -9,7 +9,7 @@ One folder is the workspace. Open it once. That window is the chatpot: every top
 
 A topic is a folder inside that workspace. Start the agent on that folder from the same window. The chat stays with the folder. A new topic is a new folder. Leave the path where it is; moving or renaming the folder starts a new workspace, and the existing chats stay on the old path.
 
-Open the Agents Window on the workspace (Command Palette → Open Agents Window). Pick the topic folder as that agent's target. Stay in that one window. A topic the user did not name is not a folder you add, and it is not a window you open.
+Open the Agents Window on the workspace (Command Palette → Open Agents Window). Pick the topic folder as that agent's target. Stay in that one window. Add a folder only for a topic the user named.
 
 ## With this suite
 
