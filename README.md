@@ -16,7 +16,7 @@ Cursor plugin suite for least-privilege work from the agent. Provider plugins op
 
 `ops-architecture` writes the architecture and delivery plan of a new or existing application, after interviewing you on what is still open. The set is `ARCHITECTURE.md`, ADRs, a runbook and a `TODO.md` that traces every requirement and syncs to GitHub issues. Its platform diagrams use the official AWS, Azure, Google Cloud and Kubernetes icons (see [Architecture and delivery plans](#architecture-and-delivery-plans)).
 
-`ops-core` adds cross-cutting guardrails (secret blocking in prompts/commands/MCP args, [safety guardrails](#safety-guardrails) against destructive git, database, filesystem and system commands, risk classification for **third-party** MCP servers such as the official Vercel or GitHub MCP), the audit trail, the operating-model rule, change-management/incident skills and a read-only `ops-investigator` subagent.
+`ops-core` adds cross-cutting guardrails (secret blocking in prompts/commands/MCP args, [safety guardrails](#safety-guardrails) against destructive git, database, filesystem and system commands, risk classification for **third-party** MCP servers such as the official Vercel or GitHub MCP), the audit trail, the operating-model rule, change-management/incident skills, the [workspace sessions](#sessions) skill and a read-only `ops-investigator` subagent.
 
 `ops-security`, `ops-performance`, `ops-standards` and `ops-docs` review the agent's own work. Once installed, every turn that changes code or docs ends with a review of exactly those changes for security, performance, clean code (current state only, no legacy or dead code) and documentation freshness (see [Automatic code review](#automatic-code-review)).
 
@@ -135,6 +135,25 @@ Releases use [release-please](https://github.com/googleapis/release-please). Con
 Workflows on PRs opened with the default `GITHUB_TOKEN` (the release and sync PRs) don't run on their own: GitHub holds them as *action required* until a maintainer clicks **Approve and run**. To skip that step, add a fine-grained token with Contents and Pull requests read/write on the repo as the `GITOPS_TOKEN` Actions secret. The workflows use it when present.
 
 The `gitops-workflow` skill (ops-github) drives this from the agent. Agents squash-merge their own work PRs into `dev` once checks are green, and open the `dev` → `main` promote PR when the suite should ship. A pull request into `main` merges when the user approves `github_pr_merge`, or when the user merges it. The agent does not merge those with `gh pr merge`. `github_repo_create` always asks for the visibility. `github_repo_bootstrap` creates `dev` and any extra environments, sets the merge settings, labels and rulesets, lets Actions open PRs, links a project board, and reports whether `GITOPS_TOKEN` is set. `github_release_list`, `github_project_list` and `github_project_item_add` cover releases and boards. `github_issues_import` creates a delivery plan's epics and tasks as issues in one approved call (see [Architecture and delivery plans](#architecture-and-delivery-plans)). The project tools need the `project` token scope (`gh auth refresh -s project`).
+
+## Sessions
+
+Cursor keeps agent chat with the workspace you open. One topic is one folder, opened as its own window, and that window's chats stay with that folder. A second topic is a second folder. Open it with File → Open Folder, or Agents Window → Open Folder. Keep the path stable: a move or rename is a new workspace, and the old chats stay on the old path.
+
+A multi-root workspace is a different thing: one session across several folders, for a change that has to touch them together. Save it inside the topic folder as `<topic>.code-workspace`:
+
+```json
+{
+  "folders": [
+    { "name": "api", "path": "api" },
+    { "name": "web", "path": "web" }
+  ]
+}
+```
+
+Open that file from the editor (File → Open Workspace from File). The Agents Window folder picker accepts folders, not workspace files; after the editor has opened the file, the workspace shows up as an agent target. Turning a single-folder window into a multi-root workspace creates a new identity, and the current chat stays on the original folder.
+
+The suite loader runs for every workspace that opens, so each topic session gets the plugins. A topic session is not a git worktree: two agents in one checkout still use `ops worktree` (see [GitOps](#gitops)). The `workspace-sessions` skill (ops-core) is this same setup for the agent.
 
 ## Microsoft 365
 
