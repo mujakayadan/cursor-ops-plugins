@@ -34,6 +34,6 @@ Paths are relative to the file. Open it from the editor with File → Open Works
 
 The loader runs on every workspace open, so each topic session gets the enabled plugins. Nothing is copied per topic.
 
-A topic session is not a git worktree. Two agents in one checkout still use `ops worktree add` so they do not share a working tree. A topic that is a different folder needs no worktree.
+Two agents in one checkout use `ops worktree add` so they do not share a working tree. A topic in its own folder has no worktree.
 
 When you create the folders for the user, open each one. Keep machine paths out of a public repository; the guide stays portable, and the workspace files stay on their machine.
