@@ -138,7 +138,7 @@ The `gitops-workflow` skill (ops-github) drives this from the agent. Agents squa
 
 ## Sessions
 
-One folder is the workspace. Open it once, then open the Agents Window on it (Command Palette → Open Agents Window). That window is where the chats live.
+One folder is the workspace. Open it once and use it as a chatbot, then open the Agents Window on it (Command Palette → Open Agents Window). Every topic chat lives in that window.
 
 A topic is a folder inside that workspace. Start the agent on that folder from the same window. The chat stays with the folder. A new topic is a new folder, not a new window. Leave the path where it is: a move or rename is a new workspace, and the existing chats stay on the old path.
 
