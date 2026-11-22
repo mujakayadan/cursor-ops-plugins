@@ -142,7 +142,7 @@ Use the editor. A topic is a folder: File → Open Folder. The chats in that win
 
 A directory of topic folders is only a shelf. Opening the shelf, or a `.code-workspace` that lists every topic, is one workspace and one history for all of them. Leave each topic folder where it is: a move or rename is a new workspace, and the existing chats stay on the old path.
 
-The Agents Window can run that agent in the cloud. A cloud agent edits a remote checkout, not the files on this machine, and Move to → Local appears only when a local agent for that same repo is already open. A topic chat that stays on this machine stays in the editor.
+The Agents Window is a different surface. A cloud agent there edits a remote checkout, not the files on this machine, and Move to → Local appears only when a local agent for that same repo is already open. The suite loads through the editor's `workspaceOpen` hook, and guardrail and review hooks run in the editor. An Agents Window chat does not get that loader or those hooks the same way. A topic chat that stays on this machine with the suite stays in the editor.
 
 The suite loader runs when a workspace opens, so each topic folder gets the enabled plugins. `memory_remember` writes one knowledge graph for the machine. A fact that belongs to one topic stays in that agent's transcript, or in a file in that folder. Two agents in one checkout use `ops worktree add` (see [GitOps](#gitops)). The `workspace-sessions` skill (ops-core) is this same setup for the agent.
 
@@ -371,7 +371,7 @@ ops doctor                    # CLIs, loader, read server, config, sign-in per t
 ```
 
 `ops install` does four things:
-- adds a user-level `workspaceOpen` hook that runs `scripts/workspace-plugins.ts`. When any workspace opens, it starts the shared read server if needed, then returns the paths of every enabled plugin in this checkout, so every project gets the whole suite and `git pull` updates it in place. (Cursor skips links in `~/.cursor/plugins/local` that point elsewhere, so the suite keeps none there.)
+- adds a user-level `workspaceOpen` hook that runs `scripts/workspace-plugins.ts`. When a workspace opens in the editor, it starts the shared read server if needed, then returns the paths of every enabled plugin in this checkout, so every editor project gets the whole suite and `git pull` updates it in place. (Cursor skips links in `~/.cursor/plugins/local` that point elsewhere, so the suite keeps none there. The Agents Window does not load the suite this way.)
 - creates the read server's token (`~/.ops/serve.token`, a random local secret, not a provider credential) and sets it as the `OPS_MCP_TOKEN` user environment variable.
 - writes the `ops` launcher to `~/.ops/bin` and adds that folder to your user PATH. On macOS and Linux it prints the two profile lines instead; `--no-user-env` skips both.
 - creates `~/.ops/config.json` from `config.example.json` if it doesn't exist.
