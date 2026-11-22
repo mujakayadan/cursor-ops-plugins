@@ -53,4 +53,4 @@ Privileged actions are disabled by default. To enable them for one provider, set
 
 ## Sessions
 
-One folder is the workspace, opened once. A topic is a folder inside it, and that folder is the session. Follow `workspace-sessions`. The loader runs for every workspace, so the enabled plugins come with it.
+The Agents Window is the chatbot, opened once. A topic is one agent on its own folder. Follow `workspace-sessions`. The loader runs for every workspace, so the enabled plugins come with it.

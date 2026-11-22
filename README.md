@@ -138,11 +138,11 @@ The `gitops-workflow` skill (ops-github) drives this from the agent. Agents squa
 
 ## Sessions
 
-One folder is the workspace. Open it once and use it as a chatbot, then open the Agents Window on it (Command Palette → Open Agents Window). Every topic chat lives in that window.
+The Agents Window is the chatbot. Open it once (Command Palette → Open Agents Window). A topic is one agent whose workspace is its own folder. Cursor keeps the chat with that workspace, so continue the same agent to keep the session and its transcript.
 
-A topic is a folder inside that workspace. Start the agent on that folder from the same window. The chat stays with the folder. A new topic is a new folder, not a new window. Leave the path where it is: a move or rename is a new workspace, and the existing chats stay on the old path.
+A directory of topic folders is only a shelf. Opening the shelf, or a `.code-workspace` that lists every topic, is one workspace and one history for all of them. Leave each topic folder where it is: a move or rename is a new workspace, and the existing chats stay on the old path.
 
-The suite loader runs for every workspace that opens, so that workspace gets the enabled plugins. Two agents in one checkout use `ops worktree add` (see [GitOps](#gitops)). The `workspace-sessions` skill (ops-core) is this same setup for the agent.
+The suite loader runs when a workspace opens, so each topic folder gets the enabled plugins. `memory_remember` writes one knowledge graph for the machine. A fact that belongs to one topic stays in that agent's transcript, or in a file in that folder. Two agents in one checkout use `ops worktree add` (see [GitOps](#gitops)). The `workspace-sessions` skill (ops-core) is this same setup for the agent.
 
 ## Microsoft 365
 
