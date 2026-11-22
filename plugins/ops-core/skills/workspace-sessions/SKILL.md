@@ -17,7 +17,7 @@ The Agents Window is a different surface. A cloud agent there edits a remote che
 
 ## With this suite
 
-The loader runs when a workspace opens, so the enabled plugins are in each topic folder. Nothing is copied per topic.
+The loader runs when an editor workspace opens, so the enabled plugins are in each topic folder. Nothing is copied per topic.
 
 `memory_remember` writes the machine knowledge graph, which every workspace can read. A fact that belongs to one topic stays in that agent's transcript, or in a file in that folder.
 
