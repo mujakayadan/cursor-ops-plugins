@@ -1,19 +1,19 @@
 ---
 name: workspace-sessions
-description: Set up Cursor as a chatbot, with one Agents Window and one folder-backed agent per topic. Use when the user wants a workspace, a session per topic, separate chats per subject, or a setup guide other people can follow.
+description: Set up Cursor as a chatbot in the editor, with one folder and its chats per topic, kept on this machine. Use when the user wants a workspace, a session per topic, separate chats per subject, or a setup guide other people can follow.
 ---
 
 # Workspace sessions
 
-The Agents Window is the chatbot. Open it once (Command Palette → Open Agents Window). A topic is one agent, and that agent's workspace is its own folder. Cursor keeps the chat with the workspace, so continue that same agent to keep the session and its transcript.
+Use the editor. A topic is a folder. Open that folder with File → Open Folder. The chats in that window are the session, and they run on this machine. Close the window when you stop. Open the same folder again to continue those chats.
 
 A directory that holds the topic folders is a shelf. Opening the shelf, or a `.code-workspace` that lists every topic, is one workspace and one history for all of them.
 
-1. Create a folder for the topic and leave it at that path. Moving or renaming it starts a new workspace, and the existing chats stay on the old path.
-2. In the Agents Window, start an agent on that folder.
-3. Next time, open the Agents Window and continue that agent. Search there reaches chats across workspaces.
+Leave the folder at that path. Moving or renaming it starts a new workspace, and the existing chats stay on the old path.
 
 Add a folder only for a topic the user named.
+
+The Agents Window can run an agent in the cloud. A cloud agent edits a remote checkout, not the files on this machine. Move to Local appears only when a local agent for that same folder is already open. For a topic chat that stays on this PC, stay in the editor and do not send the agent to the cloud.
 
 ## With this suite
 

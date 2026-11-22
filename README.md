@@ -138,9 +138,11 @@ The `gitops-workflow` skill (ops-github) drives this from the agent. Agents squa
 
 ## Sessions
 
-The Agents Window is the chatbot. Open it once (Command Palette → Open Agents Window). A topic is one agent whose workspace is its own folder. Cursor keeps the chat with that workspace, so continue the same agent to keep the session and its transcript.
+Use the editor. A topic is a folder: File → Open Folder. The chats in that window are the session, and they run on this machine. Close the window when you stop. Open the same folder again to continue those chats.
 
 A directory of topic folders is only a shelf. Opening the shelf, or a `.code-workspace` that lists every topic, is one workspace and one history for all of them. Leave each topic folder where it is: a move or rename is a new workspace, and the existing chats stay on the old path.
+
+The Agents Window can run that agent in the cloud. A cloud agent edits a remote checkout, not the files on this machine, and Move to Local appears only when a local agent for that same folder is already open. A topic chat that stays on this PC stays in the editor.
 
 The suite loader runs when a workspace opens, so each topic folder gets the enabled plugins. `memory_remember` writes one knowledge graph for the machine. A fact that belongs to one topic stays in that agent's transcript, or in a file in that folder. Two agents in one checkout use `ops worktree add` (see [GitOps](#gitops)). The `workspace-sessions` skill (ops-core) is this same setup for the agent.
 
