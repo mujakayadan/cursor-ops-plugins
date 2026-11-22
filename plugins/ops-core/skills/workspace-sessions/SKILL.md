@@ -13,7 +13,7 @@ Leave the folder at that path. Moving or renaming it starts a new workspace, and
 
 Add a folder only for a topic the user named.
 
-The Agents Window can run an agent in the cloud. A cloud agent edits a remote checkout, not the files on this machine. Move to Local appears only when a local agent for that same folder is already open. For a topic chat that stays on this PC, stay in the editor and do not send the agent to the cloud.
+The Agents Window can run an agent in the cloud. A cloud agent edits a remote checkout, not the files on this machine. Move to → Local appears only when a local agent for that same repo is already open. For a topic chat that stays on this machine, stay in the editor and do not send the agent to the cloud.
 
 ## With this suite
 
