@@ -2,7 +2,7 @@
   "name": "ops-core",
   "displayName": "Ops: Core Guardrails",
   "version": "1.11.0",
-  "description": "Enterprise guardrails for agent operations: secret-blocking, shell and third-party MCP risk policy, audit logging, change-management skills.",
+  "description": "Enterprise guardrails for agent operations: secret-blocking, shell and third-party MCP risk policy, audit logging, change-management and workspace-sessions skills.",
   "author": {
     "name": "Muja Kayadan"
   },

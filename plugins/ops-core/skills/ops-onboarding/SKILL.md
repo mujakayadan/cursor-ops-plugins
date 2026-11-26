@@ -50,3 +50,7 @@ Privileged actions are disabled by default. To enable them for one provider, set
 - **A read server shows an error in Settings → MCP while the doctor says the server is up:** Cursor connected while the server was down or restarting, and it doesn't retry a failed server on its own. Ask the user to toggle that server off and on in Settings → MCP; a quit and reopen of Cursor also works.
 - **The read tier shows the same identity as the write tier:** the per-tier credentials aren't configured, so both tiers use the default login.
 - **Audit records** are in `~/.ops/audit/YYYY-MM-DD.jsonl`, with secrets redacted.
+
+## Sessions
+
+A topic is one folder opened in the editor. That window is the session, on this machine. Follow `workspace-sessions`. The loader runs for every editor workspace, so the enabled plugins come with it. The Agents Window does not load the suite the same way.
