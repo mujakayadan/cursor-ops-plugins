@@ -211,7 +211,7 @@ Writes need approval, so content from a web page or an issue can't plant facts w
 
 `ops-rea` pins the upstream [REA](https://github.com/morluto/rea) (`rea-agents`) MCP for the team marketplace without reimplementing its tools. Enable the plugin, restart Cursor, and use the `rea` server under Settings → MCP. Bump the version in `plugins/ops-rea/mcp.json` to follow upstream.
 
-`ops-inhouse` talks to [Inhouse](https://www.inhouse.ai) over HTTPS (`https://api.inhouse.ai` by default) with a Bearer access token in `INHOUSE_ACCESS_TOKEN` (never paste the token into chat). It lists threads, reads messages, lists the document library, and uploads evidence via presigned URLs. Endpoints are not a published partner API and can change. Outbound mail with attachments stays on `ops-msgraph`.
+`ops-inhouse` talks to [Inhouse](https://www.inhouse.ai) over HTTPS (`https://api.inhouse.ai` by default) with a Bearer access token in `INHOUSE_ACCESS_TOKEN` (never paste the token into chat; do not use `setx`, which truncates long JWTs). Run `node plugins/ops-inhouse/login.ts` from the checkout to open the site and store the token, then quit/reopen Cursor. It lists threads, reads messages, lists the document library, and uploads evidence via presigned URLs. Endpoints are not a published partner API and can change. Outbound mail with attachments stays on `ops-msgraph`.
 
 | Tool | Tier | What it does |
 |---|---|---|

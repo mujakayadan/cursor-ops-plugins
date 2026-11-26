@@ -94,8 +94,36 @@ async function api<T>(
   return data as T;
 }
 
-export function getInfo(env?: NodeJS.ProcessEnv) {
-  return api<unknown>("GET", "/api/v0/user/get-info", undefined, env);
+export interface InhouseProfile {
+  userId: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  subscriptionStatus: string | null;
+  subscriptionType: string | null;
+  threadsRemainingAsk: number | null;
+  threadsRemainingDraft: number | null;
+}
+
+function optionalString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function optionalNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+/** Account summary from GET /api/user/get-metadata (safe subset; no phone). */
+export async function getInfo(env?: NodeJS.ProcessEnv): Promise<InhouseProfile> {
+  const raw = await api<Record<string, unknown>>("GET", "/api/user/get-metadata", undefined, env);
+  return {
+    userId: optionalString(raw.user_id),
+    firstName: optionalString(raw.first_name),
+    lastName: optionalString(raw.last_name),
+    subscriptionStatus: optionalString(raw.subscription_status),
+    subscriptionType: optionalString(raw.subscription_type),
+    threadsRemainingAsk: optionalNumber(raw.threads_remaining_ask),
+    threadsRemainingDraft: optionalNumber(raw.threads_remaining_draft),
+  };
 }
 
 export function listThreads(env?: NodeJS.ProcessEnv) {
