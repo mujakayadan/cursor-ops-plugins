@@ -15,7 +15,7 @@ Start with `msgraph_whoami` so you know which account is active (work or persona
 
 ## Mail
 - Triage: `msgraph_mail_list` (`unreadOnly`, `from`, or `search` with KQL such as `subject:invoice`), then `msgraph_mail_get` for the few that matter. Group by what needs action, and cite subjects and senders.
-- Reply: `msgraph_mail_reply` (`replyAll` only when the user says so). Forward: `msgraph_mail_forward`. New mail: `msgraph_mail_send` or `msgraph_mail_draft_create`. Attach local files with absolute paths on send or draft create (`attachments`), or add them later with `msgraph_mail_attach` (each file at most 3 MB). Confirm attachment names with the user before calling.
+- Reply: `msgraph_mail_reply` (`replyAll` only when the user says so). Forward: `msgraph_mail_forward`. New mail: `msgraph_mail_send` or `msgraph_mail_draft_create`. Attach local files with absolute paths on send or draft create (`attachments`), or add them later with `msgraph_mail_attach` (at most 10 files, 3 MB each; not under the ops home directory). Confirm attachment names with the user before calling.
 - Tidy up: `msgraph_mail_mark`, `msgraph_mail_move` (folders from `msgraph_mail_folders`).
 
 ## Calendar
