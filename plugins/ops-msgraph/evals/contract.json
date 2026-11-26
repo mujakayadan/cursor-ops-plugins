@@ -1,6 +1,7 @@
 [
   { "name": "send requires a recipient", "tool": "msgraph_mail_send", "server": "write", "arguments": { "to": [], "subject": "Hi", "body": "x" }, "expectError": "Invalid arguments" },
   { "name": "send rejects malformed addresses", "tool": "msgraph_mail_send", "server": "write", "arguments": { "to": ["Ana <ana@contoso.com>"], "subject": "Hi", "body": "x" }, "expectError": "Invalid arguments" },
+  { "name": "attach needs a draft id", "tool": "msgraph_mail_attach", "server": "write", "arguments": { "attachments": [{ "path": "C:/tmp/a.pdf" }] }, "expectError": "Invalid arguments" },
   { "name": "event times are local wall-clock values", "tool": "msgraph_event_create", "server": "write", "arguments": { "subject": "Sync", "start": "2026-11-20T10:00:00Z", "end": "2026-11-20T10:30:00Z" }, "expectError": "Invalid arguments" },
   { "name": "event end must follow start", "tool": "msgraph_event_create", "server": "write", "arguments": { "subject": "Sync", "start": "2026-11-20T10:30", "end": "2026-11-20T10:00" }, "expectError": "end must be after start" },
   { "name": "event update needs a change", "tool": "msgraph_event_update", "server": "write", "arguments": { "id": "AAMkAGI2" }, "expectError": "nothing to update" },
