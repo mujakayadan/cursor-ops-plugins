@@ -20,7 +20,7 @@ From the suite checkout:
 node plugins/ops-inhouse/login.ts
 ```
 
-That opens [platform.inhouse.app](https://platform.inhouse.app), asks you to paste `accessToken2` from DevTools → Application → Local Storage, and stores `INHOUSE_ACCESS_TOKEN` with the OS user-environment API. Do **not** use `setx` — it truncates JWTs longer than ~1024 characters.
+That opens [platform.inhouse.app](https://platform.inhouse.app), asks you to paste `accessToken2` from DevTools → Application → Local Storage (paste is hidden in the terminal), and stores `INHOUSE_ACCESS_TOKEN` with the OS user-environment API. Do **not** use `setx` — it truncates JWTs longer than ~1024 characters.
 
 Then **quit Cursor completely and reopen it**. Call `inhouse_status` (ready true) and `inhouse_whoami`.
 
