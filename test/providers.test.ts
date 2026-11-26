@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
+import { existsSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "vitest";
 import type { ProviderConfig, ToolContext } from "../packages/core/types.ts";
@@ -24,6 +25,8 @@ import memory from "../plugins/ops-memory/provider.ts";
 import mermaid from "../plugins/ops-mermaid/provider.ts";
 import models from "../plugins/ops-models/provider.ts";
 import msgraph, {
+  ATTACHMENT_MAX_BYTES,
+  fileAttachments,
   outsideDomains,
   requestArgs,
   stripHtml,
@@ -223,6 +226,41 @@ describe("msgraph requests", () => {
       "--content-type",
       "application/json",
     ]);
+  });
+  it("points m365 at a body file when the JSON is large", () => {
+    const args = requestArgs({
+      method: "post",
+      path: "/me/sendMail",
+      bodyFile: "C:\\temp\\body.json",
+    });
+    assert.deepEqual(args.slice(args.indexOf("--body"), args.indexOf("--body") + 4), [
+      "--body",
+      "@C:\\temp\\body.json",
+      "--content-type",
+      "application/json",
+    ]);
+  });
+  it("builds Graph fileAttachments from absolute paths", () => {
+    const dir = mkdtempSync(join(tmpdir(), "ops-msgraph-attach-"));
+    const path = join(dir, "evidence.pdf");
+    writeFileSync(path, "pdf-bytes");
+    const [att] = fileAttachments([{ path, name: "Evidence.pdf" }]);
+    assert.ok(att);
+    assert.equal(att["@odata.type"], "#microsoft.graph.fileAttachment");
+    assert.equal(att.name, "Evidence.pdf");
+    assert.equal(att.contentType, "application/pdf");
+    assert.equal(att.contentBytes, Buffer.from("pdf-bytes").toString("base64"));
+  });
+  it("rejects relative paths, missing files and oversized attachments", () => {
+    assert.throws(() => fileAttachments([{ path: "relative.pdf" }]), /absolute path/);
+    assert.throws(
+      () => fileAttachments([{ path: join(tmpdir(), "missing-ops-attach.bin") }]),
+      /not found/,
+    );
+    const dir = mkdtempSync(join(tmpdir(), "ops-msgraph-attach-"));
+    const path = join(dir, "big.bin");
+    writeFileSync(path, Buffer.alloc(ATTACHMENT_MAX_BYTES + 1));
+    assert.throws(() => fileAttachments([{ path }]), /simple attachment limit/);
   });
   it("fences recipients to allowed domains and their subdomains", () => {
     const pcfg = {
