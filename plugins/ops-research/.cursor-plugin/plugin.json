@@ -1,7 +1,7 @@
 {
   "name": "ops-research",
   "displayName": "Ops: Research",
-  "version": "1.11.0",
+  "version": "1.12.0",
   "description": "Literature search across OpenAlex, arXiv and Semantic Scholar. Returns real identifiers only, follows one hop of references and citations, and appends BibTeX after re-resolving those ids. ops-latex compiles the manuscript.",
   "author": {
     "name": "Muja Kayadan"

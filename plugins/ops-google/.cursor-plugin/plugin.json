@@ -1,7 +1,7 @@
 {
   "name": "ops-google",
   "displayName": "Ops: Google",
-  "version": "1.11.0",
+  "version": "1.12.0",
   "description": "Google operations with separate read and write MCP servers and gog guardrails.",
   "author": {
     "name": "Muja Kayadan"
