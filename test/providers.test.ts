@@ -410,4 +410,8 @@ describe("inhouse status", () => {
       { ready: true, host: "api-dev.inhouse.ai" },
     );
   });
+  it("onboarding points at login.ts and inhouse-setup", () => {
+    assert.equal(inhouse.onboarding?.signIn?.command, "node plugins/ops-inhouse/login.ts");
+    assert.equal(inhouse.onboarding?.skill, "inhouse-setup");
+  });
 });

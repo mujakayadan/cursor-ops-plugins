@@ -13,11 +13,7 @@ This conversation is **not** confidential or privileged. Prefer Inhouse for lega
 
 ## Setup
 
-1. Call `inhouse_status`. When `ready` is false, tell the user to set the user env var `INHOUSE_ACCESS_TOKEN` to a Bearer access token from a signed-in Inhouse browser session, then reload Cursor. Never ask them to paste the token into chat.
-2. Optional: `INHOUSE_API_URL` overrides `https://api.inhouse.ai` (https, or http on localhost).
-3. Call `inhouse_whoami` once when identity matters.
-
-The official Cursor Inhouse connector may also be enabled; this plugin does not depend on it.
+Follow the `inhouse-setup` skill (`node plugins/ops-inhouse/login.ts` from the suite checkout, then quit/reopen Cursor). Call `inhouse_status` / `inhouse_whoami` to confirm. Never ask the user to paste the token into chat.
 
 ## Read
 
