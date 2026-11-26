@@ -252,7 +252,7 @@ describe("msgraph requests", () => {
     assert.equal(att.contentBytes, Buffer.from("pdf-bytes").toString("base64"));
   });
   it("rejects relative paths, missing files and oversized attachments", () => {
-    assert.throws(() => fileAttachments([{ path: "relative.pdf" }]), /absolute path/);
+    assert.throws(() => fileAttachments([{ path: "relative.pdf" }]), /absolute/);
     assert.throws(
       () => fileAttachments([{ path: join(tmpdir(), "missing-ops-attach.bin") }]),
       /not found/,
@@ -261,6 +261,20 @@ describe("msgraph requests", () => {
     const path = join(dir, "big.bin");
     writeFileSync(path, Buffer.alloc(ATTACHMENT_MAX_BYTES + 1));
     assert.throws(() => fileAttachments([{ path }]), /simple attachment limit/);
+  });
+  it("rejects attachments under ops home and paths with ..", () => {
+    const prev = process.env.OPS_HOME;
+    const home = mkdtempSync(join(tmpdir(), "ops-home-"));
+    process.env.OPS_HOME = home;
+    try {
+      const secret = join(home, "serve.token");
+      writeFileSync(secret, "token");
+      assert.throws(() => fileAttachments([{ path: secret }]), /ops home/);
+      assert.throws(() => fileAttachments([{ path: `${tmpdir()}/ops-attach/../x.bin` }]), /\.\./);
+    } finally {
+      if (prev === undefined) delete process.env.OPS_HOME;
+      else process.env.OPS_HOME = prev;
+    }
   });
   it("fences recipients to allowed domains and their subdomains", () => {
     const pcfg = {
