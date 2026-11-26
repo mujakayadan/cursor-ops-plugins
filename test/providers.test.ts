@@ -25,10 +25,15 @@ import memory from "../plugins/ops-memory/provider.ts";
 import mermaid from "../plugins/ops-mermaid/provider.ts";
 import models from "../plugins/ops-models/provider.ts";
 import msgraph, {
+  ATTACHMENT_CHUNK_BYTES,
   ATTACHMENT_MAX_BYTES,
+  ATTACHMENT_SIMPLE_MAX_BYTES,
+  assertAttachmentUploadUrl,
   fileAttachments,
   outsideDomains,
+  putAttachmentChunks,
   requestArgs,
+  resolveMailAttachments,
   stripHtml,
 } from "../plugins/ops-msgraph/provider.ts";
 import oss from "../plugins/ops-oss/provider.ts";
@@ -260,7 +265,12 @@ describe("msgraph requests", () => {
     const dir = mkdtempSync(join(tmpdir(), "ops-msgraph-attach-"));
     const path = join(dir, "big.bin");
     writeFileSync(path, Buffer.alloc(ATTACHMENT_MAX_BYTES + 1));
-    assert.throws(() => fileAttachments([{ path }]), /simple attachment limit/);
+    assert.throws(() => resolveMailAttachments([{ path }]), /suite attachment limit/);
+    writeFileSync(path, Buffer.alloc(ATTACHMENT_SIMPLE_MAX_BYTES + 1));
+    const [large] = resolveMailAttachments([{ path }]);
+    assert.ok(large);
+    assert.equal(large.size, ATTACHMENT_SIMPLE_MAX_BYTES + 1);
+    assert.throws(() => fileAttachments([{ path }]), /upload session/);
   });
   it("rejects attachments under ops home and paths with ..", () => {
     const prev = process.env.OPS_HOME;
@@ -275,6 +285,36 @@ describe("msgraph requests", () => {
       if (prev === undefined) delete process.env.OPS_HOME;
       else process.env.OPS_HOME = prev;
     }
+  });
+  it("allows only Microsoft Outlook hosts for attachment upload URLs", () => {
+    const ok =
+      "https://outlook.office.com/api/v1.0/Users('u')/Messages('m')/AttachmentSessions('s')?authtoken=x";
+    assert.equal(assertAttachmentUploadUrl(ok), ok);
+    assert.throws(() => assertAttachmentUploadUrl("http://outlook.office.com/x"), /https/);
+    assert.throws(() => assertAttachmentUploadUrl("https://evil.example/x"), /not allowed/);
+  });
+  it("PUTs attachment chunks with Content-Range headers", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "ops-msgraph-chunk-"));
+    const path = join(dir, "blob.bin");
+    const size = ATTACHMENT_CHUNK_BYTES + 100;
+    writeFileSync(path, Buffer.alloc(size, 7));
+    const ranges: string[] = [];
+    await putAttachmentChunks(
+      "https://outlook.office.com/api/v1.0/AttachmentSessions('s')?authtoken=x",
+      path,
+      size,
+      async (_url, init) => {
+        ranges.push(String(init?.headers?.["Content-Range"]));
+        assert.equal(init?.method, "PUT");
+        assert.equal(init?.headers?.["Content-Type"], "application/octet-stream");
+        assert.equal(init?.body?.length, Number(init?.headers?.["Content-Length"]));
+        return { ok: true, status: 200, text: async () => "" };
+      },
+    );
+    assert.deepEqual(ranges, [
+      `bytes 0-${ATTACHMENT_CHUNK_BYTES - 1}/${size}`,
+      `bytes ${ATTACHMENT_CHUNK_BYTES}-${size - 1}/${size}`,
+    ]);
   });
   it("fences recipients to allowed domains and their subdomains", () => {
     const pcfg = {
