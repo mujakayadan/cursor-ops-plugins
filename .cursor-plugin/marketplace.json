@@ -91,6 +91,14 @@
     {
       "name": "ops-yarba",
       "source": "./plugins/ops-yarba"
+    },
+    {
+      "name": "ops-rea",
+      "source": "./plugins/ops-rea"
+    },
+    {
+      "name": "ops-inhouse",
+      "source": "./plugins/ops-inhouse"
     }
   ]
 }

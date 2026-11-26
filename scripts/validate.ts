@@ -177,7 +177,18 @@ for (const plugin of listPlugins()) {
 
   const mcpPath = join(root, "mcp.json");
   if (existsSync(mcpPath)) {
+    const isProvider = existsSync(join(root, "provider.ts"));
     for (const [name, def] of Object.entries(json<McpFile>(mcpPath).mcpServers)) {
+      if (!isProvider) {
+        // Bridge plugin: pin an external MCP (command + args), not ops-<id>-read/write.
+        if (!("command" in def) || typeof def.command !== "string" || !def.command) {
+          fail(`${plugin}/mcp.json`, `${name}: bridge servers need a command`);
+        }
+        if (!Array.isArray(def.args) || def.args.length === 0) {
+          fail(`${plugin}/mcp.json`, `${name}: bridge servers need args`);
+        }
+        continue;
+      }
       if (!/^ops-[a-z0-9]+-(read|write)$/.test(name)) {
         fail(`${plugin}/mcp.json`, `server "${name}" must be named ops-<provider>-<read|write>`);
       }
