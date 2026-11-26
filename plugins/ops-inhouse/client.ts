@@ -112,8 +112,8 @@ function optionalNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
-/** Account summary from GET /api/user/get-metadata (safe subset; no phone). */
-export async function getInfo(env?: NodeJS.ProcessEnv): Promise<InhouseProfile> {
+/** Account summary from GET /api/user/get-metadata. */
+export async function getMetadata(env?: NodeJS.ProcessEnv): Promise<InhouseProfile> {
   const raw = await api<Record<string, unknown>>("GET", "/api/user/get-metadata", undefined, env);
   return {
     userId: optionalString(raw.user_id),
