@@ -1,7 +1,7 @@
 {
   "name": "ops-rea",
   "displayName": "Ops: REA",
-  "version": "1.11.0",
+  "version": "1.12.0",
   "description": "Pins the upstream Reverse Engineer Anything (REA) MCP server for the team marketplace without reimplementing its tools. Bump the rea-agents version in mcp.json to follow upstream.",
   "author": {
     "name": "Muja Kayadan"
