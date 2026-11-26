@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.12.0](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.11.0...v1.12.0) (2026-11-26)
+
+
+### Features
+
+* add ops-rea MCP pin and ops-inhouse HTTP provider ([#117](https://github.com/mujakayadan/cursor-ops-plugins/issues/117)) ([23df251](https://github.com/mujakayadan/cursor-ops-plugins/commit/23df251eecdda3a69f56d958ce4c2ed1df0681e6))
+* **msgraph:** attach local files to Outlook drafts and sends ([#108](https://github.com/mujakayadan/cursor-ops-plugins/issues/108)) ([ade8c16](https://github.com/mujakayadan/cursor-ops-plugins/commit/ade8c16bcf3114fdcf13e917ec496794f9992c60))
+* **msgraph:** upload sessions for mail attachments up to 25 MB ([#114](https://github.com/mujakayadan/cursor-ops-plugins/issues/114)) ([b954849](https://github.com/mujakayadan/cursor-ops-plugins/commit/b9548491a725c5f3df6a6c618c688cad132639c0))
+
+
+### Bug Fixes
+
+* **inhouse:** whoami via get-metadata and terminal login helper ([#120](https://github.com/mujakayadan/cursor-ops-plugins/issues/120)) ([f4f7c3e](https://github.com/mujakayadan/cursor-ops-plugins/commit/f4f7c3efe6c3e2009cc3b6a657209f09a3f24385))
+* **msgraph:** fence attachment paths and parallelize draft attach ([#111](https://github.com/mujakayadan/cursor-ops-plugins/issues/111)) ([80a226a](https://github.com/mujakayadan/cursor-ops-plugins/commit/80a226a3f1fa704056928facf600b532de97bea1))
+* **yarba:** describe the portfolio fields and hide non-JSON bodies ([#97](https://github.com/mujakayadan/cursor-ops-plugins/issues/97)) ([1f42e25](https://github.com/mujakayadan/cursor-ops-plugins/commit/1f42e25ba14acf293bc4f28f991a42af7d13b2e1))
+
 ## [1.11.0](https://github.com/mujakayadan/cursor-ops-plugins/compare/v1.10.0...v1.11.0) (2026-11-17)
 
 
