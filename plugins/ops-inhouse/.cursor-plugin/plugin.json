@@ -1,0 +1,16 @@
+{
+  "name": "ops-inhouse",
+  "displayName": "Ops: Inhouse",
+  "version": "1.11.0",
+  "description": "Inhouse legal AI over HTTPS: account, threads, messages, document library and evidence upload. Uses INHOUSE_ACCESS_TOKEN; endpoints are not a published partner API.",
+  "author": {
+    "name": "Muja Kayadan"
+  },
+  "license": "MIT",
+  "keywords": [
+    "inhouse",
+    "legal",
+    "documents"
+  ],
+  "category": "developer-tools"
+}
