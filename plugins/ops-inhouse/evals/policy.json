@@ -1,0 +1,22 @@
+[
+  {
+    "name": "read tool allowed",
+    "event": "beforeMCPExecution",
+    "input": {
+      "mcp_server_name": "ops-inhouse-read",
+      "tool_name": "inhouse_status",
+      "tool_input": "{}"
+    },
+    "expect": { "permission": "allow" }
+  },
+  {
+    "name": "write tool asks",
+    "event": "beforeMCPExecution",
+    "input": {
+      "mcp_server_name": "ops-inhouse-write",
+      "tool_name": "inhouse_upload",
+      "tool_input": "{\"path\":\"/tmp/evidence.pdf\"}"
+    },
+    "expect": { "permission": "ask" }
+  }
+]

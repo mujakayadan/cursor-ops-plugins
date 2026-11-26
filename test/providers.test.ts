@@ -20,6 +20,8 @@ import google, {
   outsideDomains as googleOutsideDomains,
   pickGoogleAccount,
 } from "../plugins/ops-google/provider.ts";
+import { inhouseStatus } from "../plugins/ops-inhouse/client.ts";
+import inhouse from "../plugins/ops-inhouse/provider.ts";
 import latex from "../plugins/ops-latex/provider.ts";
 import memory from "../plugins/ops-memory/provider.ts";
 import mermaid from "../plugins/ops-mermaid/provider.ts";
@@ -60,6 +62,7 @@ const providers = [
   models,
   research,
   yarba,
+  inhouse,
 ];
 
 describe("provider list", () => {
@@ -389,5 +392,22 @@ describe("aws hideEnvValues", () => {
       Configuration: { Environment: { Variables: { DB_PASSWORD: "[hidden]", MODE: "[hidden]" } } },
       containerDefinitions: [{ environment: [{ name: "TOKEN", value: "[hidden]" }] }],
     });
+  });
+});
+
+describe("inhouse status", () => {
+  it("reports ready only when INHOUSE_ACCESS_TOKEN is set", () => {
+    assert.deepEqual(inhouseStatus({}), { ready: false, host: null });
+    assert.deepEqual(inhouseStatus({ INHOUSE_ACCESS_TOKEN: "tok" }), {
+      ready: true,
+      host: "api.inhouse.ai",
+    });
+    assert.deepEqual(
+      inhouseStatus({
+        INHOUSE_ACCESS_TOKEN: "tok",
+        INHOUSE_API_URL: "https://api-dev.inhouse.ai/",
+      }),
+      { ready: true, host: "api-dev.inhouse.ai" },
+    );
   });
 });
