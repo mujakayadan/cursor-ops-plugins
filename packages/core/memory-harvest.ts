@@ -15,7 +15,7 @@ import type { Config, HookPayload, HookResponse } from "./types.ts";
 /** Prefix of every automatic memory-harvest request; prompts starting with it are not user turns. */
 export const MEMORY_MARKER = "[ops-memory]";
 
-/** Same marker as packages/core/review.ts — kept local so non-review plugins need not sync review.ts. */
+/** Prefix of automatic review follow-ups; prompts starting with it are not user turns. */
 const REVIEW_MARKER = "[ops-review]";
 
 const RETENTION_MS = 7 * 24 * 60 * 60 * 1000;

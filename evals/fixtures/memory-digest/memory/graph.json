@@ -1,10 +1,10 @@
 {
   "entities": [
     {
-      "name": "Muja",
+      "name": "Alex",
       "type": "person",
       "scope": "user",
-      "observations": [{ "text": "Prefers Fairfield IA mailing address on forms", "at": "2026-11-26" }]
+      "observations": [{ "text": "Prefers Example City mailing address on forms", "at": "2026-11-26" }]
     }
   ],
   "relations": []

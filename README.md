@@ -144,7 +144,7 @@ A directory of topic folders is only a shelf. Opening the shelf, or a `.code-wor
 
 The Agents Window is a different surface. A cloud agent there edits a remote checkout, not the files on this machine, and Move to → Local appears only when a local agent for that same repo is already open. The suite loads through the editor's `workspaceOpen` hook, and guardrail and review hooks run in the editor. An Agents Window chat does not get that loader or those hooks the same way. A topic chat that stays on this machine with the suite stays in the editor.
 
-The suite loader runs when an editor workspace opens, so each topic folder gets the enabled plugins. `memory_remember` writes one knowledge graph for the machine. A fact that belongs to one topic stays in that agent's transcript, or in a file in that folder. Two agents in one checkout use `ops worktree add` (see [GitOps](#gitops)). The `workspace-sessions` skill (ops-core) is this same setup for the agent.
+The suite loader runs when an editor workspace opens, so each topic folder gets the enabled plugins. `memory_remember` writes one knowledge graph for the machine (session start injects the user-scope digest; harvest follow-ups propose lasting facts after a turn). A fact that belongs to one topic stays in that agent's transcript, or in a file in that folder. Two agents in one checkout use `ops worktree add` (see [GitOps](#gitops)). The `workspace-sessions` skill (ops-core) is this same setup for the agent.
 
 ## Microsoft 365
 

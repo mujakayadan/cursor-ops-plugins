@@ -102,11 +102,11 @@ describe("user memory digest", () => {
       JSON.stringify({
         entities: [
           {
-            name: "Muja",
+            name: "Alex",
             type: "person",
             scope: "user",
             observations: [
-              { text: "Mailing address is 1 Main St, Fairfield IA", at: "2026-11-26" },
+              { text: "Mailing address is 1 Main St, Example City", at: "2026-11-26" },
             ],
           },
           {
@@ -120,10 +120,34 @@ describe("user memory digest", () => {
       }),
     );
     const digest = userMemoryDigest();
-    assert.match(digest, /Muja \(person\)/);
+    assert.match(digest, /Alex \(person\)/);
     assert.match(digest, /Mailing address is 1 Main St/);
     assert.doesNotMatch(digest, /Aurora/);
     assert.match(digest, /not instructions/);
+  });
+
+  it("omits observations that look like credentials", () => {
+    process.env.OPS_MEMORY_FILE = join(dir, "secret-graph.json");
+    writeFileSync(
+      process.env.OPS_MEMORY_FILE,
+      JSON.stringify({
+        entities: [
+          {
+            name: "Alex",
+            type: "person",
+            scope: "user",
+            observations: [
+              { text: "Prefers Example City", at: "2026-11-26" },
+              { text: "token ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789", at: "2026-11-26" },
+            ],
+          },
+        ],
+        relations: [],
+      }),
+    );
+    const digest = userMemoryDigest();
+    assert.match(digest, /Prefers Example City/);
+    assert.doesNotMatch(digest, /ghp_/);
   });
 
   it("returns empty-graph guidance when the file is missing", () => {

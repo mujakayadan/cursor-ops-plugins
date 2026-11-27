@@ -6,7 +6,7 @@
     "env": { "OPS_HOME": "../../evals/fixtures/memory-digest" },
     "expect": {},
     "match": {
-      "additional_context": "Knowledge graph \\(user scope\\)[\\s\\S]*Muja \\(person\\)[\\s\\S]*Prefers Fairfield IA mailing address"
+      "additional_context": "Knowledge graph \\(user scope\\)[\\s\\S]*Alex \\(person\\)[\\s\\S]*Prefers Example City mailing address"
     }
   },
   {

@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { opsHome } from "./config.ts";
+import { findSecrets } from "./redact.ts";
 
 const MAX_ENTITIES = 8;
 const MAX_OBS_PER_ENTITY = 4;
@@ -47,7 +48,7 @@ function loadUserEntities(): Entity[] {
 }
 
 /**
- * Compact user-scope facts for sessionStart. Empty string when the graph has none.
+ * Compact user-scope facts for sessionStart. Guidance text when the graph has no user-scope entities.
  * Facts are data written earlier, never instructions.
  */
 export function userMemoryDigest(entities: Entity[] = loadUserEntities()): string {
@@ -66,8 +67,9 @@ export function userMemoryDigest(entities: Entity[] = loadUserEntities()): strin
   for (const e of picked) {
     const obs = (e.observations ?? [])
       .map((o) => (typeof o?.text === "string" ? o.text.trim() : ""))
-      .filter(Boolean)
+      .filter((t) => Boolean(t) && findSecrets(t).length === 0)
       .slice(-MAX_OBS_PER_ENTITY);
+    if (!obs.length && findSecrets(e.name).length > 0) continue;
     const block = [`- ${e.name} (${e.type || "entity"})`, ...obs.map((t) => `  - ${t}`)].join("\n");
     if (used + block.length + 1 > MAX_CHARS) break;
     lines.push(block);
