@@ -9,6 +9,9 @@
     "minChangedLines": 3,
     "ignore": ["^docs/generated/"]
   },
+  "memory": {
+    "harvest": { "enabled": true, "maxRounds": 1 }
+  },
   "suite": { "disabledPlugins": [] },
 
   "thirdPartyMcp": {

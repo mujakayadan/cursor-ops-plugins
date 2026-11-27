@@ -47,6 +47,17 @@ export interface ThirdPartyMcpPolicy extends Record<ToolClass, Decision> {
   deniedTools: string[];
 }
 
+export interface MemoryHarvestConfig {
+  /** After each user turn, ask the agent to store lasting facts (still needs approval). */
+  enabled: boolean;
+  /** Harvest follow-ups per user prompt. */
+  maxRounds: number;
+}
+
+export interface MemoryConfig {
+  harvest: MemoryHarvestConfig;
+}
+
 export interface Config {
   audit: { enabled: boolean; dir: string | null; maxFieldChars: number };
   execution: { timeoutMs: number; maxOutputChars: number };
@@ -55,6 +66,7 @@ export interface Config {
   guardrails: { shell: { overrides: Record<string, Decision> } };
   prompts: { blockSecrets: boolean };
   review: ReviewConfig;
+  memory: MemoryConfig;
   suite: { disabledPlugins: string[] };
 }
 

@@ -30,6 +30,7 @@ function mcpJson(id: string, writes: boolean): string {
 
 const PROVIDER_ONLY = new Set(["run-mcp.ts", "run-guard.ts"]);
 const REVIEW_ONLY = new Set(["review.ts", "review-scan.ts", "review-docs.ts"]);
+const MEMORY_ONLY = new Set(["memory-harvest.ts", "memory-digest.ts"]);
 const CONTROL_ONLY = new Set(["suite.ts"]);
 const PROFILE_PLUGINS = new Set(["ops-core", "ops-control"]);
 const check = process.argv.includes("--check");
@@ -46,6 +47,7 @@ for (const plugin of listPlugins()) {
     (f) =>
       (isProvider || !PROVIDER_ONLY.has(f)) &&
       (isReviewer || !REVIEW_ONLY.has(f)) &&
+      (plugin === "ops-memory" || !MEMORY_ONLY.has(f)) &&
       (plugin === "ops-control" || !CONTROL_ONLY.has(f)) &&
       (PROFILE_PLUGINS.has(plugin) || f !== "profile.ts"),
   );

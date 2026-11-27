@@ -19,7 +19,7 @@ The Agents Window is a different surface. A cloud agent there edits a remote che
 
 The loader runs when an editor workspace opens, so the enabled plugins are in each topic folder. Nothing is copied per topic.
 
-`memory_remember` writes the machine knowledge graph, which every workspace can read. A fact that belongs to one topic stays in that agent's transcript, or in a file in that folder.
+`memory_remember` writes the machine knowledge graph, which every workspace can read (session start injects the user-scope digest; harvest follow-ups propose lasting facts after a turn). A fact that belongs to one topic stays in that agent's transcript, or in a file in that folder.
 
 Two agents in one checkout use `ops worktree add` so they do not share a working tree. A topic folder has no worktree of its own.
 

@@ -1,0 +1,11 @@
+{
+  "entities": [
+    {
+      "name": "Alex",
+      "type": "person",
+      "scope": "user",
+      "observations": [{ "text": "Prefers Example City mailing address on forms", "at": "2026-11-26" }]
+    }
+  ],
+  "relations": []
+}

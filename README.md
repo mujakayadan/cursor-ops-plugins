@@ -144,7 +144,7 @@ A directory of topic folders is only a shelf. Opening the shelf, or a `.code-wor
 
 The Agents Window is a different surface. A cloud agent there edits a remote checkout, not the files on this machine, and Move to → Local appears only when a local agent for that same repo is already open. The suite loads through the editor's `workspaceOpen` hook, and guardrail and review hooks run in the editor. An Agents Window chat does not get that loader or those hooks the same way. A topic chat that stays on this machine with the suite stays in the editor.
 
-The suite loader runs when an editor workspace opens, so each topic folder gets the enabled plugins. `memory_remember` writes one knowledge graph for the machine. A fact that belongs to one topic stays in that agent's transcript, or in a file in that folder. Two agents in one checkout use `ops worktree add` (see [GitOps](#gitops)). The `workspace-sessions` skill (ops-core) is this same setup for the agent.
+The suite loader runs when an editor workspace opens, so each topic folder gets the enabled plugins. `memory_remember` writes one knowledge graph for the machine (session start injects the user-scope digest; harvest follow-ups propose lasting facts after a turn). A fact that belongs to one topic stays in that agent's transcript, or in a file in that folder. Two agents in one checkout use `ops worktree add` (see [GitOps](#gitops)). The `workspace-sessions` skill (ops-core) is this same setup for the agent.
 
 ## Microsoft 365
 
@@ -205,7 +205,7 @@ It writes only the `review` and `suite` sections of `~/.ops/config.json` and the
 
 `~/.ops/profile.json` holds your expertise level (`senior-engineer`, `engineer`, `technical` or `non-technical`), an optional role and up to 20 short preferences. The `ops-core` `sessionStart` hook turns it into context at the start of every conversation, so the agent adapts without being told: for a senior engineer it talks peer to peer, resolves what it can, asks only the calls that are yours as trade-offs with a recommended option, and finishes work instead of listing what remains. Without a profile, the agent asks once which level describes you and saves the answer with `control_profile_set`. The profile belongs to the OS user, so each person on a shared machine or team gets their own.
 
-`ops-memory` is a knowledge graph in `~/.ops/memory/graph.json` (`OPS_MEMORY_FILE` overrides the path), using the data model of the reference MCP memory server: named, typed entities with dated observations, and typed relations between them. Every entity has a scope (`global`, `user` or `project:<owner>/<repo>`) so searches stay within a project.
+`ops-memory` is a knowledge graph in `~/.ops/memory/graph.json` (`OPS_MEMORY_FILE` overrides the path), using the data model of the reference MCP memory server: named, typed entities with dated observations, and typed relations between them. Every entity has a scope (`global`, `user` or `project:<owner>/<repo>`) so searches stay within a project. At `sessionStart`, a compact user-scope digest is injected so later chats see lasting facts about you without rediscovery. After each user turn, an `[ops-memory]` harvest follow-up asks the agent to store lasting facts from that turn with `memory_remember` (still needs your approval). This is separate from `[ops-review]`, which only audits code and docs.
 
 | Tool | Tier | What it does |
 |---|---|---|
@@ -215,7 +215,7 @@ It writes only the `review` and `suite` sections of `~/.ops/config.json` and the
 | `memory_remember` | write | Create or update entities, add observations and relations |
 | `memory_forget` | write | Delete entities, observations or relations |
 
-Writes need approval, so content from a web page or an issue can't plant facts without you seeing them, and both the `ops-core` hook and the tool reject credentials. Concurrent writers are serialized with a lock file and every write replaces the file atomically. The `memory` skill covers what to recall at the start of a task and what is worth recording.
+Writes need approval, so content from a web page or an issue can't plant facts without you seeing them, and both the `ops-core` hook and the tool reject credentials. Concurrent writers are serialized with a lock file and every write replaces the file atomically. The `memory` skill covers what to recall at the start of a task and what is worth recording. Turn harvest off with `memory.harvest.enabled: false` or temporarily with `OPS_MEMORY_HARVEST=off`.
 
 `ops-yarba` reads the published [YARBA](https://yarba.app) portfolio. The default API is `https://api.yarba.app`. `YARBA_API_URL` overrides it and must be https, or http on localhost. The token is the portfolio site token, sent as `X-Portfolio-Site-Token` and never logged or returned. An agent access token is not accepted. The portfolio is not copied into the knowledge graph. The `yarba-portfolio` skill reads it once per conversation and treats the text as data.
 
@@ -462,6 +462,7 @@ To add a tool, add a `tool({...})` entry to the provider's `tools` array with a 
 | `review.enabled` / `review.lenses.{security,performance,standards,docs}` | `true` / `true` | Automatic review after turns that change code or docs (`OPS_REVIEW=off` disables it for a session) |
 | `review.maxRounds` / `minChangedLines` / `maxFiles` | `1` / `3` / `30` | Review follow-ups per prompt; smallest unhinted change reviewed; files listed per lens |
 | `review.ignore` | `[]` | Workspace-relative path regexes never reviewed (dependencies, builds, lockfiles and `lib/core` are always skipped) |
+| `memory.harvest.enabled` / `memory.harvest.maxRounds` | `true` / `1` | After each user turn, ask to store lasting graph facts (`OPS_MEMORY_HARVEST=off` disables it for a session) |
 | `audit.{enabled,dir}` | `true`, `~/.ops/audit` | Audit trail |
 | `suite.disabledPlugins` | `[]` | Plugins the loader skips (`ops-core` and `ops-control` always load) |
 
