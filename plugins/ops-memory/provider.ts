@@ -106,7 +106,7 @@ const tools = [
     name: "memory_remember",
     title: "Remember",
     tier: "write",
-    description: `Create or update entities, add observations (duplicates are skipped, at most ${MAX_OBSERVATIONS} per entity) and add relations between existing or new entities. Never store credentials or personal data the user didn't ask to keep.`,
+    description: `Create or update entities, add observations (duplicates are skipped, at most ${MAX_OBSERVATIONS} per entity) and add relations between existing or new entities. Store lasting user facts (scope user) the user stated for later sessions, project decisions/conventions, and vetted components. Never store credentials or dump a transcript.`,
     input: obj({
       entities: list(
         obj(

@@ -1,11 +1,22 @@
 {
   "version": 1,
   "hooks": {
+    "sessionStart": [{ "command": "node ./hooks/session.ts sessionStart", "timeout": 10 }],
+    "beforeSubmitPrompt": [
+      { "command": "node ./hooks/harvest.ts beforeSubmitPrompt", "timeout": 10 }
+    ],
     "beforeMCPExecution": [
       {
         "command": "node ./lib/core/run-guard.ts beforeMCPExecution",
         "timeout": 10,
         "failClosed": true
+      }
+    ],
+    "stop": [
+      {
+        "command": "node -e \"import(require('node:url').pathToFileURL(process.env.CURSOR_PLUGIN_ROOT+'/hooks/harvest.ts').href)\"",
+        "timeout": 10,
+        "loop_limit": 5
       }
     ]
   }

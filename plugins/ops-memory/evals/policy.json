@@ -1,5 +1,15 @@
 [
   {
+    "name": "session start injects user-scope digest",
+    "event": "sessionStart",
+    "input": { "session_id": "eval", "is_background_agent": false },
+    "env": { "OPS_HOME": "../../evals/fixtures/memory-digest" },
+    "expect": {},
+    "match": {
+      "additional_context": "Knowledge graph \\(user scope\\)[\\s\\S]*Muja \\(person\\)[\\s\\S]*Prefers Fairfield IA mailing address"
+    }
+  },
+  {
     "name": "search is a read",
     "event": "beforeMCPExecution",
     "input": {

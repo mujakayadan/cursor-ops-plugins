@@ -47,8 +47,15 @@ const DEFAULTS: Config = {
     maxFiles: 30,
     ignore: [],
   },
+  memory: {
+    harvest: { enabled: true, maxRounds: 1 },
+  },
   suite: { disabledPlugins: [] },
 };
+
+export function memoryHarvestDir(): string {
+  return process.env.OPS_MEMORY_HARVEST_DIR || join(opsHome(), "memory-harvest");
+}
 
 const PROVIDER_DEFAULTS: ProviderConfig = {
   allowPrivileged: false,
