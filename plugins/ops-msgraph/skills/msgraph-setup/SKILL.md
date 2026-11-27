@@ -20,12 +20,16 @@ m365 signs in with an Entra app registration the user owns. Either run `m365 set
 Personal accounts only support the mail, calendar and profile permissions; Teams tools work with work or school accounts only.
 
 ## 3. Sign in
-The user runs these in their own terminal (they open a browser or show a device code):
+Name every connection after the account itself (usually the email), never a shared label like `personal` or `work` when more than one account of that kind exists. Connection names may include letters, digits, spaces, `_`, `.`, `@` and `-`.
 
-- Work: `m365 login --appId <app-id> --tenant <tenant-id> --connectionName work`
-- Personal: `m365 login --appId <app-id> --tenant consumers --connectionName personal`
+The user runs these in their own terminal (they open a browser or show a device code). Reuse the same Entra `--appId` for each login:
 
-Then call `msgraph_whoami` to confirm the account.
+- Work / school: `m365 login --appId <app-id> --tenant <tenant-id> --connectionName <you@contoso.com>`
+- Personal (Outlook.com / MSA): `m365 login --appId <app-id> --tenant consumers --connectionName <you@outlook.com>`
+
+Repeat the personal line once per Microsoft account, each with its own `--connectionName`. To replace a badly named connection: `m365 connection remove --name <old-name> --force`, then sign in again with the email as the name.
+
+Then call `msgraph_whoami` to confirm the active account, and `msgraph_connection_list` to see all names.
 
 ## 4. Switch accounts
 Every tool acts as the active m365 connection. `msgraph_connection_list` shows them; `msgraph_connection_use` (write, needs approval) switches. Say which account is active before any write.

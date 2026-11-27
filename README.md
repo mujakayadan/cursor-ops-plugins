@@ -152,7 +152,7 @@ The suite loader runs when an editor workspace opens, so each topic folder gets 
 
 - **Read (auto-allowed):** identity and connections, mail list/get/folders, people search, calendars, events (recurrences expanded), meeting-time suggestions, joined teams, channels, chats, and chat and channel messages.
 - **Write (always approved):** send, draft (optional local file attachments, at most 10 files and 25 MB each; over 3 MB uses a Graph upload session; `msgraph_mail_attach` adds more to an existing draft), reply, forward, move (including to Deleted Items) and mark mail; create, update, respond to and cancel events; post Teams chat messages, channel posts and thread replies. Nothing hard-deletes.
-- **Accounts:** `m365 login --connectionName work|personal` once per account; `msgraph_connection_use` switches. Teams tools need a work or school account.
+- **Accounts:** `m365 login --connectionName <email>` once per account (never reuse a shared name like `personal` when you have several MSAs); `msgraph_connection_use` switches. Teams tools need a work or school account.
 - **Guards:** `providers.msgraph.scope.allowedRecipientDomains` fences who mail, replies, forwards and invitations can reach. Message and event bodies are treated as untrusted content. The shell guard asks before `m365` sends, removals, raw write requests and Entra changes, and ops-core asks before tokens or the m365 token cache are read.
 
 The `msgraph-setup` skill covers the Entra app registration (delegated permissions), sign-in and troubleshooting; `m365-assistant` covers inbox triage, scheduling and Teams.

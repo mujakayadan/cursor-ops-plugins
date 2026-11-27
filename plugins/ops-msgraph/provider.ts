@@ -619,7 +619,7 @@ const tools = [
     title: "List m365 connections",
     tier: "read",
     description:
-      "Accounts the m365 CLI is signed in to (for example work and personal). Every tool acts as the active one.",
+      "Accounts the m365 CLI is signed in to (name each connection after the account email). Every tool acts as the active one.",
     run: (_a, { cli }) => cli(["connection", "list", "--output", "json"]),
   }),
   tool({
@@ -1529,7 +1529,7 @@ const provider: Provider = {
     whoami: "msgraph_whoami",
     signIn: {
       command: "m365 setup",
-      note: "creates the Entra app, then sign in with `m365 login --connectionName work` (or `personal`)",
+      note: "creates the Entra app, then sign in once per account with `m365 login --connectionName <email>` (tenant consumers for personal MSA; tenant id for work)",
     },
     skill: "msgraph-setup",
   },
